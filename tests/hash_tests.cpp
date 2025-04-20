@@ -11,9 +11,9 @@ TEST(IterativeStdHashTests, ConstructorInitializeFields) {
     IterativeStdHash iterHash5(5);
 
     // hash class get name should return the name in this format
-    EXPECT_EQ(iterHash1.getName(), "std hash 1");
-    EXPECT_EQ(iterHash2.getName(), "std hash 2");
-    EXPECT_EQ(iterHash5.getName(), "std hash 5");
+    EXPECT_EQ(iterHash1.getName(), "iterative_std::hash_1");
+    EXPECT_EQ(iterHash2.getName(), "iterative_std::hash_2");
+    EXPECT_EQ(iterHash5.getName(), "iterative_std::hash_5");
 }
 
 // same input to the hash function should always!! return the same output (deterministic function)
