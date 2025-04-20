@@ -22,7 +22,7 @@ TEST(IterativeStdHashTests, SameInputSameHashOutput) {
     EXPECT_EQ(iterHash("aa"), iterHash("aa"));
 }
 
-// activating the same hash function on different inputs, should usually yield different output (not always!)
+// activating the same hash function on different inputs, should usually yield different output
 TEST(IterativeStdHashTests, DifferentInputDifferentHashOutput) {
     IterativeStdHash iterHash(2);
     EXPECT_NE(iterHash("aa"), iterHash("bb"));
