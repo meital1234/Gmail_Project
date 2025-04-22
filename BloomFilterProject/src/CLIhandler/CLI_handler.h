@@ -25,7 +25,7 @@ public:
 
 
     // this function handles the starting line of input and determines the bit array size and the number of hash funcs
-    void loadOrInitializeBloomFilter(const std::string& configLine);
+    bool loadOrInitializeBloomFilter(const std::string& configLine);
     // this function analyzes command line (adding or checking)
     void handleCommand(const std::string& line);
     // this function adds URL to bloomfilter
