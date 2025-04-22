@@ -133,6 +133,38 @@ TEST(CLIHandlerTest, CheckURL_NotAdded) {
     EXPECT_TRUE(output == "false\n" || output == "true false\n");
 }
 
+// TEST 8
+// This test checks that the Bloom Filter can return false positive
+TEST(CLIHandlerTest, DetectFalsePositive) {
+    removeTestFiles();                      // Clean test environment
+    CLIHandler handler;
+    handler.loadOrInitializeBloomFilter("8 1");  // Tiny filter, high false positive chance
+
+    std::string added = "www.example.com0";
+    handler.processAdd(added);              // Add a single URL
+
+    bool foundFalsePositive = false;
+
+    for (int i = 1; i < 1000; ++i) {
+        std::string candidate = "www.example.com" + std::to_string(i);
+
+        // Skip if accidentally checking the one we added
+        if (candidate == added) continue;
+
+        testing::internal::CaptureStdout();
+        handler.processCheck(candidate);
+        std::string output = testing::internal::GetCapturedStdout();
+
+        if (output == "true false\n") {
+            foundFalsePositive = true;
+            break;
+        }
+    }
+
+    // expects to get at least one false positive
+    EXPECT_TRUE(foundFalsePositive) << "No false positive found after 999 tries. Increase tries or reduce Bloom size.";
+}
+
 // int main(int argc, char **argv) {
 //     ::testing::InitGoogleTest(&argc, argv);
 //     return RUN_ALL_TESTS();
