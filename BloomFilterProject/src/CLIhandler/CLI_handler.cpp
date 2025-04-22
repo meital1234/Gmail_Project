@@ -18,12 +18,14 @@ void CLIHandler::run() {
     // waits to get line after line from user
     while (getline(std::cin, user_line)) {
          // if the line is configuration line (like 256 2 1) it will load into BloomFilter
-        if (!initialized) {
-            loadOrInitializeBloomFilter(user_line);
-            initialized = true;
-        } 
-        // for all the other lines parse and check user commands
-        else {
+         if (!initialized) {
+            if (loadOrInitializeBloomFilter(user_line)) {
+                initialized = true;
+            } else {
+                std::cout << "Invalid configuration line, try again." << std::endl;
+                continue;
+            }
+        } else {
             handleCommand(user_line);
         }
     }
@@ -54,19 +56,10 @@ std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids) {
     return funcs;
 }
 
-
 // this function checks if their is a saved file of BloomFilter
 // if yes it loads it and if no it initializes it according to configuration line
-void CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
-    // opening file for reading and if its good (exists & open) 
-    // load saved bloomfilter state and replace current object
-    ifstream file(bloomFilePath);
-    if (file.good()) {
-        std::vector<HashFunction*> hashFuncs = { new IterativeStdHash(1) };
-        bloomFilter = new BloomFilter(256, hashFuncs); 
-        bloomFilter->loadFromFile(bloomFilePath);
-    } 
-    else {
+bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
+    
         // Parse configuration line to initialize bloom filter
         // this "iss" is just like cin but enssure that what he reads from the config line is string
         istringstream iss(configLine);
@@ -76,11 +69,9 @@ void CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
         // check that the first value exist and is positive integers
         if (!(iss >> bitArraySize) || bitArraySize <= 0 ) {
             std::cerr << "Invalid configuration: first value must be a positive integer (bit array size)." << endl;
-            return;
+            return false;
         }
         // list of identifiers of hash functions that the user chose
-        // vector<int> hashTypes;
-        // std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
         // hashType list representing the types of hash funcs the user chose
         int hashType;
         std::vector<int> hashTypes;
@@ -88,28 +79,37 @@ void CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
         while (iss >> hashType) {
             if (hashType <= 0) {
                 std::cerr << "Invalid configuration: hash function identifiers must be positive integers." << endl;
-                return;
+                return false;
             }
             hashTypes.push_back(hashType);
         }
         // ensure at least one hash function was provided
         if (hashTypes.empty()) {
             std::cerr << "Invalid configuration: at least one hash function must be specified." << endl;
-            return;
+            return false;
         }
 
         // initialize Bloom Filter
         std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
         if (hashFuncs.empty()) {
             std::cerr << "Configuration failed: No valid hash functions provided." << std::endl;
-            return;
+            return false;
         }
-        bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
 
+        // opening file for reading and if its good (exists & open) 
+        // load saved bloomfilter state and replace current object
+        ifstream file(bloomFilePath);
+        if (file.good()&& configLine.empty()) {
+            bloomFilter = new BloomFilter(bitArraySize, hashFuncs); 
+            bloomFilter->loadFromFile(bloomFilePath);
+        } 
+        else {
+            bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
 
     }
     // Load blacklist regardless
     loadBlacklistFromFile();
+    return true;
 }
 
 // Loads URLs from the blacklist file into memory (blacklistUrls)
