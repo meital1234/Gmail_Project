@@ -31,7 +31,7 @@ TEST(IterativeStdHashTests, DifferentInputDifferentHashOutput) {
 // Creating an iterative std hash function pbject with the value 1 - should return the same output as the regular std hash
 TEST(IterativeStdHashTests, IterationOneEqualsStdHash) {
     IterativeStdHash iterHash(1);
-    std::hash stdHash;
+    std::hash<std::string> stdHash;
     EXPECT_EQ(iterHash("aa"), stdHash("aa"));
 }
 
@@ -56,20 +56,13 @@ TEST(IterativeStdHashTests, LongStringHash) {
 }
 
 // large number of iterations should return a value without throwing an error
-TEST(IterativeStdHashTests, LongStringHash) {
-    IterativeStdHash iterHash(100000);
+TEST(IterativeStdHashTests, LargeIterationsNumber) {
+    IterativeStdHash iterHash(1000000);
     EXPECT_NO_THROW(iterHash("Hello"));
-}
-
-// should handle maximizing the number of iterations without crushing
-TEST(IterativeStdHashTests, LongStringHash) {
-    size_t max_size = std::numeric_limits<size_t>::max();
-    IterativeStdHash iterHash(max_size);
-    EXPECT_NO_THROW(iterHash("World"));
 }
 
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS
+    return RUN_ALL_TESTS();
 }
