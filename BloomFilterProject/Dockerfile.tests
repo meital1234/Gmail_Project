@@ -1,7 +1,7 @@
-# Use a C++ base image
+# Base image with C++ compiler
 FROM gcc:latest
 
-# Install CMake and any build dependencies
+# Install CMake and GTest dependencies
 RUN apt-get update && \
     apt-get install -y cmake && \
     apt-get clean
@@ -9,11 +9,11 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /app
 
-# Copy everything
+# Copy the whole project
 COPY . .
 
-# Build the project
+# Build test targets
 RUN mkdir build && cd build && cmake .. && make
 
-# Default command to run the application
-CMD ["./build/main"]
+# Run tests
+CMD ["./build/runTests"]
