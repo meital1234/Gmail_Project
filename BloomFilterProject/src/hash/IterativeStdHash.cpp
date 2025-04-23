@@ -1,8 +1,13 @@
 #include "IterativeStdHash.h"
 #include <functional>
+#include <stdexcept>  // for std::invalid_argument
 
 // standard constructor implementation - initialize the number of iterations with the given n
-IterativeStdHash::IterativeStdHash(size_t n) : iterations(n) {}
+IterativeStdHash::IterativeStdHash(size_t n) : iterations(n) {
+    if (n == 0) {
+        throw std::invalid_argument("Number of iterations must be greater than zero.");
+    }
+}
 
 // operator overloading - I want to be able to call iterativeStdHash(some_string), so I need to override the operator "()"
 size_t IterativeStdHash::operator()(const std::string& input) const {
