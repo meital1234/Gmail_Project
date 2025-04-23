@@ -2,7 +2,7 @@
 #include <fstream>
 #include <string>
 #include <cstdio>
-#include "CLI_handler.h"      // Include the CLIHandler class we are testing
+#include "CLIhandler/CLI_handler.h"      // Include the CLIHandler class we are testing
 #include <gtest/gtest.h>      // Include Google Test framework
 #include "../src/BloomFilterLogic/BloomFilter.h"
 
