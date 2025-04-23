@@ -3,8 +3,8 @@
 #include <string>
 #include <map>
 #include <cstdio>
-#include "../BloomFilterProject/src/BloomFilterLogic/BloomFilter.h"
-#include "../BloomFilterProject/src/HashFunction.h"
+#include "BloomFilterLogic/BloomFilter.h"
+#include "hash/HashFunction.h"
 //#include "../external/googletest-main/googletest/include/gtest/gtest.h"
 
 using namespace std;
@@ -63,6 +63,15 @@ TEST(BloomFilterTest, FalsePositiveDetectedWhenHashOverlapOccurs) {
     //lights will light up — and the filter will think that it might be in, even though we didn't add it.
 }
 
+TEST(BloomFilterTest, ThrowExeptionSizeZero) {
+    MockHashFunction hash1(2); // always returns 2.
+
+    vector<HashFunction*> hashes = { &hash1 };
+    
+    EXPECT_THROW({
+        BloomFilter filter(0, hashes); //Building an 0-bit filter with the two constant functions.
+    }, std::invalid_argument);
+}
 
 // test for Persistence:
 
