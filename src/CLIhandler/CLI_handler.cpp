@@ -22,7 +22,7 @@ void CLIHandler::run() {
             if (loadOrInitializeBloomFilter(user_line)) {
                 initialized = true;
             } else {
-                std::cout << "Invalid configuration line, try again." << std::endl;
+                // std::cout << "Invalid configuration line, try again." << std::endl;
                 continue;
             }
         } else {
@@ -45,7 +45,7 @@ std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids) {
             funcs.push_back(new IterativeStdHash(2));
             hasValid = true;
         } else {
-            cerr << "Unknown hash function ID: " << id << std::endl;
+            // cerr << "Unknown hash function ID: " << id << std::endl;
         }
     }
 
@@ -68,7 +68,7 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
         int bitArraySize;
         // check that the first value exist and is positive integers
         if (!(iss >> bitArraySize) || bitArraySize <= 0 ) {
-            std::cerr << "Invalid configuration: first value must be a positive integer (bit array size)." << endl;
+            // std::cerr << "Invalid configuration: first value must be a positive integer (bit array size)." << endl;
             return false;
         }
         // list of identifiers of hash functions that the user chose
@@ -78,21 +78,21 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
         // this loop promise that hash type is valid
         while (iss >> hashType) {
             if (hashType <= 0) {
-                std::cerr << "Invalid configuration: hash function identifiers must be positive integers." << endl;
+                // std::cerr << "Invalid configuration: hash function identifiers must be positive integers." << endl;
                 return false;
             }
             hashTypes.push_back(hashType);
         }
         // ensure at least one hash function was provided
         if (hashTypes.empty()) {
-            std::cerr << "Invalid configuration: at least one hash function must be specified." << endl;
+            // std::cerr << "Invalid configuration: at least one hash function must be specified." << endl;
             return false;
         }
 
         // initialize Bloom Filter
         std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
         if (hashFuncs.empty()) {
-            std::cerr << "Configuration failed: No valid hash functions provided." << std::endl;
+            // std::cerr << "Configuration failed: No valid hash functions provided." << std::endl;
             return false;
         }
 
