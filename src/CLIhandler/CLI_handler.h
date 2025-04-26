@@ -8,6 +8,10 @@
 #include "../BloomFilterLogic/BloomFilter.h"
 
 class CLIHandler {
+private:
+    // private function to check the validity of any given address - to see if it is really a url
+    bool isValidUrl(const std::string& url);
+
 public:
     // constructor that will initialize reference variables if needed 
     CLIHandler();

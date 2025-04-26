@@ -5,6 +5,8 @@
 #include "CLI_handler.h"
 #include "../BloomFilterLogic/BloomFilter.h"
 #include "../hash/IterativeStdHash.h"
+#include <regex>
+
 
 using namespace std;
 
@@ -127,6 +129,11 @@ void CLIHandler::loadBlacklistFromFile() {
     }
 }
 
+bool CLIHandler::isValidUrl(const std::string& url) {
+    static const std::regex urlRegex(R"(^((https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,})(\/\S*)?$)");
+    return std::regex_match(url, urlRegex);
+}
+
 // this function sperates the input string from user
 // devide it to tokens and ensures valid format (exactly two tokens)
 void CLIHandler::handleCommand(const std::string& line) {
@@ -139,6 +146,7 @@ void CLIHandler::handleCommand(const std::string& line) {
     }
     // check if command is 1 - add to blacklist or 2 - check if in blacklist 
     if (commandToken == "1") {
+        if (!isValidUrl(urlToken)) return; // Skip invalid URL
         processAdd(urlToken);
     } 
     else if (commandToken == "2") {
