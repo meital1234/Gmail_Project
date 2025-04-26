@@ -40,20 +40,26 @@ docker-compose run --rm test
 ---
 
 ## 💬 Example Usage
-
-### Output:
-
-### Output:
-
----
-
-## 📂 Project Structure
+```
+a
+8 1 2
+2 www.example.com0
+false
+x
+1 www.example.com0
+2 www.example.com0
+true true
+2 www.example.com1
+false
+2 www.example.com11
+true false
+```
 
 ---
 
 ## 🖼️ Screenshots
-[Insert Screenshot: Program Start and Config Input]
+### Program Start and Config Input
 
-[Insert Screenshot: Adding a URL]
+### Adding a URL
 
-[Insert Screenshot: Checking a URL]
+### Checking a URL
