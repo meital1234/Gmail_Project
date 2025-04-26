@@ -25,17 +25,17 @@ Make sure you have **Docker** and **Docker Compose** installed.
 Build the images:
 ```bash
 docker-compose build
-'''
+```
 
 Run the app:
 ```bash
 docker-compose run --rm app
-'''
+```
 
 Run the unit tests:
 ```bash
 docker-compose run --rm test
-'''
+```
 
 ---
 
