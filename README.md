@@ -66,4 +66,5 @@ true false
 
 ### Checking a URL
 <img width="490" alt="image" src="https://github.com/user-attachments/assets/e2b1684a-a39c-4c0e-915c-8d2186cf8a46" />
-* When checking if aa is in bloomfilter it returns false because aaa is not in a valid url format
+
+* When checking if 'aa' is in bloomfilter it returns false because aaa is not in a valid url format
