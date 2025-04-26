@@ -20,18 +20,30 @@ False positives can happen, but false negatives cannot.
 ---
 
 ## ▶️ How to Run
+Make sure you have **Docker** and **Docker Compose** installed.
 
-### Locally
+Build the images:
+```bash
+docker-compose build
+'''
 
-### Using Docker
+Run the app:
+```bash
+docker-compose run --rm app
+'''
+
+Run the unit tests:
+```bash
+docker-compose run --rm test
+'''
 
 ---
 
 ## 💬 Example Usage
 
-# Output:
+### Output:
 
-# Output:
+### Output:
 
 ---
 
@@ -45,5 +57,3 @@ False positives can happen, but false negatives cannot.
 [Insert Screenshot: Adding a URL]
 
 [Insert Screenshot: Checking a URL]
-
----
