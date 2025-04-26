@@ -59,7 +59,11 @@ true false
 
 ## 🖼️ Screenshots
 ### Program Start and Config Input
+<img width="490" alt="image" src="https://github.com/user-attachments/assets/12551e8c-f6dc-4078-bd10-e688414be39c" />
 
 ### Adding a URL
+<img width="490" alt="image" src="https://github.com/user-attachments/assets/2a122beb-6729-4297-b2dc-7e8712f844cf" />
 
 ### Checking a URL
+<img width="490" alt="image" src="https://github.com/user-attachments/assets/e2b1684a-a39c-4c0e-915c-8d2186cf8a46" />
+* When checking if aa is in bloomfilter it returns false because aaa is not in a valid url format
