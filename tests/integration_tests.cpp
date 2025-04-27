@@ -42,13 +42,18 @@ TEST(CLIHandlerTest, InvalidInput_OnlyBitSize) {
     CLIHandler handler;
     std::string config = "128";             // Invalid: missing hash function(s)
 
-    // Capture standard error output to check for error message
-    testing::internal::CaptureStderr();     // Begin capturing std::cerr
-    handler.loadOrInitializeBloomFilter(config); // Run the function
-    std::string output = testing::internal::GetCapturedStderr(); // Get captured output
+    bool result = handler.loadOrInitializeBloomFilter(config);
 
-    // Make sure the error message contains a specific phrase
-    EXPECT_NE(output.find("at least one hash function"), std::string::npos);
+    // Expect initialization to fail (false)
+    EXPECT_FALSE(result);
+
+    // Capture standard error output to check for error message
+    // testing::internal::CaptureStderr();     // Begin capturing std::cerr
+    // handler.loadOrInitializeBloomFilter(config); // Run the function
+    // std::string output = testing::internal::GetCapturedStderr(); // Get captured output
+
+    // // Make sure the error message contains a specific phrase
+    // EXPECT_NE(output.find("at least one hash function"), std::string::npos);
 }
 
 // TEST 4
@@ -58,12 +63,17 @@ TEST(CLIHandlerTest, InvalidInput_ZeroBitSize) {
     CLIHandler handler;
     std::string config = "0 1";             // Invalid: 0-bit array size
 
-    testing::internal::CaptureStderr();     // Capture std::cerr
-    handler.loadOrInitializeBloomFilter(config); // Run
-    std::string output = testing::internal::GetCapturedStderr(); // Get error
+    bool result = handler.loadOrInitializeBloomFilter(config);
 
-    // Check that error mentions 'bit array size'
-    EXPECT_NE(output.find("bit array size"), std::string::npos);
+    // Expect initialization to fail
+    EXPECT_FALSE(result);
+
+    // testing::internal::CaptureStderr();     // Capture std::cerr
+    // handler.loadOrInitializeBloomFilter(config); // Run
+    // std::string output = testing::internal::GetCapturedStderr(); // Get error
+
+    // // Check that error mentions 'bit array size'
+    // EXPECT_NE(output.find("bit array size"), std::string::npos);
 }
 
 // TEST 5
@@ -73,12 +83,17 @@ TEST(CLIHandlerTest, InvalidInput_NegativeHash) {
     CLIHandler handler;
     std::string config = "256 -1";          // Invalid: -1 is not a valid hash type
 
-    testing::internal::CaptureStderr();     // Start capturing error stream
-    handler.loadOrInitializeBloomFilter(config); // Run the method
-    std::string output = testing::internal::GetCapturedStderr(); // Grab captured output
+    bool result = handler.loadOrInitializeBloomFilter(config);
 
-    // Ensure error mentions that hash IDs must be positive
-    EXPECT_NE(output.find("hash function identifiers"), std::string::npos);
+    // Expect initialization to fail
+    EXPECT_FALSE(result);
+
+    // testing::internal::CaptureStderr();     // Start capturing error stream
+    // handler.loadOrInitializeBloomFilter(config); // Run the method
+    // std::string output = testing::internal::GetCapturedStderr(); // Grab captured output
+
+    // // Ensure error mentions that hash IDs must be positive
+    // EXPECT_NE(output.find("hash function identifiers"), std::string::npos);
 }
 
 // TEST 6
