@@ -5,6 +5,7 @@ This project is a simple URL filtering system using a **Bloom filter** — a fas
 It helps check if a URL is blacklisted without saving all URLs individually.
 
 We built it using **Test Driven Development (TDD)** and clean **SOLID-based** C++ design.
+Jira link - https://myemenahem.atlassian.net/jira/software/projects/BGE/summary
 
 ---
 
