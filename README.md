@@ -69,3 +69,8 @@ true false
 <img width="490" alt="image" src="https://github.com/user-attachments/assets/e2b1684a-a39c-4c0e-915c-8d2186cf8a46" />
 
 * When checking if 'aa' is in bloomfilter it returns false because aaa is not in a valid url format
+
+### Running tests on docker
+<img width="727" alt="image" src="https://github.com/user-attachments/assets/ed0dbaaa-cc5d-401e-bbb5-f6b7133e2eba" />
+<img width="727" alt="image" src="https://github.com/user-attachments/assets/739a41a3-346a-4527-8403-804f337fe5e1" />
+
