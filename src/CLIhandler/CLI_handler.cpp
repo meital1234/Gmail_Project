@@ -40,15 +40,20 @@ std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids) {
     bool hasValid = false;
 
     for (int id : ids) {
-        if (id == 1) {
-            funcs.push_back(new IterativeStdHash(1));
+        // changed logic so that any positive number could be accepted as the number of iterations
+        if (id > 0) {
+            funcs.push_back(new IterativeStdHash(id)); 
             hasValid = true;
-        } else if (id == 2) {
-            funcs.push_back(new IterativeStdHash(2));
-            hasValid = true;
-        } else {
-            // cerr << "Unknown hash function ID: " << id << std::endl;
         }
+        // if (id == 1) {
+        //     funcs.push_back(new IterativeStdHash(1));
+        //     hasValid = true;
+        // } else if (id == 2) {
+        //     funcs.push_back(new IterativeStdHash(2));
+        //     hasValid = true;
+        // } else {
+        //     // cerr << "Unknown hash function ID: " << id << std::endl;
+        // }
     }
 
     if (!hasValid) {
