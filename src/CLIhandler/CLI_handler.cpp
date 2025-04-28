@@ -105,15 +105,21 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
 
         // opening file for reading and if its good (exists & open) 
         // load saved bloomfilter state and replace current object
+                //ifstream file(bloomFilePath);
+        //if (file.good()&& configLine.empty()) {
+        //    bloomFilter = new BloomFilter(bitArraySize, hashFuncs); 
+        //    bloomFilter->loadFromFile(bloomFilePath);
+        //} 
+        //else {
+        //    bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
+        bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
         ifstream file(bloomFilePath);
-        if (file.good()&& configLine.empty()) {
-            bloomFilter = new BloomFilter(bitArraySize, hashFuncs); 
-            bloomFilter->loadFromFile(bloomFilePath);
-        } 
-        else {
-            bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
-
+        if (file.good()) {
+        bloomFilter->loadFromFile(bloomFilePath);
     }
+
+
+    
     // Load blacklist regardless
     loadBlacklistFromFile();
     return true;
