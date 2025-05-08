@@ -23,6 +23,9 @@ add_executable(main
     src/BloomFilterLogic/BloomFilter.cpp
     src/hash/IterativeStdHash.cpp
     src/CLIhandler/CLI_handler.cpp
+    src/commands/AddCommand.cpp
+    src/commands/CheckCommand.cpp
+    src/commands/DeleteCommand.cpp
 )
 
 # ---- Unit tests ----
@@ -32,9 +35,15 @@ add_executable(runTests
     tests/bloom_tests.cpp
     tests/hash_tests.cpp
     tests/integration_tests.cpp
+    tests/Command_tests/CheckCommand_tests.cpp
+    tests/Command_tests/AddCommand_tests.cpp
+    tests/Command_tests/DeleteCommand_tests.cpp
     src/BloomFilterLogic/BloomFilter.cpp
     src/hash/IterativeStdHash.cpp
     src/CLIhandler/CLI_handler.cpp
+    src/commands/AddCommand.cpp
+    src/commands/CheckCommand.cpp
+    src/commands/DeleteCommand.cpp
 )
 
 target_link_libraries(runTests
