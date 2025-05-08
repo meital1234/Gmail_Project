@@ -1,11 +1,20 @@
+// Test 1 - Minimal valid input (bit size + 1 hash function)
+// Test 2 - Valid input with multiple hash functions
+// Test 3 - Invalid: only bit size, no hash functions
+// Test 4 - Invalid: zero bit size
+// Test 5 - Invalid: negative hash function ID
+// Test 6 - Valid AddCommand adds URL to both memory and blacklist file
+// Test 7 - Valid CheckCommand finds URL in both BloomFilter and blacklist → if OK it prints "true true"
+// Test 8 - Valid DeleteCommand removes URL from both memory and blacklist file
+
+
 #include <sstream>
 #include <fstream>
 #include <string>
 #include <cstdio>
-#include "CLIhandler/CLI_handler.h"      // Include the CLIHandler class we are testing
-#include <gtest/gtest.h>      // Include Google Test framework
+#include "CLIhandler/CLI_handler.h"  // Include the CLIHandler class we are testing
+#include <gtest/gtest.h>  // Include Google Test framework
 #include "../src/BloomFilterLogic/BloomFilter.h"
-
 
 
 // Helper function to delete output files before each test run.
@@ -81,7 +90,7 @@ TEST(CLIHandlerTest, InvalidInput_ZeroBitSize) {
 TEST(CLIHandlerTest, InvalidInput_NegativeHash) {
     removeTestFiles();
     CLIHandler handler;
-    std::string config = "256 -1";          // Invalid: -1 is not a valid hash type
+    std::string config = "256 -1";  // Invalid: -1 is not a valid hash type
 
     bool result = handler.loadOrInitializeBloomFilter(config);
 
@@ -97,88 +106,96 @@ TEST(CLIHandlerTest, InvalidInput_NegativeHash) {
 }
 
 // TEST 6
-// This test checks that processAdd and processCheck actually affect the bloom filter and blacklist.
-// It captures the printed output and verifies correctness.
-TEST(CLIHandlerTest, AddAndCheckURL) {
-    removeTestFiles();                      // Clean any leftover files
+// This test verifies that CLIHandler interprets the "ADD" command correctly
+// and passes it to the AddCommand object, which updates BloomFilter & blacklist
+TEST(CLIHandlerIntegration, HandleCommand_ADD_ShouldCallAddCommand) {
+    removeTestFiles();  // clean files from previous runs
 
-    CLIHandler handler;                     // Create CLI handler
-    std::string config = "256 1";           // Initialize with valid configuration
-    handler.loadOrInitializeBloomFilter(config);  // Initialize bloom filter
+    CLIHandler handler;  // create new CLIHandler
+    handler.loadOrInitializeBloomFilter("128 1");  // load minimal config
 
-    std::string url = "example.com";
+    handler.registerCommands();
 
-    // Add a URL to the bloom filter and blacklist
-    handler.processAdd(url);
+    //handler.handleCommand("POST test.com");  // simulate user input command
+    ASSERT_TRUE(handler.handleCommand("POST test.com"));
 
-    // Capture standard output of processCheck
-    testing::internal::CaptureStdout();     // Start capturing std::cout
-    handler.processCheck(url);              // Check if the URL is found
-    std::string output = testing::internal::GetCapturedStdout(); // Get printed output
+    // ensure that "test.com" was added to the in-memory blacklist
+    EXPECT_TRUE(handler.blacklistUrls.count("test.com") > 0);  // must be in set
 
-    // The output should be: "true true\n" since the bloom filter and the blacklist both confirm it
-    EXPECT_EQ(output, "true true\n");
+    // read blacklist file and confirm persistence
+    std::ifstream file("data/blacklist_urls.txt");
+    std::string line;
+    bool found = false;
+    while (std::getline(file, line)) {
+        if (line == "test.com") {
+            found = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found);  // URL should appear in file as well
 }
 
 // TEST 7
-// This test checks that checking a URL that was never added behaves as expected.
-// It verifies both "false" (definitely not present) and "true false" (false positive).
-TEST(CLIHandlerTest, CheckURL_NotAdded) {
-    removeTestFiles();                      // Ensure clean state
+// This test checks that CLIHandler passes a "CHECK" command correctly to CheckCommand,
+// and that the correct output ("true true") is printed when URL exists in both BloomFilter and blacklist
+TEST(CLIHandlerIntegration, HandleCommand_CHECK_ShouldOutputCorrectResult) {
+    removeTestFiles();  // remove previous files
 
-    CLIHandler handler;                     // New CLI handler instance
-    std::string config = "256 1";           // Initialize with a small bloom filter (more likely to produce false positives)
-    handler.loadOrInitializeBloomFilter(config);
+    CLIHandler handler;
+    handler.loadOrInitializeBloomFilter("128 1");
 
-    std::string addedURL = "known.com";
-    std::string unknownURL = "unknown.com";
+    handler.registerCommands();
 
-    handler.processAdd(addedURL);           // Add only one known URL
+    // simulate adding a URL to Bloom & blacklist
+    handler.handleCommand("POST trusted.com");
 
-    // Capture output of checking an unknown URL
-    testing::internal::CaptureStdout();     // Start capturing output
-    handler.processCheck(unknownURL);       // Check for unknown URL
+    // redirect stdout to capture printed result
+    testing::internal::CaptureStdout();
+    handler.handleCommand("GET trusted.com");
     std::string output = testing::internal::GetCapturedStdout();
 
-    // The result may be either:
-    // "false\n" – if Bloom filter says it's not present (ideal)
-    // "true false\n" – if Bloom filter gives false positive (possible for small filters)
-
-    // We accept both possibilities and assert one of them
-    EXPECT_TRUE(output == "false\n" || output == "true false\n");
+    EXPECT_EQ(output, "true true\n");  // must return "true true"
 }
 
 // TEST 8
-// This test checks that the Bloom Filter can return false positive
-TEST(CLIHandlerTest, DetectFalsePositive) {
-    removeTestFiles();                      // Clean test environment
+// This test checks that CLIHandler dirests DELETE command to DeleteCommand
+// and that URL is removed from both memory and blacklist
+TEST(CLIHandler_HandleCommand, DeleteCommand_RemovesURL_FromMemoryAndFile) {
+    removeTestFiles();  // Clean previous test files
+
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");  // Tiny filter, high false positive chance
 
-    std::string added = "www.example.com0";
-    handler.processAdd(added);              // Add a single URL
+    // initialize BloomFilter (making sure valid config)
+    std::string config = "128 1";
+    ASSERT_TRUE(handler.loadOrInitializeBloomFilter(config));  // config: 128-bit, 1 hash
 
-    bool foundFalsePositive = false;
+    handler.registerCommands();
 
-    for (int i = 1; i < 1000; ++i) {
-        std::string candidate = "www.example.com" + std::to_string(i);
+    // insert URL into blacklist and memory
+    std::ofstream out("data/blacklist_urls.txt");
+    out << "bad.com\n";  // write test URL to file
+    out.close();
 
-        // Skip if accidentally checking the one we added
-        if (candidate == added) continue;
+   // make sure blacklist in memory also contains "bad.com" (normally happens in run())
+    handler.loadBlacklistFromFile();  // we load file to memory so blacklist will contain "bad.com"
 
-        testing::internal::CaptureStdout();
-        handler.processCheck(candidate);
-        std::string output = testing::internal::GetCapturedStdout();
+    // Step 3: simulate command line input to delete the URL
+    handler.handleCommand("DELETE bad.com");
 
-        if (output == "true false\n") {
-            foundFalsePositive = true;
+    // check that URL is no longer in file
+    std::ifstream in("data/blacklist_urls.txt");
+    std::string line;
+    bool found = false;  // flag that marks that URL to be found in blacklist
+    while (std::getline(in, line)) {  // read blacklist line-line
+        if (line == "bad.com") {  // checks each line if is test URL
+            found = true;  // if test URL is found we stop checking
             break;
         }
     }
 
-    // expects to get at least one false positive
-    EXPECT_TRUE(foundFalsePositive) << "No false positive found after 999 tries. Increase tries or reduce Bloom size.";
+    EXPECT_FALSE(found);  // URL should not be in file anymore
 }
+
 
 // int main(int argc, char **argv) {
 //     ::testing::InitGoogleTest(&argc, argv);

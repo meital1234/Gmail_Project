@@ -4,41 +4,41 @@
 #define CLI_HANDLER_H
 
 #include <string>
-#include <set>
+#include <unordered_set>
+#include <unordered_map>
+#include "../commands/ICommand.h"
 #include "../BloomFilterLogic/BloomFilter.h"
 
 class CLIHandler {
 private:
     // private function to check the validity of any given address - to see if it is really a url
     bool isValidUrl(const std::string& url);
+    // Map between command names (like "ADD", "CHECK", "DELETE") and command objects
+    std::unordered_map<std::string, ICommand*> commandMap;
+    //// registers commands into the commandMap (during init)
+    //void registerCommands();
 
 public:
+    // registers commands into the commandMap (during init)
+    void registerCommands();
     // constructor that will initialize reference variables if needed 
     CLIHandler();
     // main function that runs the CLI infinite loop - all of user input goes through
     void run();
-    
-// private:
     BloomFilter* bloomFilter = nullptr;
     // defualt file path that saves BloomFilter State
     const std::string bloomFilePath = "data/bloomfilter_state.dat";
 
     // Stores all URLs that were actually added (for false positive verification)
-    std::set <std::string> blacklistUrls;
+    std::unordered_set<std::string> blacklistUrls;
     const std::string blacklistFilePath = "data/blacklist_urls.txt";
-
-
-    // this function handles the starting line of input and determines the bit array size and the number of hash funcs
+    // this function parses the input config line and determines the bit array size & the number of hash funcs
     bool loadOrInitializeBloomFilter(const std::string& configLine);
-    // this function analyzes command line (adding or checking)
-    void handleCommand(const std::string& line);
-    // this function adds URL to bloomfilter
-    void processAdd(const std::string& url);
-    // Saves the blacklist to a file
+    // this function parses and execute user commands
+    bool handleCommand(const std::string& line);
+    // this function saves the blacklist to a file
     void saveBlacklistToFile() const;
-    // this function checks if URL is in bloomfilter
-    void processCheck(const std::string& url);
-    // Loads the blacklist from a file
+    // this function loads the blacklist from a file
     void loadBlacklistFromFile();
     // this function prints true or false according to result
     void printOutput(bool firstResult, bool secondResult = false);
