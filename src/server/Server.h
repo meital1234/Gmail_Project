@@ -7,16 +7,17 @@
 
 class Server {
 private:
-    int port;
-    std::atomic<bool> running;
-    void acceptConnections();
+    // server class attributes
+    int port;                       // the port it is listening to
+    std::atomic<bool> running;      // boolean value if it is running
+    void acceptConnections();       // and private function to accept connections - to be called from start
 
 public:
-    Server(int port);
+    Server(int port);               // initialize the server object
     ~Server();
 
-    void start(); // Starts listening for clients and dispatches requests
-    void stop();  // Stops the server safely
+    void start(); // start listening for client
+    void stop();  // stop the server safely
 
     bool validatePort(int port) const;
 };
