@@ -17,7 +17,8 @@ public:
     CheckCommand(BloomFilter* bf, std::unordered_set<std::string>* bl); 
 
     // Checks if input URL might be in the BloomFilter and checks with blacklist
-    void execute(const std::string& argument) override;
+    // and returns logical result (true or false) for server to handle
+    std::string execute (const std::string& url) override;
 };
 
 #endif // CHECKCOMMAND_H

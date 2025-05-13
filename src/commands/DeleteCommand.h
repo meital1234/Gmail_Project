@@ -21,7 +21,7 @@ public:
                   const std::string& blPath, const std::string& bfPath);
     // deletes URL given as arg, removes URL from blacklist & update it
     // BloomFilter stays as is (might cause FP)
-    void execute(const std::string& argument) override;
+    std::string execute(const std::string& url) override;
 };
 
 #endif // DELETECOMMAND_H

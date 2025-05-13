@@ -20,7 +20,7 @@ public:
                const std::string& blPath, const std::string& bfPath);
 
     // adds input URL to Bloom Filter & blacklist
-    void execute(const std::string& argument) override;
+    std::string execute(const std::string& url) override;
 };
 
 #endif // ADDCOMMAND_H

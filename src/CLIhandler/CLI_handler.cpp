@@ -37,8 +37,7 @@ void CLIHandler::run() {
             if (loadOrInitializeBloomFilter(user_line)) {
                 initialized = true;
                 registerCommands();
-            } else {
-                // std::cout << "Invalid configuration line, try again." << std::endl;
+            } else {  // Invalid configuration line
                 continue;
             }
         } else {
@@ -49,6 +48,7 @@ void CLIHandler::run() {
     delete bloomFilter;
 }
 
+// independent func that creates the hash funcs & is responsible for parsing hash type IDs
 std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids) {
     std::vector<HashFunction*> funcs;
     bool hasValid = false;
@@ -71,48 +71,41 @@ std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids) {
 // if yes it loads it and if no it initializes it according to configuration line
 bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
     
-        // Parse configuration line to initialize bloom filter
-        // this "iss" is just like cin but enssure that what he reads from the config line is string
-        istringstream iss(configLine);
-        // defining variables for first two values in line: 
-        // 1- size of the bit array, 2- number of hash functions
-        int bitArraySize;
-        // check that the first value exist and is positive integers
-        if (!(iss >> bitArraySize) || bitArraySize <= 0 ) {
-            // std::cerr << "Invalid configuration: first value must be a positive integer (bit array size)." << endl;
-            return false;
+    // Parse configuration line to initialize bloom filter
+    // this "iss" is just like cin but enssure that what he reads from the config line is string
+    istringstream iss(configLine);
+    // defining variables for first two values in line: 
+    // 1- size of the bit array, 2- number of hash functions
+    int bitArraySize;
+    // check that the first value exist and is positive integers
+    if (!(iss >> bitArraySize) || bitArraySize <= 0 ) { 
+        return false; // 400 Bad Request
+    }
+    
+    // hashType list represents types of hash funcs the user chose
+    int hashType;
+    std::vector<int> hashTypes;
+    // this loop promise that hash type is valid
+    while (iss >> hashType) {
+        if (hashType <= 0) {
+            return false; // 400 Bad Request
         }
-        // list of identifiers of hash functions that the user chose
-        // hashType list representing the types of hash funcs the user chose
-        int hashType;
-        std::vector<int> hashTypes;
-        // this loop promise that hash type is valid
-        while (iss >> hashType) {
-            if (hashType <= 0) {
-                // std::cerr << "Invalid configuration: hash function identifiers must be positive integers." << endl;
-                return false;
-            }
-            hashTypes.push_back(hashType);
-        }
-        // ensure at least one hash function was provided
-        if (hashTypes.empty()) {
-            // std::cerr << "Invalid configuration: at least one hash function must be specified." << endl;
-            return false;
-        }
-
-        // initialize Bloom Filter
-        std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
-        if (hashFuncs.empty()) {
-            // std::cerr << "Configuration failed: No valid hash functions provided." << std::endl;
-            return false;
-        }
-
-        bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
-        ifstream file(bloomFilePath);
-        if (file.good()) {
+        hashTypes.push_back(hashType);
+    }
+    // ensure at least one hash function was provided
+    if (hashTypes.empty()) {
+        return false;  // 400 Bad Request
+    }
+    // initialize Bloom Filter
+    std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
+    if (hashFuncs.empty()) {
+        return false;  // 400 Bad Request
+    }
+    bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
+    std::ifstream file(bloomFilePath);
+    if (file.good()) {
         bloomFilter->loadFromFile(bloomFilePath);
     }
-
     // Load blacklist regardless
     loadBlacklistFromFile();
     return true;
@@ -121,8 +114,7 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
 // Loads URLs from the blacklist file into memory (blacklistUrls)
 // enables verifying URLs detect false positives.
 void CLIHandler::loadBlacklistFromFile() {
-    // Open the input file for reading
-    ifstream in(blacklistFilePath);
+    ifstream in(blacklistFilePath);  // Open the input file for reading
     // If the file doesnt exist or can't be read, do nothing
     if (!in) return;
 
@@ -140,13 +132,13 @@ bool CLIHandler::isValidUrl(const std::string& url) {
 
 // this function sperates the input string from user
 // devide it to tokens and ensures valid format (exactly two tokens)
-bool CLIHandler::handleCommand(const std::string& line) {
+std::string CLIHandler::handleCommand(const std::string& line) {
     istringstream iss(line);
     string commandToken, urlToken, extraToken;
     // Check if line has exactly two tokens
     if (!(iss >> commandToken >> urlToken) || (iss >> extraToken)) {
         // if the format is invalid - skip line
-        return false;
+        return "false";
     }
 
     //commandMap
@@ -154,10 +146,10 @@ bool CLIHandler::handleCommand(const std::string& line) {
     if (it != commandMap.end()) {
         ICommand* cmd = it->second;
         cmd->execute(urlToken);
-        return true;
+        return "true";
     }
 
-    return false; // command not found
+    return "false"; // command not found
 }
 
 // this function saves the entire blacklist to the blacklist files
