@@ -1,15 +1,17 @@
 #pragma once
 #ifndef SERVER_H
 #define SERVER_H
-#include "../src/CLIhandler/CLI_handler.h"
+#include <atomic>
+#include "../CLIhandler/CLI_handler.h"
 
 
 class Server {
     private:
         // server class attributes
         int port;                       // the port it is listening to
-        std::atomic<bool> running;      // boolean value if it is running
         CLIHandler* handler;            // optional - to pass the logic handler as an attribute of the server
+        std::atomic<bool> running;      // boolean value if it is running
+ 
 
     public:
         Server(int port, CLIHandler* handler);               // initialize the server object

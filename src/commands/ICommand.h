@@ -8,11 +8,11 @@
 // ICommand is our interface for command execution
 class ICommand {
 public:
-    // pure virtual method that executes the command on given arg
-    virtual void execute(const std::string& argument) = 0;
-
-    // virtual destructor for cleanup
+    // virtual destruction of derived classes
     virtual ~ICommand() = default;
+    // pure virtual function that recives input URL as argument 
+    // and returns logical result (true or false) for server to handle
+    virtual std::string execute(const std::string& url) = 0;
 };
 
 #endif // ICOMMAND_H

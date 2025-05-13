@@ -1,7 +1,9 @@
+#include "../src/server/Server.h"
 #include "../src/CLIhandler/CLI_handler.h"
 
 int main() {
     CLIHandler handler;
-    handler.run();
+    Server server(8080, &handler);
+    server.start();
     return 0;
 }

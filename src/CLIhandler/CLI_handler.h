@@ -35,7 +35,7 @@ public:
     // this function parses the input config line and determines the bit array size & the number of hash funcs
     bool loadOrInitializeBloomFilter(const std::string& configLine);
     // this function parses and execute user commands
-    bool handleCommand(const std::string& line);
+    std::string handleCommand(const std::string& line);
     // this function saves the blacklist to a file
     void saveBlacklistToFile() const;
     // this function loads the blacklist from a file

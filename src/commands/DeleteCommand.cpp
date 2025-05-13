@@ -10,44 +10,26 @@ DeleteCommand::DeleteCommand(BloomFilter* bloom, std::unordered_set<std::string>
     // store file paths for later use when saving updated state
 
 // execute DELETE of a URL from blacklist
-void DeleteCommand::execute(const std::string& url) {
-    // we want to reject empty input string
-    if (url.empty()) {
-        std::cerr << "ERROR: Cannot delete an empty URL." << std::endl;  // print error to stderr
-        return;
-    }
-
-    bool changed = false;
-
-        // check if URL exists in blacklist
-        if (blacklist->count(url) == 0) { 
-            std::cout << "URL not found in blacklist." << std::endl;  // if URL not found we do nothing
-         } else {
-            blacklist->erase(url);  // remove URL from blacklist
-            std::cout << "URL deleted from blacklist." << std::endl;  // confirm DELETE to user
-            changed = true;
-        }
+std::string DeleteCommand::execute(const std::string& url) {
+    // empty input string is invalid so will be rejected & treated as Bad Request
+    if (url.empty()) return "false";  // 400 Bad Request 
     
+    // check if URL exists in blacklist
+    if (blacklist->count(url) == 0) return "false";  // 404 Not Found
+    
+    blacklist->erase(url);  // remove URL from blacklist - 204 No Content
 
-            // if URL was deleted -> update blacklist file
-            //if (changed) {
-            //std::ofstream out(blacklistFilePath);  // open blacklist file for overwriting
-            //for (const auto& item : *blacklist) {
-            //    out << item << '\n';  // write remaining URL to file
-            //}
-        // if URL was deleted -> update blacklist file
-    if (changed) {
-        std::ofstream out(blacklistFilePath);  // open blacklist file for overwriting
-        if (!out) {
-            std::cerr << "ERROR: Failed to open blacklist file: " << blacklistFilePath << std::endl;
-            return;  // Don't continue if file couldn't be opened
-        }
-
+    // if URL was deleted -> update blacklist file
+    std::ofstream out(blacklistFilePath);  // open blacklist file for overwriting
+    if (out) {
+    // Don't continue if file couldn't be opened
         for (const auto& item : *blacklist) {
             out << item << '\n';  // write remaining URLs to file
         }
     }
     
-    // always save BloomFilter state to file, even if Bloom wasn't changed
-    bloomFilter->saveToFile(bloomFilePath);  // ensure BloomFilter state is maintained
+    // always save BloomFilter state to file & ensure it maintained, even if wasn't changed
+    bloomFilter->saveToFile(bloomFilePath);  
+
+    return "true";
 }
