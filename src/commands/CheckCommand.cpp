@@ -7,23 +7,12 @@ CheckCommand::CheckCommand(BloomFilter* bf, std::unordered_set<std::string>* bl)
 // This function executes the CheckCommand:
 // It checks if the given URL exists in the Bloom Filter and/or the blacklist,
 // and returns the logical result for server
-std::string CheckCommand::execute(const std::string& url) {
-
-    if (url.empty()) {
-        return "";
-    }
+CommandResult CheckCommand::execute(const std::string& url) {
+    if (url.empty()) return { false, false, "" };  // Invalid input
 
     bool inBloom = bloomFilter->mightContain(url);
-    if(!inBloom) {
-        return "false";
-    }
-    
+    if (!inBloom) return { true, false, "false" };  // not in bloom filter
 
     bool inBlacklist = blacklist->count(url) > 0;
-
-     if (inBlacklist) {
-        return "true true";
-    } else {
-        return "true false";
-    }
+    return { true, false, inBlacklist ? "true true" : "true false" };
 }

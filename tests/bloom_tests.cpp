@@ -27,7 +27,6 @@ class MockHashFunction : public HashFunction { // A class that inherits from Has
         size_t value;
 };
 
-
 class CustomMockHashFunction : public HashFunction {
     public:
         CustomMockHashFunction(const map<string, size_t>& predefined) : hashMap(predefined) {}

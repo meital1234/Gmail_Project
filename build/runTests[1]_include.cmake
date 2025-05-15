@@ -1,0 +1,5 @@
+if(EXISTS "/mnt/c/Users/Mye/Downloads/advanced_system_programming/project/the_best_Gmail_EVER/build/runTests[1]_tests.cmake")
+  include("/mnt/c/Users/Mye/Downloads/advanced_system_programming/project/the_best_Gmail_EVER/build/runTests[1]_tests.cmake")
+else()
+  add_test(runTests_NOT_BUILT runTests_NOT_BUILT)
+endif()

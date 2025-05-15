@@ -1,0 +1,19 @@
+FROM gcc:12
+
+WORKDIR /app
+
+COPY src ./src
+COPY src/main.cpp ./main.cpp
+
+RUN mkdir -p data && \
+    g++ main.cpp \
+        src/server/Server.cpp \
+        src/CLIhandler/CLI_handler.cpp \
+        src/commands/AddCommand.cpp \
+        src/commands/CheckCommand.cpp \
+        src/commands/DeleteCommand.cpp \
+        src/BloomFilterLogic/BloomFilter.cpp \
+        src/hash/IterativeStdHash.cpp \
+        -o ServerApp -std=c++17 -Wall -Wextra
+
+CMD ["./ServerApp", "8080"]

@@ -1,15 +1,16 @@
 services:
-  app:
+  server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.server
     volumes:
       - ./data:/app/data
-    stdin_open: true
-    tty: true
+    ports:
+      - "8080:8080"
 
-  test:
+  client:
     build:
       context: .
-      dockerfile: Dockerfile.tests
-    command: ./build/runTests
+      dockerfile: Dockerfile.client
+    stdin_open: true
+    tty: true
