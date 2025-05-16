@@ -1,16 +1,36 @@
+version: "3.8"
 services:
   server:
     build:
       context: .
-      dockerfile: Dockerfile.server
-    volumes:
-      - ./data:/app/data
+      dockerfile: Dockerfile
+    container_name: server
     ports:
       - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
 
   client:
     build:
       context: .
       dockerfile: Dockerfile.client
+    container_name: client
+    depends_on:
+      - server
     stdin_open: true
     tty: true
+    
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    container_name: test
+    depends_on:
+      - server
+    volumes:
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
+    command: ./build/runTests
