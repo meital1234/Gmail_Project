@@ -59,21 +59,24 @@ private:
 // ==========================
 struct ScopedServer {
     Server& server;
-    ScopedServer(Server& s) : server(s) { server.start(); }
+    ScopedServer(Server& s) : server(s) { 
+        server.start(); 
+    }
     ~ScopedServer() {
         std::cout << "[Test] Stopping server" << std::endl;
         server.stop();
 
-        // Ensure accept() unblocks by dummy connect:
-        int dummySock = socket(AF_INET, SOCK_STREAM, 0);
-        if (dummySock >= 0) {
-            sockaddr_in dummyAddr{};
-            dummyAddr.sin_family = AF_INET;
-            dummyAddr.sin_port = htons(server.getPort());  // we'll need getPort() method
-            dummyAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-            connect(dummySock, (sockaddr*)&dummyAddr, sizeof(dummyAddr));
-            close(dummySock);
-        }
+
+        // // Ensure accept() unblocks by dummy connect:
+        // int dummySock = socket(AF_INET, SOCK_STREAM, 0);
+        // if (dummySock >= 0) {
+        //     sockaddr_in dummyAddr{};
+        //     dummyAddr.sin_family = AF_INET;
+        //     dummyAddr.sin_port = htons(server.getPort());  // we'll need getPort() method
+        //     dummyAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+        //     connect(dummySock, (sockaddr*)&dummyAddr, sizeof(dummyAddr));
+        //     close(dummySock);
+        // }
     }
 };
 
@@ -89,27 +92,48 @@ struct ScopedServer {
 // POST command should return 201 Created
 TEST(ServerCommandTests, PostAddsUrl) {
     CLIHandler handler;
+    
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
-
-    Server server(UNIQUE_PORT, &handler);
+    // handler.registerCommands();
+    int port = UNIQUE_PORT;
+    Server server(port, &handler);
     ScopedServer guard(server);
-
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    EXPECT_EQ(client.sendToServer("POST www.posttest.com"), "201 Created\n");
+    server.start();
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    EXPECT_EQ(client->sendToServer("POST www.posttest.com"), "201 Created\n");
 }
 
 // GET unknown URL should return false
 TEST(ServerCommandTests, GetReturnsFalseForNewUrl) {
     CLIHandler handler;
+    
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
-
-    Server server(UNIQUE_PORT, &handler); 
+    int port = UNIQUE_PORT;
+    Server server(port, &handler); 
     ScopedServer guard(server); 
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    EXPECT_EQ(client.sendToServer("GET unknown.com"), "200 Ok\n\nfalse\n");
+    // TestClient client("127.0.0.1", port);
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+
+    EXPECT_EQ(client->sendToServer("GET unknown.com"), "200 Ok\n\nfalse\n");
 }
 
 
@@ -117,14 +141,23 @@ TEST(ServerCommandTests, GetReturnsFalseForNewUrl) {
 TEST(ServerCommandTests, GetReturnsTrueForAddedUrl) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    int port = UNIQUE_PORT;
 
-    Server server(UNIQUE_PORT, &handler);
+    Server server(port, &handler);
     ScopedServer guard(server);
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    client.sendToServer("POST www.exists.com");
-    EXPECT_EQ(client.sendToServer("GET www.exists.com"), "200 Ok\n\ntrue true\n");
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+
+    client->sendToServer("POST www.exists.com");
+    EXPECT_EQ(client->sendToServer("GET www.exists.com"), "200 Ok\n\ntrue true\n");
 }
 
 
@@ -132,14 +165,24 @@ TEST(ServerCommandTests, GetReturnsTrueForAddedUrl) {
 TEST(ServerCommandTests, DeleteUrlReturns204) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    int port = UNIQUE_PORT;
 
-    Server server(UNIQUE_PORT, &handler);
+    Server server(port, &handler);
     ScopedServer guard(server);
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    client.sendToServer("POST www.todelete.com");
-    EXPECT_EQ(client.sendToServer("DELETE www.todelete.com"), "204 No Content\n");
+    // TestClient client("127.0.0.1", port);
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    client->sendToServer("POST www.todelete.com");
+    EXPECT_EQ(client->sendToServer("DELETE www.todelete.com"), "204 No Content\n");
 }
 
 
@@ -147,13 +190,22 @@ TEST(ServerCommandTests, DeleteUrlReturns204) {
 TEST(ServerCommandTests, DeleteUnknownUrlReturns404) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    int port = UNIQUE_PORT;
 
-    Server server(UNIQUE_PORT, &handler);
+    Server server(port, &handler);
     ScopedServer guard(server);
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    EXPECT_EQ(client.sendToServer("DELETE www.nonexistent.com"), "404 Not Found\n");
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    EXPECT_EQ(client->sendToServer("DELETE www.nonexistent.com"), "404 Not Found\n");
 }
 
 
@@ -161,13 +213,23 @@ TEST(ServerCommandTests, DeleteUnknownUrlReturns404) {
 TEST(ServerCommandTests, UnknownCommandReturns400) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    int port = UNIQUE_PORT;
 
-    Server server(UNIQUE_PORT, &handler); 
+    Server server(port, &handler); 
     ScopedServer guard(server);
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    EXPECT_EQ(client.sendToServer("RANDOM COMMAND"), "400 Bad Request\n");
+    // TestClient client("127.0.0.1", port);
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    EXPECT_EQ(client->sendToServer("RANDOM COMMAND"), "400 Bad Request\n");
 }
 
 
@@ -175,13 +237,23 @@ TEST(ServerCommandTests, UnknownCommandReturns400) {
 TEST(ServerCommandTests, MalformedGetReturns400) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    int port = UNIQUE_PORT;
 
-    Server server(UNIQUE_PORT, &handler);
+    Server server(port, &handler);
     ScopedServer guard(server);
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    EXPECT_EQ(client.sendToServer("GET too many args"), "400 Bad Request\n");
+    // TestClient client("127.0.0.1", port);
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    EXPECT_EQ(client->sendToServer("GET too many args"), "400 Bad Request\n");
 }
 
 
@@ -189,16 +261,26 @@ TEST(ServerCommandTests, MalformedGetReturns400) {
 TEST(ServerCommandTests, PostDeleteThenGetReturnsTrueFalse) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    int port = UNIQUE_PORT;
 
-    Server server(UNIQUE_PORT, &handler);
+    Server server(port, &handler);
     ScopedServer guard(server);
 
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    client.sendToServer("POST www.example.com");
-    client.sendToServer("DELETE www.example.com");
+    // TestClient client("127.0.0.1", port);
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    client->sendToServer("POST www.example.com");
+    client->sendToServer("DELETE www.example.com");
 
-    EXPECT_EQ(client.sendToServer("GET www.example.com"), "200 Ok\n\ntrue false\n");
+    EXPECT_EQ(client->sendToServer("GET www.example.com"), "200 Ok\n\ntrue false\n");
 }
 
 
@@ -206,19 +288,39 @@ TEST(ServerCommandTests, PostDeleteThenGetReturnsTrueFalse) {
 TEST(ServerContinuityTests, KeepsUrlBetweenRuns) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
-
-    Server server(UNIQUE_PORT, &handler);
+    
+    int port = UNIQUE_PORT;
+    
+    Server server(port, &handler);
     {
         ScopedServer guard(server);
 
-        TestClient client("127.0.0.1", UNIQUE_PORT);
-        client.sendToServer("POST www.persistent.com");
+        // TestClient client("127.0.0.1", port);
+        std::unique_ptr<TestClient> client;
+        for (int i = 0; i < 2; i++) {
+            try {
+                client = std::make_unique<TestClient>("127.0.0.1", port);
+                break;
+            } catch (...) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+        }
+        client->sendToServer("POST www.persistent.com");
     } // server.stop() on scope exit
 
     server.start(); // restart manually for continuity test
-    TestClient client("127.0.0.1", UNIQUE_PORT);
-    EXPECT_EQ(client.sendToServer("GET www.persistent.com"), "200 Ok\n\ntrue true\n");
+    // TestClient client("127.0.0.1", port);
+    std::unique_ptr<TestClient> client;
+    for (int i = 0; i < 2; i++) {
+        try {
+            client = std::make_unique<TestClient>("127.0.0.1", port);
+            break;
+        } catch (...) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    
+    EXPECT_EQ(client->sendToServer("GET www.persistent.com"), "200 Ok\n\ntrue true\n");
 
     server.stop(); // make sure to stop after restart too
 

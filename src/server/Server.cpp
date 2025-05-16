@@ -21,27 +21,35 @@ void Server::start() {
         std::cout << "[Server] Already running on port " << port << std::endl;
         return;
     }
-
     running = true;
+
+    // auto-register
+    handler->registerCommands();
 
     // Launch server in background thread
     serverThread = std::thread(&Server::run, this);
+    // run();
 
+    // while (!listen.load()) {
+    //     std::this_thread::yield();
+    // }
+    //std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::cout << "[Server] Server started on port " << port << std::endl;
 }
 
 // Stops the server and joins the thread
 void Server::stop() {
     if (!running) return;
-
+    
     running = false;
-
+    
     // Close server socket to unblock accept()
     if (serverSocket >= 0) {
+        shutdown(serverSocket, SHUT_RDWR);
         close(serverSocket);
         serverSocket = -1;
     }
-
+    
     // Join the server thread safely
     if (serverThread.joinable()) {
         serverThread.join();
@@ -66,16 +74,20 @@ void Server::run() {
 
     if (bind(serverSocket, (sockaddr*)&sin, sizeof(sin)) < 0) {
         std::cerr << "[Server] Bind failed" << std::endl;
-        close(serverSocket);
-        serverSocket = -1;
+        if (serverSocket >= 0) {
+            close(serverSocket);
+            serverSocket = -1;
+        }
         running = false;
         return;
     }
 
     if (listen(serverSocket, 5) < 0) {
         std::cerr << "[Server] Listen failed" << std::endl;
-        close(serverSocket);
-        serverSocket = -1;
+        if (serverSocket >= 0) {
+            close(serverSocket);
+            serverSocket = -1;
+        }
         running = false;
         return;
     }
@@ -85,18 +97,20 @@ void Server::run() {
     while (running) {
         sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
-
+        
         int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientLen);
         if (clientSocket < 0) {
             if (running) std::cerr << "[Server] Accept failed" << std::endl;
             continue;  // could be interrupted by stop()
         }
-
+        
         std::thread(&Server::handleClient, this, clientSocket).detach();
     }
 
-    close(serverSocket);
-    serverSocket = -1;
+    if (serverSocket >= 0) {
+        close(serverSocket);
+        serverSocket = -1;
+    }
 }
 
 // Handles a single client connection
@@ -118,24 +132,45 @@ void Server::handleClient(int clientSocket) {
         if (clientInput.empty()) continue;
 
         CommandResult result = handler->handleCommand(clientInput, GEToutput);
-
-        if (!result.GoodCommand) {
-            if (result.Useroutput.empty() && result.NotFound) {
-                response = "404 Not Found\n";
-            } else if (result.Useroutput.empty()) {
-                response = "400 Bad Request\n";
-            } else {
-                response = "200 Ok\n\n" + result.Useroutput + "\n";
-            }
-        } else {
-            if (result.Useroutput.empty() && result.NotFound) {
-                response = "204 No Content\n";
-            } else if (result.Useroutput.empty()) {
-                response = "201 Created\n";
-            } else {
-                response = "200 Ok\n\n" + result.Useroutput + "\n";
-            }
+        switch (result.status)
+        {
+        case STATUS_CODE::BAD_REQ:
+            response = "400 Bad Request\n";
+            break;
+        case STATUS_CODE::NOTFOUND:
+            response = "404 Not Found\n";
+            break;
+        case STATUS_CODE::NO_CONTENT:
+            response = "204 No Content\n";
+            break;
+        case STATUS_CODE::OK:
+            response = "200 Ok\n\n" + result.Useroutput + "\n";
+            break;
+        case STATUS_CODE::CREATED:
+            response = "201 Created\n";
+            break;
+        default:
+            response = "400 Bad Request\n";
+            break;
+        
         }
+        // if (!result.GoodCommand) {
+        //     if (result.Useroutput.empty() && result.NotFound) {
+        //         response = "404 Not Found\n";
+        //     } else if (result.status == STATUS_CODE::BAD_REQ) {
+        //         response = "400 Bad Request\n";
+        //     } else {
+        //         response = "200 Ok\n\n" + result.Useroutput + "\n";
+        //     }
+        // } else {
+        //     if (result.status == STATUS_CODE::NO_CONTENT) {
+        //         response = "204 No Content\n";
+        //     } else if (result.Useroutput.empty()) {
+        //         response = "201 Created\n";
+        //     } else {
+        //         response = "200 Ok\n\n" + result.Useroutput + "\n";
+        //     }
+        // }
 
         send(clientSocket, response.c_str(), response.size(), 0);
     }

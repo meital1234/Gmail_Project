@@ -13,12 +13,12 @@ CommandResult AddCommand::execute(const std::string& url) {
 
     if (url.empty()) {
         std::cerr << "[AddCommand] Error: URL is empty" << std::endl;
-        return { false, false, "" };  // 400 Bad Request
+        return { false, false,"", STATUS_CODE::BAD_REQ };  // 400 Bad Request
     }
 
     if (blacklist->count(url) > 0) {
         std::cout << "[AddCommand] URL already exists in blacklist: " << url << std::endl;
-        return { true, false, "" };  // Already exists (but still success for POST)
+        return { true, false,"" , STATUS_CODE::CREATED};  // Already exists (but still success for POST)
     }
 
     // Add to in-memory structures
@@ -29,7 +29,7 @@ CommandResult AddCommand::execute(const std::string& url) {
     std::ofstream out(blacklistFilePath);
     if (!out.is_open()) {
         std::cerr << "[AddCommand] Error: Could not open file for writing: " << blacklistFilePath << std::endl;
-        return { false, false, "" };  // 400 Bad Request due to file error
+        return { false, false, "" , STATUS_CODE::BAD_REQ};  // 400 Bad Request due to file error
     }
 
     for (const auto& item : *blacklist) {
@@ -41,7 +41,7 @@ CommandResult AddCommand::execute(const std::string& url) {
 
     std::cout << "[AddCommand] Successfully added URL to blacklist and saved state." << std::endl;
 
-    return { true, false, "" };  // Successful POST => Server returns 201 Created
+    return { true, false, "", STATUS_CODE::CREATED };  // Successful POST => Server returns 201 Created
 }
 
 

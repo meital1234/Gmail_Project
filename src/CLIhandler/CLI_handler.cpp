@@ -18,25 +18,34 @@ CLIHandler::CLIHandler() : bloomFilter(nullptr),
     blacklistFilePath("../data/blacklist_urls.txt"),
     bloomFilePath("../data/bloomfilter_state.dat") {}
 
+    //destructor
 CLIHandler::~CLIHandler() {
     delete bloomFilter;
+    // for each pair of string input (like "GET") & pointer to relevant command
     for (auto& pair : commandMap) {
         delete pair.second;
     }
 }
 
-// parses configuration line and initializes bloomFilter (or loads existing state)
+// this function checks if their is a saved file of BloomFilter
+// if yes it loads it and if no it initializes it according to configuration line
 bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
+    // Parse configuration line to initialize bloom filter
+    // this "iss" is just like cin but enssure that what he reads from the config line is string
     std::istringstream iss(configLine);
+    // defining variables for first two values in line: 
+    // 1- size of the bit array, 2- number of hash functions
     int bitArraySize;
-    std::vector<int> hashTypes;
-
+    // check that the first value exist and is positive integers
     if (!(iss >> bitArraySize) || bitArraySize <= 0) {
         std::cout << "[CLIHandler] Invalid bit array size in config line." << std::endl;
         return false;  // 400 Bad Request
     }
 
+      // hashType list represents types of hash funcs the user chose
     int hashType;
+    std::vector<int> hashTypes;
+    // this loop promise that hash type is valid (at least 1 exists & positive)
     while (iss >> hashType) {
         if (hashType <= 0) {
             std::cout << "[CLIHandler] Invalid hash type in config line." << std::endl;
@@ -45,11 +54,13 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
         hashTypes.push_back(hashType);
     }
 
+    // ensure at least one hash function was provided
     if (hashTypes.empty()) {
         std::cout << "[CLIHandler] No hash functions provided in config line." << std::endl;
         return false;  // 400 Bad Request
     }
 
+    // initialize Bloom Filter
     std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
     if (hashFuncs.empty()) {
         std::cout << "[CLIHandler] Failed to create hash functions." << std::endl;
@@ -59,7 +70,7 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
     bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
     std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
 
-     std::ifstream file(bloomFilePath, std::ios::binary);
+    std::ifstream file(bloomFilePath, std::ios::binary);
     if (file.good()) {
         bloomFilter->loadFromFile(bloomFilePath);
         std::cout << "[CLIHandler] Bloom filter state loaded from file." << std::endl;
@@ -67,13 +78,16 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
         std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
     }
 
+    // Load blacklist regardless
     loadBlacklistFromFile();
     return true;
 }
 
 // registers command objects to their corresponding keywords
 void CLIHandler::registerCommands() {
-    // AddCommand will have access to bloomFilter & blacklist & files
+    // AddCommand will have access to bloomFilter & blacklist files
+    // each command holds pointers to bloomFilter state & blacklist
+
     commandMap["POST"] = new AddCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
     commandMap["GET"] = new CheckCommand(bloomFilter, &blacklistUrls);
     commandMap["DELETE"] = new DeleteCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
@@ -85,9 +99,6 @@ void CLIHandler::registerCommands() {
 CommandResult CLIHandler::handleCommand(const std::string& line, std::string& GEToutput) {
     std::cout << "[CLIHandler] Received command line: \"" << line << "\"" << std::endl;
 
-    // std::string cleanedLine = line;
-    // cleanedLine.erase(cleanedLine.find_last_not_of(" \n\r\t") + 1);
-
     std::istringstream iss(line);
     std::string commandToken, urlToken, extraToken;
 
@@ -96,7 +107,7 @@ CommandResult CLIHandler::handleCommand(const std::string& line, std::string& GE
         std::cout << "[CLIHandler] Invalid command format: '" << line << "'" << std::endl;
         return { false, false, "" };
     }
-
+ 
     // check if command exists in map
     auto it = commandMap.find(commandToken);
     if (it == commandMap.end()) {

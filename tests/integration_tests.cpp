@@ -97,7 +97,7 @@ TEST(CLIHandlerIntegration, HandleCommand_ADD_ShouldCallAddCommand) {
     CLIHandler handler;
     handler.loadOrInitializeBloomFilter("8 1");
     handler.registerCommands();
-
+    
     std::string dummyOutput;
     CommandResult result = handler.handleCommand("POST test.com", dummyOutput);
 

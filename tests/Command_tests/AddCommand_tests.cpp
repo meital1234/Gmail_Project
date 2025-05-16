@@ -61,10 +61,10 @@ TEST(AddCommandTests, AddedURL_WrittenToBlacklistFile) {
     std::unordered_set<std::string> blacklist;
     std::string url = "www.example.com";
 
-    AddCommand cmd(&bloom, &blacklist, "../blacklist_urls.txt", "../bloomfilter_state.dat");
+    AddCommand cmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
     cmd.execute(url);
 
-    std::ifstream file("blacklist_urls.txt");
+    std::ifstream file("../data/blacklist_urls.txt");
     std::string line;
     bool found = false;
 

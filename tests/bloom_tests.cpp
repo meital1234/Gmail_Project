@@ -84,6 +84,7 @@ TEST(BloomFilterTest, CanSaveAndReloadStateFromFile) {
         BloomFilter filter(8, hashes); //Create a new BloomFilter object with 8 bits.
         filter.add("example.com"); //Add one site — this turns on the 3rd bit
         filter.saveToFile(filename); //Save to file
+        EXPECT_TRUE(filter.mightContain("example.com")); //We expect the new filter to recognize that "example.com" exists (because it was loaded from the file).
     }
 
     {

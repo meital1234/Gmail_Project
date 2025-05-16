@@ -1,4 +1,5 @@
 #include "commands/CheckCommand.h"
+#include "commands/DeleteCommand.h"
 #include "hash/IterativeStdHash.h"
 #include "BloomFilterLogic/BloomFilter.h"
 #include <gtest/gtest.h>
@@ -15,17 +16,14 @@ static void removeTestFiles() {
 // TEST 1 - Empty input string → always "false"
 TEST(CheckCommandTests, EmptyStringCheck_ShouldReturnFalse) {
     removeTestFiles();
-
+    
     BloomFilter bloom(256, { new IterativeStdHash(1) });
     std::unordered_set<std::string> blacklist;
-
+    
     CheckCommand cmd(&bloom, &blacklist);
-
-    testing::internal::CaptureStdout();
-    cmd.execute("");
-    std::string output = testing::internal::GetCapturedStdout();
-
-    EXPECT_EQ(output, "false");
+    std::string emptyString="";
+    CommandResult res = cmd.execute(emptyString);
+    EXPECT_EQ(res.Useroutput, "false");
 }
 
 // TEST 2 - URL only in Bloom filter → "true false"
@@ -37,14 +35,13 @@ TEST(CheckCommandTests, URL_OnlyInBloom_ShouldReturnTrueFalse) {
 
     std::string url = "suspicious.com";
     bloom.add(url);
-
+    
     CheckCommand cmd(&bloom, &blacklist);
+    DeleteCommand delCmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
+    delCmd.execute("suspicious.com");
+    CommandResult res = cmd.execute(url);
 
-    testing::internal::CaptureStdout();
-    cmd.execute(url);
-    std::string output = testing::internal::GetCapturedStdout();
-
-    EXPECT_EQ(output, "true false");
+    EXPECT_EQ(res.Useroutput, "true false");
 }
 
 // TEST 3 - URL only in blacklist → "false" or "false true"
@@ -56,9 +53,8 @@ TEST(CheckCommandTests, OnlyInBlacklist_ShouldReturnFalseTrueOrFalse) {
 
     CheckCommand cmd(&bloom, &blacklist);
 
-    testing::internal::CaptureStdout();
-    cmd.execute("only-in-blacklist.com");
-    std::string result = testing::internal::GetCapturedStdout();
+    CommandResult res = cmd.execute("only-in-blacklist.com");
+    std::string result = res.Useroutput;
 
     EXPECT_TRUE(result == "false" || result == "false true");
 }
@@ -74,10 +70,8 @@ TEST(CheckCommandTests, CheckURL_NotAdded_ShouldBehaveAsExpected) {
 
     CheckCommand cmd(&bloom, &blacklist);
 
-    testing::internal::CaptureStdout();
-    cmd.execute("unknown.com");
-    std::string result = testing::internal::GetCapturedStdout();
-
+    CommandResult res = cmd.execute("unknown.com");
+    std::string result = res.Useroutput;
     EXPECT_TRUE(result == "false" || result == "true false");
 }
 
@@ -98,9 +92,8 @@ TEST(CheckCommandTests, DetectFalsePositive) {
         std::string candidate = "www.example.com" + std::to_string(i);
         if (candidate == added) continue;
 
-        testing::internal::CaptureStdout();
-        cmd.execute(candidate);
-        std::string result = testing::internal::GetCapturedStdout();
+        CommandResult res = cmd.execute(candidate);
+        std::string result = res.Useroutput;
 
         if (result == "true false") {
             falsePositiveFound = true;

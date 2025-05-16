@@ -1976,6 +1976,7 @@ CMakeFiles/runTests.dir/tests/Command_tests/CheckCommand_tests.cpp.o: ../tests/C
   /usr/include/c++/11/bits/enable_special_members.h \
   /usr/include/c++/11/bits/unordered_set.h \
   /usr/include/c++/11/bits/erase_if.h \
+  ../src/commands/DeleteCommand.h \
   ../src/hash/IterativeStdHash.h \
   ../src/hash/HashFunction.h \
   _deps/googletest-src/googletest/include/gtest/gtest.h \

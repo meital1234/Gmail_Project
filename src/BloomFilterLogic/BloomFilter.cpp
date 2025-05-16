@@ -62,14 +62,9 @@ void BloomFilter::saveToFile(const string& filename) const { //Accepts a string 
     ios::binary – Opens the file in binary mode,
     meaning it saves the information as it is in memory (not readable text, but zeros and ones). */
     ofstream outFile(filename, ios::binary);
-    if (!outFile) throw std::runtime_error("Failed to open file for writing");
-    //Checks if an error occurred while opening the file. If we were unable to open – we simply exit the function.
-    if (!outFile.is_open()) {
-        return;
-    }
 
-    // Save filter size as metadata (optional but recommended)
-    outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    //Checks if an error occurred while opening the file. If we were unable to open – we simply exit the function.
+    if (!outFile) return;
 
     for (bool bit : bitArray) { //loop that goes through all the bits in a bitArray.
         char c = bit ? 1 : 0; //If bit == true, then c = 1. If bit == false, then c = 0.
@@ -82,15 +77,12 @@ void BloomFilter::saveToFile(const string& filename) const { //Accepts a string 
 // load bitArray from file
 void BloomFilter::loadFromFile(const string& filename) { //Opens the file for reading and reads in binary form
     ifstream inFile(filename, ios::binary);
-    if (!inFile) throw std::runtime_error("Failed to open file for reading");
-    if (!inFile.is_open()) {
-        return; //If we were unable to open – we simply exit the function.
-    }
+    if (!inFile) return; //If we were unable to open – we simply exit the function.
 
     //This loop reads the bits we previously saved in the file one by one, and restores them into the filter's bitArray.
     for (int i = 0; i < size && inFile.good(); ++i) { //inFile.good() is a safety condition – it checks if the read file (inFile) is still in good condition.
-        char c = 0; //A temporary variable to read a byte into from the file.
-        inFile.read(&c, sizeof(c)); //Reads one byte from the file into the variable c.
+        char c; //A temporary variable to read a byte into from the file.
+        inFile.read(&c, sizeof(char)); //Reads one byte from the file into the variable c.
         bitArray[i] = (c != 0); //bitArray accepts a boolean value, that is why we write (c!=0)
     }
     
