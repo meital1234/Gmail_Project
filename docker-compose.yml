@@ -33,4 +33,3 @@ services:
       - ./data:/app/data
     stdin_open: true
     tty: true
-    command: ./build/runTests

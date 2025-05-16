@@ -15,8 +15,8 @@ using namespace std;
 
 // constructor that initializes bloomFilter to nullptr (waiting for config)
 CLIHandler::CLIHandler() : bloomFilter(nullptr),
-    blacklistFilePath("../data/blacklist_urls.txt"),
-    bloomFilePath("../data/bloomfilter_state.dat") {}
+    blacklistFilePath(BLACKLIST_FILE_PATH),
+    bloomFilePath(BLOOM_FILE_PATH) {}
 
 //destructor
 CLIHandler::~CLIHandler() {

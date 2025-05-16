@@ -7,11 +7,12 @@
 #include <unordered_set>
 #include <fstream>
 #include <cstdio>
+#include <../src/Constants.h>
 
 // helper function to clean test output files
 static void removeTestFiles() {
-    std::remove("../data/bloomfilter_state.dat");
-    std::remove("../data/blacklist_urls.txt");
+    std::remove(BLOOM_FILE_PATH.c_str());
+    std::remove(BLACKLIST_FILE_PATH.c_str());
 }
 
 // TEST 1 – Empty URL should be rejected with 400 Bad Request

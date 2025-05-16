@@ -13,21 +13,21 @@
 #include <cstdio>
 #include <gtest/gtest.h>  // Include Google Test framework
 #include "CLIhandler/CLI_handler.h"  // Include the CLIHandler class we are testing
-
+#include <../src/Constants.h>
 #include "../src/commands/CommandResult.h"
 #include "../src/BloomFilterLogic/BloomFilter.h"
 
 // Helper function to delete output files before each test run.
 // Prevents interference from previous runs.
 void removeTestFiles() {
-    std::remove("../data/bloomfilter_state.dat");
-    std::remove("../data/blacklist_urls.txt");
+    std::remove(BLOOM_FILE_PATH.c_str());
+    std::remove(BLACKLIST_FILE_PATH.c_str());
 }
 
 // Helper function: create empty files if missing
 void ensureDataFilesExist() {
-    std::ofstream("../data/blacklist_urls.txt", std::ios::app).close();  // creates if not exists
-    std::ofstream("../data/bloomfilter_state.dat", std::ios::app).close();  // creates if not exists
+    std::ofstream(BLACKLIST_FILE_PATH, std::ios::app).close();  // creates if not exists
+    std::ofstream(BLOOM_FILE_PATH, std::ios::app).close();  // creates if not exists
 }
 
 // Test 1: minimal valid input for config line: bit size + one hash function
@@ -115,7 +115,7 @@ TEST(CLIHandlerIntegration, HandleCommand_DELETE_ReturnsNoContent) {
 
     // Pre-populate blacklist file with 'bad.com'
     {
-        std::ofstream out("../data/blacklist_urls.txt");
+        std::ofstream out(BLACKLIST_FILE_PATH);
         out << "bad.com\n";
     }
 
@@ -129,7 +129,7 @@ TEST(CLIHandlerIntegration, HandleCommand_DELETE_ReturnsNoContent) {
     EXPECT_EQ(res.statusCode, StatusCode::NoContent); // Expect HTTP 204 No Content
 
     // Verify that 'bad.com' is no longer present in the blacklist file
-    std::ifstream inFile("../data/blacklist_urls.txt");
+    std::ifstream inFile(BLACKLIST_FILE_PATH);
     bool found = false;
     std::string line;
     while (std::getline(inFile, line)) {

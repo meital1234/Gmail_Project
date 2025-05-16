@@ -10,6 +10,7 @@
 #include "../commands/ICommand.h"
 #include "../commands/CommandResult.h"
 #include "../BloomFilterLogic/BloomFilter.h"
+#include "../src/Constants.h"
 
 class CLIHandler {
 private:
@@ -29,9 +30,9 @@ public:
     // Directory path for data files
     const std::string dataDirPath = "../data/";
     // defualt file path that saves BloomFilter State
-    const std::string bloomFilePath = "../data/bloomfilter_state.dat";
+    const std::string bloomFilePath = BLOOM_FILE_PATH;
     // default path for blacklist file
-    const std::string blacklistFilePath = "../data/data/blacklist_urls.txt";
+    const std::string blacklistFilePath = BLACKLIST_FILE_PATH;
     // stores all URLs that were actually added (for false positive verification)
     std::unordered_set<std::string> blacklistUrls;
 
