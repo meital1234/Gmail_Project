@@ -18,7 +18,7 @@ CLIHandler::CLIHandler() : bloomFilter(nullptr),
     blacklistFilePath("../data/blacklist_urls.txt"),
     bloomFilePath("../data/bloomfilter_state.dat") {}
 
-    //destructor
+//destructor
 CLIHandler::~CLIHandler() {
     delete bloomFilter;
     // for each pair of string input (like "GET") & pointer to relevant command
@@ -38,7 +38,7 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
     int bitArraySize;
     // check that the first value exist and is positive integers
     if (!(iss >> bitArraySize) || bitArraySize <= 0) {
-        std::cout << "[CLIHandler] Invalid bit array size in config line." << std::endl;
+        // std::cout << "[CLIHandler] Invalid bit array size in config line." << std::endl;
         return false;  // 400 Bad Request
     }
 
@@ -48,7 +48,7 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
     // this loop promise that hash type is valid (at least 1 exists & positive)
     while (iss >> hashType) {
         if (hashType <= 0) {
-            std::cout << "[CLIHandler] Invalid hash type in config line." << std::endl;
+            // std::cout << "[CLIHandler] Invalid hash type in config line." << std::endl;
             return false;  // 400 Bad Request
         }
         hashTypes.push_back(hashType);
@@ -56,26 +56,26 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
 
     // ensure at least one hash function was provided
     if (hashTypes.empty()) {
-        std::cout << "[CLIHandler] No hash functions provided in config line." << std::endl;
+        // std::cout << "[CLIHandler] No hash functions provided in config line." << std::endl;
         return false;  // 400 Bad Request
     }
 
     // initialize Bloom Filter
     std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
     if (hashFuncs.empty()) {
-        std::cout << "[CLIHandler] Failed to create hash functions." << std::endl;
+        // std::cout << "[CLIHandler] Failed to create hash functions." << std::endl;
         return false;  // 400 Bad Request
     }
 
     bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
-    std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
+    // std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
 
     std::ifstream file(bloomFilePath, std::ios::binary);
     if (file.good()) {
         bloomFilter->loadFromFile(bloomFilePath);
-        std::cout << "[CLIHandler] Bloom filter state loaded from file." << std::endl;
+        // std::cout << "[CLIHandler] Bloom filter state loaded from file." << std::endl;
     } else {
-        std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
+        // std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
     }
 
     // Load blacklist regardless
@@ -92,36 +92,32 @@ void CLIHandler::registerCommands() {
     commandMap["GET"] = new CheckCommand(bloomFilter, &blacklistUrls);
     commandMap["DELETE"] = new DeleteCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
 
-    std::cout << "[CLIHandler] Commands registered successfully." << std::endl;
+    // std::cout << "[CLIHandler] Commands registered successfully." << std::endl;
 }
 
 // parses user line into command, validates format, and executes relevant command
-CommandResult CLIHandler::handleCommand(const std::string& line, std::string& GEToutput) {
-    std::cout << "[CLIHandler] Received command line: \"" << line << "\"" << std::endl;
+CommandResult CLIHandler::handleCommand(const std::string& line) {
+    // std::cout << "[CLIHandler] Received command line: \"" << line << "\"" << std::endl;
 
+    // deviding each line to relevant tokens
     std::istringstream iss(line);
     std::string commandToken, urlToken, extraToken;
 
     // expects exactly two tokens: COMMAND URL (no extra)
     if (!(iss >> commandToken >> urlToken) || (iss >> extraToken)) {
-        std::cout << "[CLIHandler] Invalid command format: '" << line << "'" << std::endl;
-        return { false, false, "" };
+        // std::cout << "[CLIHandler] Invalid command format: '" << line << "'" << std::endl;
+        return CommandResult(StatusCode::BadRequest);
     }
  
     // check if command exists in map
     auto it = commandMap.find(commandToken);
     if (it == commandMap.end()) {
-        std::cout << "[CLIHandler] Unknown command: '" << commandToken << "'" << std::endl;
-        return { false, false, "" };
+        // std::cout << "[CLIHandler] Unknown command: '" << commandToken << "'" << std::endl;
+        return CommandResult(StatusCode::BadRequest);
     }
 
     // execute relevant command
     CommandResult result = it->second->execute(urlToken);
-
-    // for GET: update UserOutput string for EX1
-    if (commandToken == "GET" && result.GoodCommand) {
-        GEToutput = result.Useroutput;
-    }
 
     return result;  // CommandResult for server status codes
 }
@@ -130,7 +126,7 @@ CommandResult CLIHandler::handleCommand(const std::string& line, std::string& GE
 void CLIHandler::loadBlacklistFromFile() {
     std::ifstream in(blacklistFilePath);
     if (!in.is_open()) {
-        std::cerr << "[CLIHandler] Warning: Could not open blacklist file: " << blacklistFilePath << std::endl;
+        // std::cerr << "[CLIHandler] Warning: Could not open blacklist file: " << blacklistFilePath << std::endl;
         return;
     }
 
@@ -138,21 +134,21 @@ void CLIHandler::loadBlacklistFromFile() {
     while (getline(in, url)) {
         blacklistUrls.insert(url);
     }
-    std::cout << "[CLIHandler] Blacklist loaded: " << blacklistUrls.size() << " entries." << std::endl;
+    // std::cout << "[CLIHandler] Blacklist loaded: " << blacklistUrls.size() << " entries." << std::endl;
 }
 
 // saves blacklist URLs into file (overwrites existing)
 void CLIHandler::saveBlacklistToFile() const {
     std::ofstream out(blacklistFilePath);
     if (!out.is_open()) {
-        std::cerr << "[CLIHandler] Error: Could not open blacklist file for writing: " << blacklistFilePath << std::endl;
+        // std::cerr << "[CLIHandler] Error: Could not open blacklist file for writing: " << blacklistFilePath << std::endl;
         return;
     }
 
     for (const auto& url : blacklistUrls) {
         out << url << '\n';
     }
-    cout << "[CLIHandler] Blacklist saved to file: " << blacklistFilePath << endl;
+    // cout << "[CLIHandler] Blacklist saved to file: " << blacklistFilePath << endl;
 
 }
 

@@ -3,9 +3,9 @@
 #include <string>
 #include <map>
 #include <cstdio>
+#include <stdexcept>
 #include "BloomFilterLogic/BloomFilter.h"
 #include "hash/HashFunction.h"
-//#include "../external/googletest-main/googletest/include/gtest/gtest.h"
 
 using namespace std;
 

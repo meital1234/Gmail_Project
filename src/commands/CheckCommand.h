@@ -2,6 +2,7 @@
 #define CHECKCOMMAND_H
 
 #include "ICommand.h"
+#include "CommandResult.h"
 #include "../BloomFilterLogic/BloomFilter.h"
 #include <unordered_set>
 #include <string>

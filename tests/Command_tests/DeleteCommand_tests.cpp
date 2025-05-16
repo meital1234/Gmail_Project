@@ -13,81 +13,106 @@
 #include <sstream>
 #include <cstdio>
 
+// helper function to clean test output files
+
 static void removeTestFiles() {
     std::remove("../data/bloomfilter_state.dat");
     std::remove("../data/blacklist_urls.txt");
 }
 
-std::string readFile(const std::string& path) {
-    std::ifstream file(path);
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-TEST(DeleteCommand_FromIntegration, DeleteExistingURL_RemovesFromSetAndFile) {
+// TEST 1 – Deleting an existing URL returns 204 No Content and removes it from memory & file
+TEST(DeleteCommandTests, DeleteExistingURL_RemovesFromSetAndFile) {
     removeTestFiles();
 
     BloomFilter bloom(256, { new IterativeStdHash(1) });
     std::unordered_set<std::string> blacklist = { "badsite.com" };
-    std::string url = "badsite.com";
 
-    std::ofstream out("../data/blacklist_urls.txt");
-    out << url << "\n";
+    // Prepopulate the file
+    {
+        std::ofstream out("../data/blacklist_urls.txt");
+        out << "badsite.com\n";
+    }
 
-    DeleteCommand delCmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
-    delCmd.execute(url);
+    DeleteCommand cmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
 
-    EXPECT_EQ(blacklist.count(url), 0);
+    CommandResult res = cmd.execute("badsite.com");
+    EXPECT_EQ(res.statusCode, StatusCode::NoContent);
 
-    std::string fileContent = readFile("../data/blacklist_urls.txt");
-    EXPECT_EQ(fileContent.find(url), std::string::npos);
+    // In-memory set must no longer contain it
+    EXPECT_EQ(blacklist.count("badsite.com"), 0);
+
+    // File must not contain it either
+    std::ifstream in("../data/blacklist_urls.txt");
+    std::string content;
+    std::stringstream buf;
+    buf << in.rdbuf();
+    EXPECT_EQ(buf.str().find("badsite.com"), std::string::npos);
 }
 
-TEST(delete_nonexistent_url, DeleteURL_NotInBlacklist_ShouldBeIgnored) {
+// TEST 2 – Deleting a non-existent URL returns 404 Not Found and leaves file untouched
+TEST(DeleteCommandTests, DeleteURL_NotInBlacklist_ShouldReturnNotFound) {
     removeTestFiles();
 
-    CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("128 1");
-    handler.registerCommands();
+    BloomFilter bloom(256, { new IterativeStdHash(1) });
+    std::unordered_set<std::string> blacklist = { "keep.com" };
 
-    std::string dummyOutput;
-    handler.handleCommand("POST existing.com", dummyOutput);
-    handler.handleCommand("DELETE missing.com", dummyOutput);
+    // write only "keep.com" to file
+    {
+        std::ofstream out("../data/blacklist_urls.txt");
+        out << "keep.com\n";
+    }
 
-    std::string content = readFile("../data/blacklist_urls.txt");
-    EXPECT_NE(content.find("existing.com"), std::string::npos);
-    EXPECT_EQ(content.find("missing.com"), std::string::npos);
+    DeleteCommand cmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
+    CommandResult res = cmd.execute("missing.com");
+    EXPECT_EQ(res.statusCode, StatusCode::NotFound);
+
+    // File still contains "keep.com" but not "missing.com"
+    std::ifstream in("../data/blacklist_urls.txt");
+    std::string fileText((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    EXPECT_NE(fileText.find("keep.com"), std::string::npos);
+    EXPECT_EQ(fileText.find("missing.com"), std::string::npos);
 }
 
-TEST(delete_empty_input, Delete_EmptyInput_ShouldNotChangeAnything) {
+// TEST 3 – Empty input to DELETE → 400 Bad Request, no changes
+TEST(DeleteCommandTests, Delete_EmptyInput_ShouldReturnBadRequest) {
     removeTestFiles();
 
-    CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("128 1");
-    handler.registerCommands();
+    BloomFilter bloom(256, { new IterativeStdHash(1) });
+    std::unordered_set<std::string> blacklist = { "keep.com" };
+    {
+        std::ofstream out("../data/blacklist_urls.txt");
+        out << "keep.com\n";
+    }
 
-    std::string dummyOutput;
-    handler.handleCommand("POST someurl.com", dummyOutput);
-    handler.handleCommand("DELETE", dummyOutput);
+    DeleteCommand cmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
+    CommandResult res = cmd.execute("");
+    EXPECT_EQ(res.statusCode, StatusCode::BadRequest);
 
-    std::string content = readFile("../data/blacklist_urls.txt");
-    EXPECT_NE(content.find("someurl.com"), std::string::npos);
+    // Ensure file unchanged
+    std::ifstream in("../data/blacklist_urls.txt");
+    std::string fileText((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    EXPECT_NE(fileText.find("keep.com"), std::string::npos);
 }
 
-TEST(delete_always_saves_bloomfilter, Delete_ShouldSaveBloomFileRegardless) {
+// TEST 4 – DELETE always writes BloomFilter state to disk
+TEST(DeleteCommandTests, Delete_ShouldSaveBloomFileRegardless) {
     removeTestFiles();
 
     BloomFilter bloom(128, { new IterativeStdHash(1) });
     std::unordered_set<std::string> blacklist = { "delete.com" };
     bloom.add("delete.com");
 
-    std::ofstream out("../data/blacklist_urls.txt");
-    out << "delete.com\n";
+    // prepopulate blacklist file
+    {
+        std::ofstream out("../data/blacklist_urls.txt");
+        out << "delete.com\n";
+    }
 
-    DeleteCommand delCmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
-    delCmd.execute("delete.com");
+    DeleteCommand cmd(&bloom, &blacklist, "../data/blacklist_urls.txt", "../data/bloomfilter_state.dat");
+    CommandResult res = cmd.execute("delete.com");
+    EXPECT_EQ(res.statusCode, StatusCode::NoContent);
 
-    std::ifstream bloomFile("../data/bloomfilter_state.dat");
-    EXPECT_TRUE(bloomFile.good());
+    // BloomFilter state file must exist
+    std::ifstream bf("../data/bloomfilter_state.dat");
+    EXPECT_TRUE(bf.good());
 }

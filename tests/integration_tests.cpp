@@ -11,14 +11,11 @@
 #include <fstream>
 #include <string>
 #include <cstdio>
-#include "CLIhandler/CLI_handler.h"  // Include the CLIHandler class we are testing
 #include <gtest/gtest.h>  // Include Google Test framework
-#include "../src/BloomFilterLogic/BloomFilter.h"
+#include "CLIhandler/CLI_handler.h"  // Include the CLIHandler class we are testing
 
-// Helper to ensure ../data directory exists
-void ensureDataDirExists() {
-    system("mkdir -p ../data");
-}
+#include "../src/commands/CommandResult.h"
+#include "../src/BloomFilterLogic/BloomFilter.h"
 
 // Helper function to delete output files before each test run.
 // Prevents interference from previous runs.
@@ -27,124 +24,116 @@ void removeTestFiles() {
     std::remove("../data/blacklist_urls.txt");
 }
 
+// Helper function: create empty files if missing
 void ensureDataFilesExist() {
     std::ofstream("../data/blacklist_urls.txt", std::ios::app).close();  // creates if not exists
     std::ofstream("../data/bloomfilter_state.dat", std::ios::app).close();  // creates if not exists
 }
 
-// Simple helper to ensure blacklist file exists (without filesystem)
-void ensureBlacklistFileExists(const std::string& path) {
-    std::ifstream infile(path);
-    if (!infile.good()) {
-        std::ofstream outfile(path);  // create empty file
-        if (!outfile.is_open()) {
-            std::cerr << "[TestSetup] Error: Could not create file: " << path << std::endl;
-        } else {
-            std::cout << "[TestSetup] Created missing file: " << path << std::endl;
-        }
-    }
-}
-
-// TEST 1 
+// Test 1: minimal valid input for config line: bit size + one hash function
 TEST(CLIHandlerTest, ValidInput_Minimal) {
-    removeTestFiles();
-    CLIHandler handler;
-    std::string config = "128 1";
-    handler.loadOrInitializeBloomFilter(config);
-    SUCCEED();
-}
-
-// TEST 2
-TEST(CLIHandlerTest, ValidInput_MultipleHashFunctions) {
-    removeTestFiles();
-    CLIHandler handler;
-    std::string config = "256 1 2 1";
-    handler.loadOrInitializeBloomFilter(config);
-    SUCCEED();
-}
-
-// TEST 3
-TEST(CLIHandlerTest, InvalidInput_OnlyBitSize) {
-    removeTestFiles();
-    CLIHandler handler;
-    std::string config = "128";
+    removeTestFiles();  // reset files
+    CLIHandler handler;  // create handler
+    std::string config = "128 1";  // minimal valid config
     bool result = handler.loadOrInitializeBloomFilter(config);
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);  // should succeed
 }
 
-// TEST 4
+// Test 2: valid input with multiple hash functions
+TEST(CLIHandlerTest, ValidInput_MultipleHashFunctions) {
+    removeTestFiles();   // reset files
+    CLIHandler handler;
+    std::string config = "256 1 2 1";  // multiple hash types
+    bool result = handler.loadOrInitializeBloomFilter(config);
+    EXPECT_TRUE(result);  // should succeed
+}
+
+// Test 3: invalid input with only bit size and no hash function
+TEST(CLIHandlerTest, InvalidInput_OnlyBitSize) {
+    removeTestFiles();  // reset files
+    CLIHandler handler;
+    std::string config = "128";   // missing hash count
+    bool result = handler.loadOrInitializeBloomFilter(config);
+    EXPECT_FALSE(result);  // should fail
+}
+
+// Test 4: invalid input with zero bit size
 TEST(CLIHandlerTest, InvalidInput_ZeroBitSize) {
     removeTestFiles();
     CLIHandler handler;
-    std::string config = "0 1";
+    std::string config = "0 1";  // bit size zero
     bool result = handler.loadOrInitializeBloomFilter(config);
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result);  // should fail
 }
 
-// TEST 5
+// Test 5: Invalid configuration (negative hash function ID)
 TEST(CLIHandlerTest, InvalidInput_NegativeHash) {
     removeTestFiles();
     CLIHandler handler;
-    std::string config = "256 -1";
+    std::string config = "256 -1"; // Negative hash ID
     bool result = handler.loadOrInitializeBloomFilter(config);
-    EXPECT_FALSE(result);
+    EXPECT_FALSE(result);  // Expect failure
 }
 
-// Test 6
-TEST(CLIHandlerIntegration, HandleCommand_ADD_ShouldCallAddCommand) {
-    ensureDataFilesExist();
+// Test 6: POST command should return Created (201) and not set bloom/black flags
+TEST(CLIHandlerIntegration, HandleCommand_POST_ReturnsCreated) {
+    removeTestFiles();  // Clear previous state
+    ensureDataFilesExist();  // Create necessary files
 
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
-    
-    std::string dummyOutput;
-    CommandResult result = handler.handleCommand("POST test.com", dummyOutput);
+    handler.loadOrInitializeBloomFilter("8 1");  // Initialize filter
+    handler.registerCommands();   // Register command handlers
 
-    EXPECT_TRUE(result.GoodCommand);
+    // Execute POST and capture result
+    CommandResult res = handler.handleCommand("POST test.com");
+    EXPECT_EQ(res.statusCode, StatusCode::Created); // Expect HTTP 201 Created
+    EXPECT_FALSE(res.bloomMatch);  // bloomMatch should be default false
+    EXPECT_FALSE(res.blackMatch);  // blackMatch should be default false
 }
 
-// Test 7
-TEST(CLIHandlerIntegration, HandleCommand_CHECK_ShouldOutputCorrectResult) {
-    ensureDataFilesExist();
+// Test 7: GET after POST should return OK (200) with bloomMatch=true and blackMatch=true
+TEST(CLIHandlerIntegration, HandleCommand_GET_ReturnsTrueTrue) {
+    removeTestFiles();  // Clear previous state
+    ensureDataFilesExist();  // Create necessary files
 
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    handler.registerCommands();
+    handler.loadOrInitializeBloomFilter("8 1");  // Initialize filter
+    handler.registerCommands();  // Register command handlers
 
-    std::string dummyOutput;
-    handler.handleCommand("POST trusted.com", dummyOutput);
+    handler.handleCommand("POST trusted.com");  // First, add the URL
+    CommandResult res = handler.handleCommand("GET trusted.com"); // Then, check it
 
-    CommandResult checkResult = handler.handleCommand("GET trusted.com", dummyOutput);
-
-    EXPECT_TRUE(checkResult.GoodCommand);
-    EXPECT_EQ(dummyOutput, "true true");
+    EXPECT_EQ(res.statusCode, StatusCode::OK);  // Expect HTTP 200 OK
+    EXPECT_TRUE(res.bloomMatch);  // Bloom filter should contain the URL
+    EXPECT_TRUE(res.blackMatch);  // Blacklist should contain the URL
 }
 
-// Test 8
-TEST(CLIHandler_HandleCommand, DeleteCommand_RemovesURL_FromMemoryAndFile) {
-    removeTestFiles();
-    CLIHandler handler;
-    ASSERT_TRUE(handler.loadOrInitializeBloomFilter("128 1"));
-    handler.registerCommands();
+// Test 8: DELETE command should remove URL and return NoContent (204)
+TEST(CLIHandlerIntegration, HandleCommand_DELETE_ReturnsNoContent) {
+    removeTestFiles();  // Clear previous state
+    ensureDataFilesExist();  // Create necessary files
 
-    std::ofstream out("../data/blacklist_urls.txt");
-    out << "bad.com\n";
-    out.close();
-
-    handler.loadBlacklistFromFile();
-
-    std::string dummyOutput;
-    ASSERT_TRUE(handler.handleCommand("DELETE bad.com", dummyOutput).GoodCommand);
-
-    std::ifstream in("../data/blacklist_urls.txt");
-    std::string line;
-    bool found = false;
-    while (std::getline(in, line)) {
-        if (line == "bad.com") {
-            found = true;
-            break;
-        }
+    // Pre-populate blacklist file with 'bad.com'
+    {
+        std::ofstream out("../data/blacklist_urls.txt");
+        out << "bad.com\n";
     }
-    EXPECT_FALSE(found);
+
+    CLIHandler handler;
+    handler.loadOrInitializeBloomFilter("8 1");  // Initialize filter
+    handler.loadBlacklistFromFile();  // Load existing blacklist entries
+    handler.registerCommands();  // Register command handlers
+
+    // Execute DELETE on the existing URL
+    CommandResult res = handler.handleCommand("DELETE bad.com");
+    EXPECT_EQ(res.statusCode, StatusCode::NoContent); // Expect HTTP 204 No Content
+
+    // Verify that 'bad.com' is no longer present in the blacklist file
+    std::ifstream inFile("../data/blacklist_urls.txt");
+    bool found = false;
+    std::string line;
+    while (std::getline(inFile, line)) {
+        if (line == "bad.com") found = true;
+    }
+    EXPECT_FALSE(found);  // URL should be removed
 }

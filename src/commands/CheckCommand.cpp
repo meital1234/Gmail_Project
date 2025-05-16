@@ -1,4 +1,7 @@
 #include "CheckCommand.h"
+#include "CommandResult.h"
+#include <fstream>
+#include <iostream>
 
 // Constructor: receives pointers to shared BloomFilter and blacklist structures
 CheckCommand::CheckCommand(BloomFilter* bf, std::unordered_set<std::string>* bl)
@@ -8,11 +11,18 @@ CheckCommand::CheckCommand(BloomFilter* bf, std::unordered_set<std::string>* bl)
 // It checks if the given URL exists in the Bloom Filter and/or the blacklist,
 // and returns the logical result for server
 CommandResult CheckCommand::execute(const std::string& url) {
-    if (url.empty()) return { false, false, "false",STATUS_CODE::BAD_REQ };  // Invalid input
-    
-    bool inBloom = bloomFilter->mightContain(url);
-    if (!inBloom) return { true, false,"false",STATUS_CODE::OK };  // not in bloom filter
+    // empty input is BAD REQUEST
+    if (url.empty()) {
+        return CommandResult(StatusCode::BadRequest);
+    }
 
-    bool inBlacklist = blacklist->count(url) > 0;
-    return { true, false, inBlacklist ? "true true" : "true false", STATUS_CODE::OK };
+    // checking bloomfilter & blacklist
+    bool bloomMatch  = bloomFilter->mightContain(url);
+    bool blackMatch  = blacklist->count(url) > 0;
+
+    // deciding CODE STATUS: if not in bf -> BAD REQUEST | else its OK
+    StatusCode code = bloomMatch ? StatusCode::OK : StatusCode::NotFound;
+
+     return CommandResult(code, bloomMatch, blackMatch);
 }
+

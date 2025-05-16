@@ -3,6 +3,7 @@
 #define SERVER_H
 #include <thread>
 #include <atomic>
+#include "../commands/CommandResult.h"
 #include "../CLIhandler/CLI_handler.h"
 
 class CLIHandler;

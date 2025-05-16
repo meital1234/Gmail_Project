@@ -10,10 +10,9 @@
 #include <unistd.h>
 #include <string.h>
 
-// ===========================================================
+
 // Helper client class to simulate real connection to server
 // each instance connects to the TCP server and sends commands
-// ===========================================================
 class TestClient {
 public:
     TestClient(const std::string& ip = "127.0.0.1", int port = 5555) {
@@ -65,18 +64,6 @@ struct ScopedServer {
     ~ScopedServer() {
         std::cout << "[Test] Stopping server" << std::endl;
         server.stop();
-
-
-        // // Ensure accept() unblocks by dummy connect:
-        // int dummySock = socket(AF_INET, SOCK_STREAM, 0);
-        // if (dummySock >= 0) {
-        //     sockaddr_in dummyAddr{};
-        //     dummyAddr.sin_family = AF_INET;
-        //     dummyAddr.sin_port = htons(server.getPort());  // we'll need getPort() method
-        //     dummyAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-        //     connect(dummySock, (sockaddr*)&dummyAddr, sizeof(dummyAddr));
-        //     close(dummySock);
-        // }
     }
 };
 
@@ -109,7 +96,7 @@ TEST(ServerCommandTests, PostAddsUrl) {
         }
     }
     
-    EXPECT_EQ(client->sendToServer("POST www.posttest.com"), "201 Created\n");
+    EXPECT_EQ(client->sendToServer("POST www.posttest.com"), "201 Created\n\n");
 }
 
 // GET unknown URL should return false
@@ -131,11 +118,8 @@ TEST(ServerCommandTests, GetReturnsFalseForNewUrl) {
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
-    
-
-    EXPECT_EQ(client->sendToServer("GET unknown.com"), "200 Ok\n\nfalse\n");
+    EXPECT_EQ(client->sendToServer("GET unknown.com"), "404 Not Found\n\nFALSE\n");
 }
-
 
 // GET after POST should return true true
 TEST(ServerCommandTests, GetReturnsTrueForAddedUrl) {
@@ -157,7 +141,7 @@ TEST(ServerCommandTests, GetReturnsTrueForAddedUrl) {
     }
 
     client->sendToServer("POST www.exists.com");
-    EXPECT_EQ(client->sendToServer("GET www.exists.com"), "200 Ok\n\ntrue true\n");
+    EXPECT_EQ(client->sendToServer("GET www.exists.com"), "200 Ok\n\nTRUE TRUE\n");
 }
 
 
@@ -182,7 +166,7 @@ TEST(ServerCommandTests, DeleteUrlReturns204) {
     }
     
     client->sendToServer("POST www.todelete.com");
-    EXPECT_EQ(client->sendToServer("DELETE www.todelete.com"), "204 No Content\n");
+    EXPECT_EQ(client->sendToServer("DELETE www.todelete.com"), "204 No Content\n\n");
 }
 
 
@@ -205,7 +189,7 @@ TEST(ServerCommandTests, DeleteUnknownUrlReturns404) {
         }
     }
     
-    EXPECT_EQ(client->sendToServer("DELETE www.nonexistent.com"), "404 Not Found\n");
+    EXPECT_EQ(client->sendToServer("DELETE www.nonexistent.com"), "404 Not Found\n\n");
 }
 
 
@@ -229,7 +213,7 @@ TEST(ServerCommandTests, UnknownCommandReturns400) {
         }
     }
     
-    EXPECT_EQ(client->sendToServer("RANDOM COMMAND"), "400 Bad Request\n");
+    EXPECT_EQ(client->sendToServer("RANDOM COMMAND"), "400 Bad Request\n\n");
 }
 
 
@@ -280,7 +264,7 @@ TEST(ServerCommandTests, PostDeleteThenGetReturnsTrueFalse) {
     client->sendToServer("POST www.example.com");
     client->sendToServer("DELETE www.example.com");
 
-    EXPECT_EQ(client->sendToServer("GET www.example.com"), "200 Ok\n\ntrue false\n");
+    EXPECT_EQ(client->sendToServer("GET www.example.com"), "200 Ok\n\nTRUE FALSE\n");
 }
 
 
@@ -320,7 +304,7 @@ TEST(ServerContinuityTests, KeepsUrlBetweenRuns) {
         }
     }
     
-    EXPECT_EQ(client->sendToServer("GET www.persistent.com"), "200 Ok\n\ntrue true\n");
+    EXPECT_EQ(client->sendToServer("GET www.persistent.com"), "200 Ok\n\nTRUE TRUE\n");
 
     server.stop(); // make sure to stop after restart too
 

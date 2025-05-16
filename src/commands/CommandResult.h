@@ -1,19 +1,31 @@
 #pragma once
-#include <string>
 
-enum STATUS_CODE{
-    OK = 200,
-    CREATED = 201,
-    NO_CONTENT = 204,
-    BAD_REQ = 400,
-    NOTFOUND = 404,
-    DEFAULT = 0,
+enum class StatusCode {
+    OK         = 200,  // GET hit: TRUE TRUE | TRUE FALSE | FALSE
+    Created    = 201,  // POST succeeded
+    NoContent  = 204,  // DELETE succeeded
+    BadRequest = 400,  // invalid command
+    NotFound   = 404   // GET/DELETE on a URL that doesn’t exist
 };
 
-// Structure to hold the result of a command execution.
+// Structure to hold the result of a command execution
+// GET will return TRUE TRUE \ TRUE FALSE \ FALSE - contains bloomMatch & blackMatch
+// ADD or DELETE will return relevant StatusCode
 struct CommandResult {
-    bool GoodCommand = false; // Indicates if the command was recognized and overall proccessed correctly
-    bool NotFound = false; // for DELETE - true if the URL was not found
-    std::string Useroutput; // for GET commands: the response content
-    STATUS_CODE status = STATUS_CODE::DEFAULT;
+    StatusCode statusCode;  // for all  commands
+    bool bloomMatch = false; // only relevant for GET - indicates if URL is in bloomFilter
+    bool blackMatch = false; // only relevant for GET - indicates if URL was found in Blacklist
+    
+
+    // constructs a CommandResult object that allows to reset boolian fields exept for GET
+    explicit CommandResult(StatusCode c)
+        : statusCode(c)
+    {}
+
+    // constructs a CommandResult object that builds the meaning of GET
+    CommandResult(StatusCode c, bool bfm, bool blm) 
+        : statusCode(c)
+        , bloomMatch(bfm)
+        , blackMatch(blm)
+    {}
 };

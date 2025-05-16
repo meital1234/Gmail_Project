@@ -1,3 +1,0 @@
-/mnt/c/Users/Mye/Downloads/advanced_system_programming/project/the_best_Gmail_EVER/build/_deps/googletest-subbuild/CMakeFiles/googletest-populate.dir
-/mnt/c/Users/Mye/Downloads/advanced_system_programming/project/the_best_Gmail_EVER/build/_deps/googletest-subbuild/CMakeFiles/edit_cache.dir
-/mnt/c/Users/Mye/Downloads/advanced_system_programming/project/the_best_Gmail_EVER/build/_deps/googletest-subbuild/CMakeFiles/rebuild_cache.dir
