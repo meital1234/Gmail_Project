@@ -89,6 +89,19 @@ POST www.noa.com
 ```
 ---
 
+## 🔧 Refactoring & Design Improvements
+As part of the transition from Ex1 to Ex2, we significantly refactored the project to improve maintainability, scalability, and testability. These improvements followed key **SOLID principles** and were driven using **Test-Driven Development (TDD)**.
+
+### ✅ Summary of SOLID Refactoring – Before & After
+
+| Before | After |
+|--------|-------|
+| All command logic (`ADD`, `CHECK`, `DELETE`) was embedded directly in `CLIHandler`, leading to tight coupling and duplicated code. | Logic was refactored into dedicated classes (`AddCommand`, `CheckCommand`, `DeleteCommand`), each implementing a shared `ICommand` interface — following the **Single Responsibility Principle (SRP)**. |
+| Adding a new command required editing the `CLIHandler` class itself. | We introduced a `commandMap` and `registerCommands()` method to support adding new commands without changing existing logic — in line with the **Open/Closed Principle (OCP)**. |
+| `CLIHandler` directly depended on concrete command implementations. | Now `CLIHandler` only communicates via the `ICommand` abstraction — applying the **Dependency Inversion Principle (DIP)**. |
+| Tests were integration-heavy, tightly coupled to multiple components. | We switched to **unit testing** for each command and internal module, following **TDD** practices to drive the design. |
+| `CLIHandler` was responsible for CLI logic, command parsing, file I/O, and Bloom Filter updates. | Each responsibility is now separated: command logic is handled by specific classes, and input parsing remains clean — supporting the **Separation of Concerns** and **SRP**. |
+---
 ## 🖼️ Screenshots
 ### Program Start and Config Input
 <img width="490" alt="image" src="https://github.com/user-attachments/assets/12551e8c-f6dc-4078-bd10-e688414be39c" />
