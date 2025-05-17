@@ -119,4 +119,5 @@ As part of the transition from Ex1 to Ex2, we significantly refactored the proje
 ### Running tests on docker
 <img width="630" alt="image" src="https://github.com/user-attachments/assets/755fef0c-cff2-489b-924e-b7fb9f5766c0" />
 <img width="630" alt="image" src="https://github.com/user-attachments/assets/d7077133-7aed-41ed-9f0d-8cc5f5b11042" />
+<img width="630" alt="image" src="https://github.com/user-attachments/assets/e89b76ec-8e27-4ef3-a65b-3f5ee413f6d4" />
 
