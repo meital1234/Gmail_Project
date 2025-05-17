@@ -30,8 +30,8 @@ CommandResult AddCommand::execute(const std::string& url) {
     // Save blacklist to file
     std::ofstream out(blacklistFilePath);
     if (!out.is_open()) {
-        std::cerr << "[AddCommand] Error: cannot open blacklist file: "
-                  << blacklistFilePath << std::endl;
+        // std::cerr << "[AddCommand] Error: cannot open blacklist file: "
+                //   << blacklistFilePath << std::endl;
         return CommandResult(StatusCode::BadRequest);
     }
     for (auto &item : *blacklist) {

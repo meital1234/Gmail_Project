@@ -154,7 +154,7 @@ void CLIHandler::saveBlacklistToFile() const {
 
 // validates URL format using regex pattern
 bool CLIHandler::isValidUrl(const std::string& url) {
-    static const std::regex urlRegex(R"(^((https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,})(\/\S*)?$)");
+    static const std::regex urlRegex(R"(^((https?:\/\/)?(www\.)?[\w.-]+\.[a-z]{2,})(\/\S*)?$)", std::regex::icase);
     return std::regex_match(url, urlRegex);
 }
 
