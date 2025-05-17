@@ -50,6 +50,7 @@ Start the client.py program with the relevant arguments:
 python client.py 172.17.0.1 8080
 ```
 Please notice - after starting the client program, the first line of input should be the configuration line. meaning, `[bit array size] [list of hash functions]`.
+
 Run the unit tests:
 ```bash
 docker-compose run --rm test
