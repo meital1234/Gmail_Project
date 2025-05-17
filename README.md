@@ -105,16 +105,18 @@ As part of the transition from Ex1 to Ex2, we significantly refactored the proje
 ---
 ## 🖼️ Screenshots
 ### Program Start and Config Input
-<img width="490" alt="image" src="https://github.com/user-attachments/assets/12551e8c-f6dc-4078-bd10-e688414be39c" />
+<img width="420" alt="image" src="https://github.com/user-attachments/assets/0a033c24-0d59-4590-93ff-87ae9dc286fd" />
 
 ### Adding a URL
-<img width="490" alt="image" src="https://github.com/user-attachments/assets/2a122beb-6729-4297-b2dc-7e8712f844cf" />
+<img width="420" alt="image" src="https://github.com/user-attachments/assets/82afbfad-6064-458f-b977-2deb67da335a" />
 
 ### Checking a URL
-<img width="490" alt="image" src="https://github.com/user-attachments/assets/e2b1684a-a39c-4c0e-915c-8d2186cf8a46" />
+<img width="420" alt="image" src="https://github.com/user-attachments/assets/55f6fbae-ca69-4df2-b3d1-6660c90a825d" />
 
-* When checking if 'aa' is in bloomfilter it returns false because aaa is not in a valid url format
+### Deleting a URL
+<img width="420" alt="image" src="https://github.com/user-attachments/assets/25314a4b-0e05-4960-8426-49fc381130d4" />
 
 ### Running tests on docker
-<img width="727" alt="image" src="https://github.com/user-attachments/assets/ed0dbaaa-cc5d-401e-bbb5-f6b7133e2eba" />
-<img width="727" alt="image" src="https://github.com/user-attachments/assets/739a41a3-346a-4527-8403-804f337fe5e1" />
+<img width="630" alt="image" src="https://github.com/user-attachments/assets/755fef0c-cff2-489b-924e-b7fb9f5766c0" />
+<img width="630" alt="image" src="https://github.com/user-attachments/assets/d7077133-7aed-41ed-9f0d-8cc5f5b11042" />
+
