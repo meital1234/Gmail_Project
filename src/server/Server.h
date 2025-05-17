@@ -26,11 +26,7 @@ class Server {
         // bool isConfigLine(const std::string& line);
         
         std::atomic<bool> running;  // safer boolean for threads
-        int serverSocket;
-
-        std::thread serverThread;   // missing field added
-
-        void run();
+        int serverSock = -1;
         void handleClient(int clientSocket);   
 };
 

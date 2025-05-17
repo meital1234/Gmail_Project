@@ -21,8 +21,7 @@ CommandResult CheckCommand::execute(const std::string& url) {
     bool blackMatch  = blacklist->count(url) > 0;
 
     // deciding CODE STATUS: if not in bf -> BAD REQUEST | else its OK
-    StatusCode code = bloomMatch ? StatusCode::OK : StatusCode::NotFound;
-
+    StatusCode code = StatusCode::OK;
      return CommandResult(code, bloomMatch, blackMatch);
 }
 

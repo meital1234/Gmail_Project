@@ -13,7 +13,7 @@ WORKDIR /app
 COPY . .
 
 # Build the project
-RUN mkdir build && cd build && cmake .. && make
+RUN mkdir -p build && cd build && cmake .. && make
 
 # Default command to run the application
 CMD ["./build/ServerApp"]

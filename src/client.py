@@ -11,32 +11,34 @@ def main():
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((dest_ip, dest_port))
-    print(f"[Client] Connected to {dest_ip}:{dest_port}")
+    # print(f"[Client] Connected to {dest_ip}:{dest_port}")
 
     try:
         while True:
-            msg = input("[Client] > ").strip()
+            msg = input().strip()
             if not msg:
                 continue
 
-            # Send user input to server
-            msg = msg.encode('utf-8', errors='ignore').decode('utf-8')
+            # Sending the command with a '\n'.
             s.sendall((msg + '\n').encode('utf-8'))
-            print(f"[Client] Sent: {msg}")
 
-            # Receive server response
-            response = s.recv(4096)
-            if not response:
-                print("[Client] Server closed connection.")
-                break
+            # Make sure we always read something or at least timeout - happens at config line input
+            s.settimeout(2.0)
 
-            # Decode and print response from server
-            print(f"[Client] Received HTTP response:\n{response.decode().strip()}")
+            try:
+                data = s.recv(4096)
+                if not data:
+                    continue
+                else:
+                    print(data.decode('utf-8'), end='')
+            except socket.timeout:
+                continue
 
-    except KeyboardInterrupt:
-        print("\n[Client] Exiting.")
+    # Allow termination if the user presses Ctrl+C.
+    # except KeyboardInterrupt:
+        # print("\nExiting client.") 
     finally:
-        s.close()
+        s.close() # Closes the connection.
 
 if __name__ == "__main__":
     main()

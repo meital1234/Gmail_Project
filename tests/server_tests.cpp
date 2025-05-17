@@ -9,303 +9,253 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+#include <thread>
+#include <chrono>
 
+// what do i need to test the server for?
+// socket connections tests (keeps connection alive)
+// correct response to GET/POST/DELETE commands sent from client
 
-// Helper client class to simulate real connection to server
-// each instance connects to the TCP server and sends commands
+// so, i want to implement a client class in cpp used for the tests, each instance of this class would connect 
+// to my server's socket in order to preform all the tests.
 class TestClient {
 public:
     TestClient(const std::string& ip = "127.0.0.1", int port = 5555) {
+        // creates a TCP socket using IPv4 and default protocol (TCP)
         sock = socket(AF_INET, SOCK_STREAM, 0);
+        // if the socket couldn't be created throw an error and stop
         if (sock < 0) throw std::runtime_error("Socket creation failed");
-
-        sockaddr_in sin{};
+        // create a struct to hold the server's information
+        sockaddr_in sin;
         sin.sin_family = AF_INET;
         sin.sin_port = htons(port);
         sin.sin_addr.s_addr = inet_addr(ip.c_str());
-
+        
+        // try to connect the socket to the server. if it fails, close the socket and throw an error
         if (connect(sock, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
             close(sock);
             throw std::runtime_error("Connection failed");
         }
     }
-    // Destructor - closes socket
-     ~TestClient() {
+
+    // // the TestClient deconstructor
+    ~TestClient() {
         if (sock >= 0) close(sock);
     }
 
     // Sends a line to server and returns the response
-        std::string sendToServer(const std::string& cmd) {
+    std::string sendToServer(const std::string& cmd, bool waitForResponse = true) {
         std::string fullCmd = cmd + "\n";
+        // std::cerr << "[Client] Sending: '" << fullCmd << "'" << std::endl;
+
         if (send(sock, fullCmd.c_str(), fullCmd.size(), 0) < 0)
             throw std::runtime_error("Send failed");
 
+        if (!waitForResponse) return "";
         char buffer[4096];
         int received = recv(sock, buffer, sizeof(buffer) - 1, 0);
-        if (received <= 0)
-            throw std::runtime_error("Receive failed or connection closed");
+        if (received <= 0) {
+            // std::cerr << "[Client] Server closed connection or recv error.\n";
+            return "";
+        }
 
         buffer[received] = '\0';
-        return std::string(buffer);
+        std::string response(buffer);
+        // std::cerr << "[Client] Received: '" << response << "'\n";
+        return response;
     }
+    void shutdownAndClose() {
+        if (sock >= 0) {
+            shutdown(sock, SHUT_RDWR);  // gracefully signal EOF
+            close(sock);
+            sock = -1;
+        }
+    }
+
 
 private:
     int sock;
 };
 
-// ==========================
-// ScopedServer guard
-// ==========================
-struct ScopedServer {
-    Server& server;
-    ScopedServer(Server& s) : server(s) { 
-        server.start(); 
-    }
-    ~ScopedServer() {
-        std::cout << "[Test] Stopping server" << std::endl;
-        server.stop();
-    }
-};
+void runServerInThread(Server* server) {
+    server->start();  // blocking function
+}
 
-// ==========================
-// Helper macro for dynamic port
-// ==========================
-#define UNIQUE_PORT (10000 + __LINE__)
+void sleepBriefly() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));  // wait for server to start
+}
 
-// ===========================================================
-// Connection Tests: server availability, protocol correctness
-// ===========================================================
 
-// POST command should return 201 Created
+// -------------------- Command Tests --------------------
+// added one test for each command the server should know how to handle
+// sending POST to server should return the 201 response
 TEST(ServerCommandTests, PostAddsUrl) {
     CLIHandler handler;
+    Server server(8080, &handler);
     
-    handler.loadOrInitializeBloomFilter("8 1");
-    // handler.registerCommands();
-    int port = UNIQUE_PORT;
-    Server server(port, &handler);
-    ScopedServer guard(server);
-    server.start();
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
-    
-    EXPECT_EQ(client->sendToServer("POST www.posttest.com"), "201 Created\n\n");
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
+
+    TestClient client("127.0.0.1", 8080);
+    client.sendToServer("8 1", false);
+    EXPECT_EQ(client.sendToServer("POST www.posttest.com"), "201 Created\n");
+    client.shutdownAndClose();
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-// GET unknown URL should return false
+// sending GET to server before adding any url should return false
 TEST(ServerCommandTests, GetReturnsFalseForNewUrl) {
     CLIHandler handler;
+    Server server(8888, &handler);
     
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
-    Server server(port, &handler); 
-    ScopedServer guard(server); 
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
 
-    // TestClient client("127.0.0.1", port);
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
-    EXPECT_EQ(client->sendToServer("GET unknown.com"), "404 Not Found\n\nFALSE\n");
+    TestClient client("127.0.0.1", 8888);
+    client.sendToServer("8 1", false);
+    std::string response = client.sendToServer("GET www.gettest.com");
+    EXPECT_TRUE(response == "200 Ok\n\nfalse\n");
+    client.shutdownAndClose();
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-// GET after POST should return true true
-TEST(ServerCommandTests, GetReturnsTrueForAddedUrl) {
+// sending GET to server after adding the url should return true
+TEST(ServerCommandTests, GetReturnsTrueForaAddedUrl) {
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
+    Server server(8888, &handler);
+    
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
 
-    Server server(port, &handler);
-    ScopedServer guard(server);
-
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
-
-    client->sendToServer("POST www.exists.com");
-    EXPECT_EQ(client->sendToServer("GET www.exists.com"), "200 Ok\n\nTRUE TRUE\n");
+    TestClient client("127.0.0.1", 8888);
+    client.sendToServer("8 1", false);
+    client.sendToServer("POST www.gettest2.com");
+    EXPECT_EQ(client.sendToServer("GET www.gettest2.com"), "200 Ok\n\ntrue true\n");
+    client.shutdownAndClose();
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-
-// DELETE known URL should return 204 No Content
+// sending DELETE to server should return the 204 response
 TEST(ServerCommandTests, DeleteUrlReturns204) {
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
-
-    Server server(port, &handler);
-    ScopedServer guard(server);
-
-    // TestClient client("127.0.0.1", port);
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
+    Server server(8000, &handler);
     
-    client->sendToServer("POST www.todelete.com");
-    EXPECT_EQ(client->sendToServer("DELETE www.todelete.com"), "204 No Content\n\n");
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
+
+    TestClient client("127.0.0.1", 8000);
+    client.sendToServer("8 1", false);
+    client.sendToServer("POST www.deletetest.com");
+    EXPECT_EQ(client.sendToServer("DELETE www.deletetest.com"), "204 No Content\n");
+    client.shutdownAndClose();
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-
-// DELETE unknown URL should return 404 Not Found
+// sending DELETE to server before adding any url should return 404
 TEST(ServerCommandTests, DeleteUnknownUrlReturns404) {
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
+    Server server(5555, &handler);
 
-    Server server(port, &handler);
-    ScopedServer guard(server);
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
 
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
-    
-    EXPECT_EQ(client->sendToServer("DELETE www.nonexistent.com"), "404 Not Found\n\n");
+    TestClient client("127.0.0.1", 5555);
+    client.sendToServer("8 1", false);
+    EXPECT_EQ(client.sendToServer("DELETE www.deletetest2.com"), "404 Not Found\n");
+    client.shutdownAndClose();
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-
-// Sending unknown command returns 400 Bad Request
-TEST(ServerCommandTests, UnknownCommandReturns400) {
+// sending POST, DELETE and then GET should return true false because delete doesnt change the bloom filter
+TEST(ServerCommandTests, PostThenDeleteThenGetReturnsTrueFalse) {
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
+    Server server(6009, &handler);
 
-    Server server(port, &handler); 
-    ScopedServer guard(server);
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
 
-    // TestClient client("127.0.0.1", port);
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
-    
-    EXPECT_EQ(client->sendToServer("RANDOM COMMAND"), "400 Bad Request\n\n");
+    TestClient client("127.0.0.1", 6009);
+    client.sendToServer("8 1", false);
+    client.sendToServer("POST www.deletetest3.com");
+    client.sendToServer("DELETE www.deletetest3.com");
+
+    EXPECT_EQ(client.sendToServer("GET www.deletetest3.com"), "200 Ok\n\ntrue false\n"); // Bloom says yes, blacklist says no
+    client.shutdownAndClose();
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-
-// Sending malformed GET returns 400 Bad Request
-TEST(ServerCommandTests, MalformedGetReturns400) {
+// sending unknown command to server should return 400
+TEST(ServerCommandTests, DeleteUnknownUrlReturns400) {
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
+    Server server(5555, &handler);
 
-    Server server(port, &handler);
-    ScopedServer guard(server);
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
 
-    // TestClient client("127.0.0.1", port);
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
-    
-    EXPECT_EQ(client->sendToServer("GET too many args"), "400 Bad Request\n");
+    TestClient client("127.0.0.1", 5555);
+    client.sendToServer("8 1", false);
+    EXPECT_EQ(client.sendToServer("hello world"), "400 Bad Request\n");
+    client.shutdownAndClose();
+
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-
-// POST, DELETE and GET returns true false (Bloom yes, blacklist no)
-TEST(ServerCommandTests, PostDeleteThenGetReturnsTrueFalse) {
+// sending invalid command to server should return 400
+TEST(ServerCommandTests, PostInvalidCommand) {
     CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    int port = UNIQUE_PORT;
-
-    Server server(port, &handler);
-    ScopedServer guard(server);
-
-    // TestClient client("127.0.0.1", port);
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    }
+    Server server(5555, &handler);
     
-    client->sendToServer("POST www.example.com");
-    client->sendToServer("DELETE www.example.com");
+    std::thread serverThread(runServerInThread, &server);  // run in background
+    sleepBriefly();  // let server bind
 
-    EXPECT_EQ(client->sendToServer("GET www.example.com"), "200 Ok\n\nTRUE FALSE\n");
+    TestClient client("127.0.0.1", 5555);
+    client.sendToServer("8 1", false);
+    EXPECT_EQ(client.sendToServer("GET www.invalid.com invalid"), "400 Bad Request\n");
+    client.shutdownAndClose();
+
+    server.stop();  // important!
+    if (serverThread.joinable()) serverThread.join();
 }
 
-
-// Continuity Test: URL persists between server restarts
+// -------------------- Continuity Tests --------------------
+// adding a url, closing the server and then reopening it and checking that url should return true
 TEST(ServerContinuityTests, KeepsUrlBetweenRuns) {
-    CLIHandler handler;
-    handler.loadOrInitializeBloomFilter("8 1");
-    
-    int port = UNIQUE_PORT;
-    
-    Server server(port, &handler);
     {
-        ScopedServer guard(server);
+        CLIHandler handler;
+        Server server(5555, &handler);
 
-        // TestClient client("127.0.0.1", port);
-        std::unique_ptr<TestClient> client;
-        for (int i = 0; i < 2; i++) {
-            try {
-                client = std::make_unique<TestClient>("127.0.0.1", port);
-                break;
-            } catch (...) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            }
-        }
-        client->sendToServer("POST www.persistent.com");
-    } // server.stop() on scope exit
+        std::thread serverThread1(runServerInThread, &server);
+        sleepBriefly();
 
-    server.start(); // restart manually for continuity test
-    // TestClient client("127.0.0.1", port);
-    std::unique_ptr<TestClient> client;
-    for (int i = 0; i < 2; i++) {
-        try {
-            client = std::make_unique<TestClient>("127.0.0.1", port);
-            break;
-        } catch (...) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
+        TestClient client("127.0.0.1", 5555);
+        client.sendToServer("8 1", false);
+        client.sendToServer("POST www.continuitytest.com");
+        client.shutdownAndClose();
+
+        server.stop();
+        if (serverThread1.joinable()) serverThread1.join();
     }
-    
-    EXPECT_EQ(client->sendToServer("GET www.persistent.com"), "200 Ok\n\nTRUE TRUE\n");
 
-    server.stop(); // make sure to stop after restart too
+    {
+        CLIHandler handler2;
+        Server server2(5555, &handler2);
 
+        std::thread serverThread2(runServerInThread, &server2);
+        sleepBriefly();
+
+        TestClient client("127.0.0.1", 5555);
+        client.sendToServer("8 1", false);  // config line
+        EXPECT_EQ(client.sendToServer("GET www.continuitytest.com"), "200 Ok\n\ntrue true\n");
+        client.shutdownAndClose();
+
+        server2.stop();
+        if (serverThread2.joinable()) serverThread2.join();
+    }
 }

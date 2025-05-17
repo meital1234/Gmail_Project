@@ -13,7 +13,7 @@ WORKDIR /app
 COPY . .
 
 # Build test targets
-RUN mkdir build && cd build && cmake .. && make
+RUN mkdir -p build && cd build && cmake .. && make
 
 # Run tests
 CMD ["./build/runTests"]

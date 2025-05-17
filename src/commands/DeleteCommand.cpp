@@ -31,8 +31,8 @@ CommandResult DeleteCommand::execute(const std::string& url) {
     // if URL was deleted -> update blacklist file
     std::ofstream out(blacklistFilePath);  // open blacklist file for overwriting
     if (!out.is_open()) {
-        std::cerr << "[DeleteCommand] Error: cannot open blacklist file: "
-                  << blacklistFilePath << std::endl;
+        // std::cerr << "[DeleteCommand] Error: cannot open blacklist file: "
+                //   << blacklistFilePath << std::endl;
         return CommandResult(StatusCode::BadRequest);
     }
     for (const auto& item : *blacklist) {
@@ -41,8 +41,8 @@ CommandResult DeleteCommand::execute(const std::string& url) {
 
     // always save BloomFilter state to file & ensure it maintained, even if wasn't changed
     bloomFilter->saveToFile(bloomFilePath);  
-    std::cout << "[DeleteCommand] Successfully deleted URL and saved state: "
-              << url << std::endl;
+    // std::cout << "[DeleteCommand] Successfully deleted URL and saved state: "
+            //   << url << std::endl;
 
     return CommandResult(StatusCode::NoContent);  // NO CONTENT
 }

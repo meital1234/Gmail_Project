@@ -45,7 +45,7 @@ TEST(CheckCommandTests, URL_OnlyInBloom_ShouldReturnTrueFalse) {
     EXPECT_FALSE(res.blackMatch);
 }
 
-// TEST 3 – URL only in blacklist (should be negative) → status 404 Not Found, bloomMatch=false, blackMatch=true
+// TEST 3 – URL only in blacklist (should be negative) → status 200, bloomMatch=false, blackMatch=true
 TEST(CheckCommandTests, OnlyInBlacklist_ShouldReturnFalseTrue) {
     removeTestFiles();
 
@@ -55,12 +55,12 @@ TEST(CheckCommandTests, OnlyInBlacklist_ShouldReturnFalseTrue) {
     CheckCommand cmd(&bloom, &blacklist);
     CommandResult res = cmd.execute("only-in-blacklist.com");
 
-    EXPECT_EQ(res.statusCode, StatusCode::NotFound);
+    EXPECT_EQ(res.statusCode, StatusCode::OK);
     EXPECT_FALSE(res.bloomMatch);
     EXPECT_TRUE(res.blackMatch);
 }
 
-// TEST 4 – URL in neither structure → status 404 Not Found, bloomMatch=false, blackMatch=false
+// TEST 4 – URL in neither structure → status 200, bloomMatch=false, blackMatch=false
 TEST(CheckCommandTests, CheckURL_NotAdded_ShouldReturnFalseFalse) {
     removeTestFiles();
 
@@ -71,7 +71,7 @@ TEST(CheckCommandTests, CheckURL_NotAdded_ShouldReturnFalseFalse) {
     CheckCommand cmd(&bloom, &blacklist);
     CommandResult res = cmd.execute("unknown.com");
 
-    EXPECT_EQ(res.statusCode, StatusCode::NotFound);
+    EXPECT_EQ(res.statusCode, StatusCode::OK);
     EXPECT_FALSE(res.bloomMatch);
     EXPECT_FALSE(res.blackMatch);
 }
