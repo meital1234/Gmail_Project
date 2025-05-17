@@ -3,7 +3,7 @@ FROM gcc:latest
 
 # Install CMake and any build dependencies
 RUN apt-get update && \
-    apt-get install -y cmake && \
+    apt-get install -y cmake make python3 && \
     apt-get clean
 
 # Set working directory
@@ -13,7 +13,7 @@ WORKDIR /app
 COPY . .
 
 # Build the project
-RUN mkdir build && cd build && cmake .. && make
+RUN mkdir -p build && cd build && cmake .. && make
 
 # Default command to run the application
-CMD ["./build/main"]
+CMD ["./build/ServerApp"]

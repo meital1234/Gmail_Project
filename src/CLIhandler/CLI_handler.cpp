@@ -13,168 +13,158 @@
 
 using namespace std;
 
-// registers command objects to their corresponding keywords
-void CLIHandler::registerCommands() {
-    // construct AddCommand with access to shared state
-    commandMap["POST"] = new AddCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
-    commandMap["GET"] = new CheckCommand(bloomFilter, &blacklistUrls);
-    commandMap["DELETE"] = new DeleteCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
-}
+// constructor that initializes bloomFilter to nullptr (waiting for config)
+CLIHandler::CLIHandler() : bloomFilter(nullptr),
+    blacklistFilePath(BLACKLIST_FILE_PATH),
+    bloomFilePath(BLOOM_FILE_PATH) {}
 
-
-CLIHandler::CLIHandler() {
-    // can't register commands in constructor – bloomFilter & blacklist aren't initialized yet.
-    // first we need to get valid configuration line & initialize data structures
-}
-
-void CLIHandler::run() {
-    std::string user_line;
-    bool initialized = false;
-    // waits to get line after line from user
-    while (getline(std::cin, user_line)) {
-         // if the line is configuration line (like 256 2 1) it will load into BloomFilter
-         if (!initialized) {
-            if (loadOrInitializeBloomFilter(user_line)) {
-                initialized = true;
-                registerCommands();
-            } else {  // Invalid configuration line
-                continue;
-            }
-        } else {
-            handleCommand(user_line);
-        }
-    }
-
+//destructor
+CLIHandler::~CLIHandler() {
     delete bloomFilter;
-}
-
-// independent func that creates the hash funcs & is responsible for parsing hash type IDs
-std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids) {
-    std::vector<HashFunction*> funcs;
-    bool hasValid = false;
-
-    for (int id : ids) {
-        // changed logic so that any positive number could be accepted as the number of iterations
-        if (id > 0) {
-            funcs.push_back(new IterativeStdHash(id)); 
-            hasValid = true;
-        }
+    // for each pair of string input (like "GET") & pointer to relevant command
+    for (auto& pair : commandMap) {
+        delete pair.second;
     }
-
-    if (!hasValid) {
-        funcs.clear();
-    }
-    return funcs;
 }
 
 // this function checks if their is a saved file of BloomFilter
 // if yes it loads it and if no it initializes it according to configuration line
 bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
-    
     // Parse configuration line to initialize bloom filter
     // this "iss" is just like cin but enssure that what he reads from the config line is string
-    istringstream iss(configLine);
+    std::istringstream iss(configLine);
     // defining variables for first two values in line: 
     // 1- size of the bit array, 2- number of hash functions
     int bitArraySize;
     // check that the first value exist and is positive integers
-    if (!(iss >> bitArraySize) || bitArraySize <= 0 ) { 
-        return false; // 400 Bad Request
+    if (!(iss >> bitArraySize) || bitArraySize <= 0) {
+        // std::cout << "[CLIHandler] Invalid bit array size in config line." << std::endl;
+        return false;  // 400 Bad Request
     }
-    
-    // hashType list represents types of hash funcs the user chose
+
+      // hashType list represents types of hash funcs the user chose
     int hashType;
     std::vector<int> hashTypes;
-    // this loop promise that hash type is valid
+    // this loop promise that hash type is valid (at least 1 exists & positive)
     while (iss >> hashType) {
         if (hashType <= 0) {
-            return false; // 400 Bad Request
+            // std::cout << "[CLIHandler] Invalid hash type in config line." << std::endl;
+            return false;  // 400 Bad Request
         }
         hashTypes.push_back(hashType);
     }
+
     // ensure at least one hash function was provided
     if (hashTypes.empty()) {
+        // std::cout << "[CLIHandler] No hash functions provided in config line." << std::endl;
         return false;  // 400 Bad Request
     }
+
     // initialize Bloom Filter
     std::vector<HashFunction*> hashFuncs = createHashFunctions(hashTypes);
     if (hashFuncs.empty()) {
+        // std::cout << "[CLIHandler] Failed to create hash functions." << std::endl;
         return false;  // 400 Bad Request
     }
+
     bloomFilter = new BloomFilter(bitArraySize, hashFuncs);
-    std::ifstream file(bloomFilePath);
+    // std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
+
+    std::ifstream file(bloomFilePath, std::ios::binary);
     if (file.good()) {
         bloomFilter->loadFromFile(bloomFilePath);
+        // std::cout << "[CLIHandler] Bloom filter state loaded from file." << std::endl;
+    } else {
+        // std::cout << "[CLIHandler] New Bloom filter initialized." << std::endl;
     }
+
     // Load blacklist regardless
     loadBlacklistFromFile();
     return true;
 }
 
-// Loads URLs from the blacklist file into memory (blacklistUrls)
-// enables verifying URLs detect false positives.
-void CLIHandler::loadBlacklistFromFile() {
-    ifstream in(blacklistFilePath);  // Open the input file for reading
-    // If the file doesnt exist or can't be read, do nothing
-    if (!in) return;
+// registers command objects to their corresponding keywords
+void CLIHandler::registerCommands() {
+    // AddCommand will have access to bloomFilter & blacklist files
+    // each command holds pointers to bloomFilter state & blacklist
 
-    string url;
-    // Read each line (URL) and insert it into the in-memory blacklist
+    commandMap["POST"] = new AddCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
+    commandMap["GET"] = new CheckCommand(bloomFilter, &blacklistUrls);
+    commandMap["DELETE"] = new DeleteCommand(bloomFilter, &blacklistUrls, blacklistFilePath, bloomFilePath);
+
+    // std::cout << "[CLIHandler] Commands registered successfully." << std::endl;
+}
+
+// parses user line into command, validates format, and executes relevant command
+CommandResult CLIHandler::handleCommand(const std::string& line) {
+    // std::cout << "[CLIHandler] Received command line: \"" << line << "\"" << std::endl;
+
+    // deviding each line to relevant tokens
+    std::istringstream iss(line);
+    std::string commandToken, urlToken, extraToken;
+
+    // expects exactly two tokens: COMMAND URL (no extra)
+    if (!(iss >> commandToken >> urlToken) || (iss >> extraToken)) {
+        // std::cout << "[CLIHandler] Invalid command format: '" << line << "'" << std::endl;
+        return CommandResult(StatusCode::BadRequest);
+    }
+ 
+    // check if command exists in map
+    auto it = commandMap.find(commandToken);
+    if (it == commandMap.end()) {
+        // std::cout << "[CLIHandler] Unknown command: '" << commandToken << "'" << std::endl;
+        return CommandResult(StatusCode::BadRequest);
+    }
+
+    // execute relevant command
+    CommandResult result = it->second->execute(urlToken);
+
+    return result;  // CommandResult for server status codes
+}
+
+// loads blacklist URLs from file into in-memory set
+void CLIHandler::loadBlacklistFromFile() {
+    std::ifstream in(blacklistFilePath);
+    if (!in.is_open()) {
+        // std::cerr << "[CLIHandler] Warning: Could not open blacklist file: " << blacklistFilePath << std::endl;
+        return;
+    }
+
+    std::string url;
     while (getline(in, url)) {
         blacklistUrls.insert(url);
     }
+    // std::cout << "[CLIHandler] Blacklist loaded: " << blacklistUrls.size() << " entries." << std::endl;
 }
 
+// saves blacklist URLs into file (overwrites existing)
+void CLIHandler::saveBlacklistToFile() const {
+    std::ofstream out(blacklistFilePath);
+    if (!out.is_open()) {
+        // std::cerr << "[CLIHandler] Error: Could not open blacklist file for writing: " << blacklistFilePath << std::endl;
+        return;
+    }
+
+    for (const auto& url : blacklistUrls) {
+        out << url << '\n';
+    }
+    // cout << "[CLIHandler] Blacklist saved to file: " << blacklistFilePath << endl;
+
+}
+
+// validates URL format using regex pattern
 bool CLIHandler::isValidUrl(const std::string& url) {
-    static const std::regex urlRegex(R"(^((https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,})(\/\S*)?$)");
+    static const std::regex urlRegex(R"(^((https?:\/\/)?(www\.)?[\w.-]+\.[a-z]{2,})(\/\S*)?$)", std::regex::icase);
     return std::regex_match(url, urlRegex);
 }
 
-// this function sperates the input string from user
-// devide it to tokens and ensures valid format (exactly two tokens)
-std::string CLIHandler::handleCommand(const std::string& line) {
-    istringstream iss(line);
-    string commandToken, urlToken, extraToken;
-    // Check if line has exactly two tokens
-    if (!(iss >> commandToken >> urlToken) || (iss >> extraToken)) {
-        // if the format is invalid - skip line
-        return "false";
+// creates hash functions according to user config types
+std::vector<HashFunction*> CLIHandler::createHashFunctions(const std::vector<int>& ids) {
+    std::vector<HashFunction*> funcs;
+    for (int id : ids) {
+        if (id > 0) {
+            funcs.push_back(new IterativeStdHash(id)); 
+        }
     }
-
-    //commandMap
-    auto it = commandMap.find(commandToken);
-    if (it != commandMap.end()) {
-        ICommand* cmd = it->second;
-        cmd->execute(urlToken);
-        return "true";
-    }
-
-    return "false"; // command not found
-}
-
-// this function saves the entire blacklist to the blacklist files
-// overwrites the file with the current contents of blacklistUrls.
-void CLIHandler::saveBlacklistToFile() const {
-    // Open the output file (overwrites existing content)
-    ofstream out(blacklistFilePath);
-    if (!out) {
-    // if file cannot be open, exit
-        return;
-    }
-    // Write each URL to a new line in the file
-    for (const string& url : blacklistUrls) {
-        out << url << '\n';
-    }
-}
-
-// this function prints the result of a Bloom Filter and blacklist check
-void CLIHandler::printOutput(bool firstResult, bool secondResult) {
-    // if bloom filter says URL not in set, print false
-    if (!firstResult) {
-        cout << "false" << endl;
-    } 
-    // else prints "true true" or "true false" depending
-    else {
-        cout << "true " << (secondResult ? "true" : "false") << endl;
-    }
+    return funcs;
 }

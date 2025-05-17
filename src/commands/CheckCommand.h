@@ -2,6 +2,7 @@
 #define CHECKCOMMAND_H
 
 #include "ICommand.h"
+#include "CommandResult.h"
 #include "../BloomFilterLogic/BloomFilter.h"
 #include <unordered_set>
 #include <string>
@@ -18,7 +19,8 @@ public:
 
     // Checks if input URL might be in the BloomFilter and checks with blacklist
     // and returns logical result (true or false) for server to handle
-    std::string execute (const std::string& url) override;
+    // std::string executeCheck(const std::string& url);
+    CommandResult execute(const std::string& url) override;
 };
 
 #endif // CHECKCOMMAND_H

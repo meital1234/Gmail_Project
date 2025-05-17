@@ -18,8 +18,9 @@ FetchContent_MakeAvailable(googletest)
 include_directories(src)
 
 # ---- Main executable ----
-add_executable(main
+add_executable(ServerApp
     src/main.cpp
+    src/server/Server.cpp
     src/BloomFilterLogic/BloomFilter.cpp
     src/hash/IterativeStdHash.cpp
     src/CLIhandler/CLI_handler.cpp
@@ -35,6 +36,8 @@ add_executable(runTests
     tests/bloom_tests.cpp
     tests/hash_tests.cpp
     tests/integration_tests.cpp
+    tests/server_tests.cpp
+    src/server/Server.cpp
     tests/Command_tests/CheckCommand_tests.cpp
     tests/Command_tests/AddCommand_tests.cpp
     tests/Command_tests/DeleteCommand_tests.cpp

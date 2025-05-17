@@ -7,11 +7,12 @@
 #include <unistd.h>
 #include <cstring>
 
+
 using namespace std;
 
 // initialize server - is not running at the start
 Server::Server(int port, CLIHandler* handler)
-    : port(port), handler(handler), running(false) {}
+    : port(port), handler(handler), running(false), serverSock(-1) {}
     
 Server::~Server() {
     stop();
@@ -24,17 +25,15 @@ bool Server::validatePort(int port) const {
 
 // start server
 void Server::start() {
-    
-
     if (!validatePort(port)) {
         throw std::invalid_argument("Invalid port number.");
     }
 
-    int serverSock = socket(AF_INET, SOCK_STREAM, 0);
+    serverSock = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSock < 0) {
         throw std::runtime_error("Socket creation failed");
     }
-    std::cout << "Listening on port " << port << "..." << std::endl;
+    // std::cout << "Listening on port " << port << "..." << std::endl;
     
     int opt = 1;
     setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -44,7 +43,7 @@ void Server::start() {
     sin.sin_addr.s_addr = INADDR_ANY;
     sin.sin_port = htons(port);
 
-    if (bind(serverSock, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
+    if (::bind(serverSock, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
         close(serverSock);
         throw std::runtime_error("Bind failed");
     }
@@ -55,69 +54,116 @@ void Server::start() {
     }
 
     running = true;
-    std::cout << "Server started on port " << port << std::endl;
 
     while (running) {
         sockaddr_in clientAddr;
         socklen_t addrLen = sizeof(clientAddr);
         int clientSock = accept(serverSock, (struct sockaddr*)&clientAddr, &addrLen);
-        if (clientSock < 0) continue;
+        if (clientSock < 0) {
+            if (running) perror("accept failed");
+            break;
+        }
+        handleClient(clientSock);
+    }
+}
 
-        char buffer[4096];
-        std::string leftover;
+void Server::handleClient(int clientSock) {
+    char buffer[4096];
+    std::string leftover;
 
-        while (true) {
-            ssize_t received = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
-            if (received <= 0) break;
+    // Step 1: Read configuration line
+    std::string configLine;
+    while (true) {
+        ssize_t received = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+        if (received <= 0) return;
 
-            buffer[received] = '\0';
-            leftover += buffer;
+        buffer[received] = '\0';
+        leftover += buffer;
 
-            size_t newlinePos;
-            while ((newlinePos = leftover.find('\n')) != std::string::npos) {
-                std::string line = leftover.substr(0, newlinePos);
-                leftover = leftover.substr(newlinePos + 1);
+        size_t newlinePos = leftover.find('\n');
+        if (newlinePos != std::string::npos) {
+            configLine = leftover.substr(0, newlinePos);
+            leftover = leftover.substr(newlinePos + 1);
+            // std::cerr << "[Server] Config line received: '" << configLine << "'" << std::endl;
+            break;
+        }
+    }
 
-                std::string result = handler->handleCommand(line);
-                std::string finalResponse;
+    // Step 2: Initialize Bloom filter
+    if (!handler->loadOrInitializeBloomFilter(configLine)) {
+        std::string error = "400 Bad Request\n";
+        send(clientSock, error.c_str(), error.size(), 0);
+        return;
+    }
 
-                std::string commandType = line.substr(0, line.find(' '));
+    handler->registerCommands();
+  
+    // Step 3: Process commands
+    while (true) {
+        // Check for full lines already received
+        size_t newlinePos;
+        while ((newlinePos = leftover.find('\n')) != std::string::npos) {
+            std::string line = leftover.substr(0, newlinePos);
+            leftover = leftover.substr(newlinePos + 1);
+            // Trim newline and carriage return
+        line.erase(line.find_last_not_of("\r\n") + 1);
+        if (line.empty()) continue;
 
-                if (commandType == "GET") {
-                    if (result == "true true" || result == "true false" || result == "false") {
-                        finalResponse = "200 OK\n" + result + "\n";
-                    } else {
-                        finalResponse = "400 Bad Request\n" + result + "\n";
-                    }
-                } else if (commandType == "POST") {
-                    if (result == "success") {
-                        finalResponse = "201 Created\n";
-                    } else {
-                        finalResponse = "400 Bad Request\n" + result + "\n";
-                    }
-                } else if (commandType == "DELETE") {
-                    if (result == "deleted") {
-                        finalResponse = "204 No Content\n";
-                    } else if (result == "not found") {
-                        finalResponse = "404 Not Found\n";
-                    } else {
-                        finalResponse = "400 Bad Request\n" + result + "\n";
-                    }
-                } else {
-                    finalResponse = "400 Bad Request\n";
-                }
+        // Extract command type (GET, POST, DELETE, etc.)
+        std::istringstream cmdiss(line);
+        std::string cmdToken;
+        cmdiss >> cmdToken;
 
-                send(clientSock, finalResponse.c_str(), finalResponse.size(), 0);
+        // Execute command
+        CommandResult result = handler->handleCommand(line);
+
+        // Build HTTP-style response
+        std::ostringstream out;
+        if (result.statusCode == StatusCode::Created) {
+            out << "201 Created\n";
+        } else if (result.statusCode == StatusCode::NoContent) {
+            out << "204 No Content\n";
+        } else if (result.statusCode == StatusCode::OK) {
+            out << "200 Ok\n";
+        } else if (result.statusCode == StatusCode::NotFound) {
+            out << (cmdToken == "GET" ? "404 Not Found\n" : "404 Not Found\n");
+        } else if (result.statusCode == StatusCode::BadRequest) {
+            out << (cmdToken == "GET" ? "400 Bad Request\n" : "400 Bad Request\n");
+        }
+
+        if (cmdToken == "GET" && result.statusCode != StatusCode::BadRequest) {
+            out << "\n";
+            if (result.bloomMatch) {
+                out << (result.blackMatch ? "true true\n" : "true false\n");
+            } else {
+                out << "false\n";
             }
         }
 
-        close(clientSock);
+        std::string response = out.str();
+        send(clientSock, response.c_str(), response.size(), 0);
     }
 
-    close(serverSock);
+    // Read more data from the socket
+    ssize_t received = recv(clientSock, buffer, sizeof(buffer) - 1, 0);
+    if (received <= 0) break;
+
+    buffer[received] = '\0';
+    leftover += buffer;
+    }
+
+    close(clientSock);
 }
 
 void Server::stop() {
     running = false;
-    std::cout << "Server stopped." << std::endl;
+    // std::cout << "Server stopped." << std::endl;
+
+    // This will unblock the accept() call
+    if (serverSock >= 0) {
+        // std::cerr << "[Server] Shutting down listening socket\n";
+        shutdown(serverSock, SHUT_RDWR);
+        close(serverSock);
+        serverSock = -1;
+    }
 }

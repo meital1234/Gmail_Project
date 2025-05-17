@@ -1,32 +1,46 @@
 #include "AddCommand.h"
+#include "CommandResult.h" 
 #include <fstream>
 #include <iostream>
 
 // constructor: receives pointers to shared BloomFilter and blacklist structures, and paths to data files
-AddCommand::AddCommand(BloomFilter* bloom, std::unordered_set<std::string>* blacklist,
-                       const std::string& blacklistFile, const std::string& bloomFile)
-    : bloomFilter(bloom), blacklist(blacklist),
-      blacklistFilePath(blacklistFile), bloomFilePath(bloomFile) {}
+AddCommand::AddCommand(BloomFilter* bf, std::unordered_set<std::string>* bl, 
+    const std::string& blFile, const std::string& bfFile)
+    : bloomFilter(bf), blacklist(bl), blacklistFilePath(blFile), bloomFilePath(bfFile) {}
 
-// this function executes AddCommand:
-// it adds the given URL to both the Bloom Filter and the blacklist,
-// and saves both structures to their corresponding files.
-std::string AddCommand::execute(const std::string& url) {
-    // skip if the input URL is empty
-    if (url.empty()) return "false";  // 400 Bad Request
+// execute POST command
+CommandResult AddCommand::execute(const std::string& url) {
+    // std::cout << "[AddCommand] POST " << url << std::endl;
+    // empty input is BAD REQUEST
+    if (url.empty()) {
+        // std::cerr << "[AddCommand] Error: URL is empty" << std::endl;
+        return CommandResult(StatusCode::BadRequest);
+    }
 
-    // if already exists in blacklist, skip and notify as 'true'
-    if (blacklist->count(url) > 0) return "true";  // URL already exists in blacklist
-    
-    bloomFilter->add(url);  // add to Bloom Filter
-    blacklist->insert(url);  // add to in-memory blacklist
+    // if URL got ADDES to blacklist than its CREATED
+    if (blacklist->count(url) > 0) {
+        // std::cout << "[AddCommand] URL already in blacklist: " << url << std::endl;
+        return CommandResult(StatusCode::Created);
+    }
 
-    // add URL to blacklist file
-    std::ofstream outBlacklist(blacklistFilePath, std::ios::app);
-    if (outBlacklist) outBlacklist << url << '\n';
+    // Add to in-memory structures
+    bloomFilter->add(url);
+    blacklist->insert(url);
 
-    // save BloomFilter state to file
-    bloomFilter->saveToFile(bloomFilePath);  
+    // Save blacklist to file
+    std::ofstream out(blacklistFilePath);
+    if (!out.is_open()) {
+        // std::cerr << "[AddCommand] Error: cannot open blacklist file: "
+                //   << blacklistFilePath << std::endl;
+        return CommandResult(StatusCode::BadRequest);
+    }
+    for (auto &item : *blacklist) {
+        out << item << '\n';
+    }
 
-    return "true";  // URL added successfully
+    // Save bloom filter state to file
+    bloomFilter->saveToFile(bloomFilePath);
+
+    // std::cout << "[AddCommand] Successfully added URL and saved state." << std::endl;
+    return CommandResult(StatusCode::Created);
 }

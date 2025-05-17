@@ -2,6 +2,7 @@
 #define DELETECOMMAND_H
 
 #include "ICommand.h"
+#include "CommandResult.h"
 #include "../BloomFilterLogic/BloomFilter.h"
 #include <unordered_set>
 #include <string>
@@ -11,17 +12,17 @@ class DeleteCommand : public ICommand {
 private:
     BloomFilter* bloomFilter;  // pointer to shared BloomFilter
     std::unordered_set<std::string>* blacklist;  // pointer to blacklist
-    std::string blacklistFilePath;  // path to blacklist file
-    std::string bloomFilePath;  // path to BloomFilter save file
+    const std::string blacklistFilePath = "../data/blacklist_urls.txt";  // path to blacklist file
+    const std::string bloomFilePath = "../data/bloomfilter_state.dat";  // path to BloomFilter save file
 
 public:
     // constructor: initializes DeleteCommand with access to BloomFilter & Blacklist
     // & file paths for BloomFilter & Blacklist
-    DeleteCommand(BloomFilter* bf, std::unordered_set<std::string>* bl,
-                  const std::string& blPath, const std::string& bfPath);
+    DeleteCommand(BloomFilter* bloom, std::unordered_set<std::string>* bl,
+                  const std::string& blFile, const std::string& bfFile);
     // deletes URL given as arg, removes URL from blacklist & update it
     // BloomFilter stays as is (might cause FP)
-    std::string execute(const std::string& url) override;
+    CommandResult execute(const std::string& url) override;
 };
 
 #endif // DELETECOMMAND_H

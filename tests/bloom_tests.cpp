@@ -3,9 +3,9 @@
 #include <string>
 #include <map>
 #include <cstdio>
+#include <stdexcept>
 #include "BloomFilterLogic/BloomFilter.h"
 #include "hash/HashFunction.h"
-//#include "../external/googletest-main/googletest/include/gtest/gtest.h"
 
 using namespace std;
 
@@ -26,7 +26,6 @@ class MockHashFunction : public HashFunction { // A class that inherits from Has
     private:
         size_t value;
 };
-
 
 class CustomMockHashFunction : public HashFunction {
     public:
@@ -85,6 +84,7 @@ TEST(BloomFilterTest, CanSaveAndReloadStateFromFile) {
         BloomFilter filter(8, hashes); //Create a new BloomFilter object with 8 bits.
         filter.add("example.com"); //Add one site — this turns on the 3rd bit
         filter.saveToFile(filename); //Save to file
+        EXPECT_TRUE(filter.mightContain("example.com")); //We expect the new filter to recognize that "example.com" exists (because it was loaded from the file).
     }
 
     {

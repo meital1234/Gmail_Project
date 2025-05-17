@@ -18,11 +18,11 @@ using std::vector;
 //constructor
 BloomFilter::BloomFilter(size_t size, const vector<HashFunction*>& hashFunctions)
     : size(size), bitArray(size, false), hashFunctions(hashFunctions) {
-    // בדיקה אם גודל המערך חוקי
     if (size == 0) {
-        throw std::invalid_argument("Size of BloomFilter must be greater than 0");
+        throw std::invalid_argument("BloomFilter size must be greater than 0");
     }
 }
+
 /** initializes:
 this->size – the size of the filter
 bitArray(size, false) – an array initialize to 0 of length size
@@ -30,8 +30,8 @@ hashFunctions – simply stores what we got **/
 
 // private helper - calculates bit index
 size_t BloomFilter::getBitIndex(const string& str, HashFunction* hashFunc) const {
-    return (*hashFunc)(str) % size; //(*hashFunc)(str) — Runs the function on the string.
-    //... % size — because your bit array is of size, so accessing an out-of-bounds index is not allowed.
+    return (*hashFunc)(str) % size;
+   //... % size — because your bit array is of size, so accessing an out-of-bounds index is not allowed.
 }
 
 // add string to bloom filter
