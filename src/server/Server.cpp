@@ -74,8 +74,6 @@ void Server::start() {
 }
 
 void Server::handleClient(int clientSock) {
-    std::cout << "[Thread " << std::this_thread::get_id()
-              << "] Handling client socket: " << clientSock << std::endl;
     char buffer[4096];
     std::string leftover;
 
