@@ -23,6 +23,12 @@ bool Server::validatePort(int port) const {
     return port > 1024 && port <= 65535;
 }
 
+void Server::startClientThread(int clientSocket) {
+    threadManager.run([this, clientSocket]() {
+        handleClient(clientSocket);  // use private server function from inside - encapsulation
+    });
+}
+
 // start server
 void Server::start() {
     if (!validatePort(port)) {
@@ -63,11 +69,13 @@ void Server::start() {
             if (running) perror("accept failed");
             break;
         }
-        handleClient(clientSock);
+        startClientThread(clientSock);
     }
 }
 
 void Server::handleClient(int clientSock) {
+    std::cout << "[Thread " << std::this_thread::get_id()
+              << "] Handling client socket: " << clientSock << std::endl;
     char buffer[4096];
     std::string leftover;
 
