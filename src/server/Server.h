@@ -5,6 +5,7 @@
 #include <atomic>
 #include "../commands/CommandResult.h"
 #include "../CLIhandler/CLI_handler.h"
+#include "ThreadManager.h"
 
 class CLIHandler;
 
@@ -17,13 +18,14 @@ class Server {
         void stop();  // stop the server safely
         int getPort() const { return port; }
         bool validatePort(int port) const;
+        void startClientThread(int clientSocket);
 
     private:
         // server class attributes
         int port;                       // the port it is listening to
-        CLIHandler* handler;            // optional - to pass the logic handler as an attribute of the server
+        CLIHandler* handler;            
+        ThreadManager threadManager;    // important for thread managment to be detached from the server implementation
         // std::atomic<bool> running;      // boolean value if it is running
-        // bool isConfigLine(const std::string& line);
         
         std::atomic<bool> running;  // safer boolean for threads
         int serverSock = -1;
