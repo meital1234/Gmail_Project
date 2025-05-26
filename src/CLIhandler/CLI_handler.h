@@ -7,6 +7,7 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
+#include <mutex>
 #include "../commands/ICommand.h"
 #include "../commands/CommandResult.h"
 #include "../BloomFilterLogic/BloomFilter.h"
@@ -20,9 +21,10 @@ private:
     bool isConfigLine(const std::string& line);
     // Creates hash functions based on given IDs
     std::vector<HashFunction*> createHashFunctions(const std::vector<int>& ids);
-
     // Map between command names (like "ADD", "CHECK", "DELETE") and command objects
     std::unordered_map<std::string, ICommand*> commandMap;
+    // use mutex lock to protect the access to shared resources between threads
+    std::mutex resourceMutex;
 
 public:
     // The BloomFilter object used for URL checks
