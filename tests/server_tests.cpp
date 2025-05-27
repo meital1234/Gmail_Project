@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "../src/server/Server.h"   // Server class
-#include "../src/CLIhandler/CLI_handler.h"   // CLIHandler to link to server
-#include "../src/BloomFilterLogic/BloomFilter.h" // for completeness
+#include "../src/BloomFilterServer/server/Server.h"   // Server class
+#include "../src/BloomFilterServer/CLIhandler/CLI_handler.h"   // CLIHandler to link to server
+#include "../src/BloomFilterServer/BloomFilterLogic/BloomFilter.h" // for completeness
 #include <fstream>
 #include <iostream>
 #include <sys/socket.h>

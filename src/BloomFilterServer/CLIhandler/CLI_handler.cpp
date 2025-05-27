@@ -140,7 +140,7 @@ void CLIHandler::loadBlacklistFromFile() {
 }
 
 // saves blacklist URLs into file (overwrites existing)
-void CLIHandler::saveBlacklistToFile() const {
+void CLIHandler::saveBlacklistToFile() {
     std::unique_lock<std::mutex> lock(resourceMutex);
     std::ofstream out(blacklistFilePath);
     if (!out.is_open()) {

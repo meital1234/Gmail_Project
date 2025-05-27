@@ -1,11 +1,11 @@
-#include "commands/AddCommand.h"
-#include "hash/IterativeStdHash.h"
-#include "BloomFilterLogic/BloomFilter.h"
+#include "../src/BloomFilterServer/commands/AddCommand.h"
+#include "../src/BloomFilterServer/hash/IterativeStdHash.h"
+#include "../src/BloomFilterServer/BloomFilterLogic/BloomFilter.h"
 #include <gtest/gtest.h>
 #include <unordered_set>
 #include <fstream>
 #include <cstdio>
-#include <../src/Constants.h>
+#include <../src/BloomFilterServer/Constants.h>
 
 // Helper: remove any old data files before each test to isolate runs
 static void removeTestFiles() {

@@ -11,7 +11,7 @@
 #include "../commands/ICommand.h"
 #include "../commands/CommandResult.h"
 #include "../BloomFilterLogic/BloomFilter.h"
-#include "../src/Constants.h"
+#include "../src/BloomFilterServer/Constants.h"
 
 class CLIHandler {
 private:
@@ -52,7 +52,7 @@ public:
     CommandResult handleCommand(const std::string& line);
 
     // this function saves the blacklist to a file
-    void saveBlacklistToFile() const;
+    void saveBlacklistToFile();
     // this function loads the blacklist from a file
     void loadBlacklistFromFile();
 };

@@ -19,14 +19,14 @@ include_directories(src)
 
 # ---- Main executable ----
 add_executable(ServerApp
-    src/main.cpp
-    src/server/Server.cpp
-    src/BloomFilterLogic/BloomFilter.cpp
-    src/hash/IterativeStdHash.cpp
-    src/CLIhandler/CLI_handler.cpp
-    src/commands/AddCommand.cpp
-    src/commands/CheckCommand.cpp
-    src/commands/DeleteCommand.cpp
+    src/BloomFilterServer/main.cpp
+    src/BloomFilterServer/server/Server.cpp
+    src/BloomFilterServer/BloomFilterLogic/BloomFilter.cpp
+    src/BloomFilterServer/hash/IterativeStdHash.cpp
+    src/BloomFilterServer/CLIhandler/CLI_handler.cpp
+    src/BloomFilterServer/commands/AddCommand.cpp
+    src/BloomFilterServer/commands/CheckCommand.cpp
+    src/BloomFilterServer/commands/DeleteCommand.cpp
 )
 
 # ---- Unit tests ----
@@ -37,16 +37,16 @@ add_executable(runTests
     tests/hash_tests.cpp
     tests/integration_tests.cpp
     tests/server_tests.cpp
-    src/server/Server.cpp
+    src/BloomFilterServer/server/Server.cpp
     tests/Command_tests/CheckCommand_tests.cpp
     tests/Command_tests/AddCommand_tests.cpp
     tests/Command_tests/DeleteCommand_tests.cpp
-    src/BloomFilterLogic/BloomFilter.cpp
-    src/hash/IterativeStdHash.cpp
-    src/CLIhandler/CLI_handler.cpp
-    src/commands/AddCommand.cpp
-    src/commands/CheckCommand.cpp
-    src/commands/DeleteCommand.cpp
+    src/BloomFilterServer/BloomFilterLogic/BloomFilter.cpp
+    src/BloomFilterServer/hash/IterativeStdHash.cpp
+    src/BloomFilterServer/CLIhandler/CLI_handler.cpp
+    src/BloomFilterServer/commands/AddCommand.cpp
+    src/BloomFilterServer/commands/CheckCommand.cpp
+    src/BloomFilterServer/commands/DeleteCommand.cpp
 )
 
 target_link_libraries(runTests
