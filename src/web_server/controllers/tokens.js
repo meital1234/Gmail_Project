@@ -16,6 +16,6 @@ exports.login = (req, res) => {
   }
 
   // Returns a token containing the user id.
-  const token = `token-${user.id}`;
+  const token = `${user.id}`;
   res.status(200).json({ token });
 };
