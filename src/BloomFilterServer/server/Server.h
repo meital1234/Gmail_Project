@@ -3,9 +3,11 @@
 #define SERVER_H
 #include <thread>
 #include <atomic>
+#include <mutex>
 #include "../commands/CommandResult.h"
 #include "../CLIhandler/CLI_handler.h"
 #include "ThreadManager.h"
+
 
 class CLIHandler;
 
@@ -29,7 +31,8 @@ class Server {
         
         std::atomic<bool> running;  // safer boolean for threads
         int serverSock = -1;
-        void handleClient(int clientSocket);   
+        void handleClient(int clientSocket); 
+        std::mutex handlerMutex;
 };
 
 #endif // SERVER_H
