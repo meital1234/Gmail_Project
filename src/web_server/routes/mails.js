@@ -1,18 +1,16 @@
 const express = require('express');
 const router = express.Router();
-
-const mails = require('../controllers/mails');
+const controller = require('../controllers/mails');
 
 // ---------------- mailing routes ----------------
-// GET /mails
-router.get('/', mails.getInbox);
-// POST /mails
-router.post('/', mails.sendMail);
-// GET /mails/:id
-router.get('/:id', mails.getMail);
-// PATCH /mails/:id
-router.patch('/:id', mails.editMail);
-// DELETE /mails/:id
-router.patch('/:id', mails.deleteMail);
+router.route('/')
+        .get(controller.getInbox)   // GET /mails
+        .post(controller.sendMail)  // POST /mails
+
+router.route('/:id')
+        .get(controller.getMail) // GET /mails/:id
+        .patch(controller.editMail)  // PATCH /mails/:id
+        .patch(controller.deleteMail)    // DELETE /mails/:id
+
 
 module.exports = router; // Exports the router so it can be used in app.js.
