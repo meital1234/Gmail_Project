@@ -14,7 +14,7 @@ exports.getInbox = (req, res) => {
   res.json(inbox);
 }
 
-exports.sendMail = (req, res) => {
+exports.sendMail = async (req, res) => {
   // ---------------- input checks ----------------
   // make sure user id is passed by header and is an actual user
   const sender = getAuthenticatedUser(req, res);
@@ -34,13 +34,20 @@ exports.sendMail = (req, res) => {
 
   // extract all links in the mail for blacklist check
   const links = extractLinks(content);
-
   const hasBlacklisted = await checkLinksWithTCP(links);
   if (hasBlacklisted) {
-    return res.status(400).json({ error: 'Mail contains blacklisted links' });
+    return res.status(400).json({ error: 'Mail contains malicious links' });
   }
 
   // Creates and send the new mail, return the id as a response
-  const newMail = Mail.newMail(req.body);
+  const newMail = Mail.createMail({
+    from: sender.id,
+    to: recipient.id,
+    subject,
+    content,
+    cc: cc,
+    labels: labels || [],
+    dateSent: new Date(),
+  });
   res.status(201).json({ id: newMail.id });
 }
