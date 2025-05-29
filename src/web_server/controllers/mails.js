@@ -4,13 +4,13 @@ const { getAuthenticatedUser } = require('../utils/auth');  // helper function f
 const { extractLinks } = require('../utils/links');
 const { checkLinksWithTCP } = require('../utils/tcpClient');
 
-// exports to implement - getInbox, sendMail, getMailById, editMailById, deleteMailById
+
 exports.getInbox = (req, res) => {
   // make sure user id is passed by header and is an actual user
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const inbox = Mail.getLatestMails(Users.id);
+  const inbox = Mail.getLatestMailsForUser(sender.id);
   res.json(inbox);
 }
 
@@ -20,7 +20,7 @@ exports.sendMail = async (req, res) => {
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const toEmail = req.body.toEmail;
+  const { toEmail, subject, content, labels, cc } = req.body;
   // Checks that all required fields are present - in this case only the target email
   if (!toEmail) {
     return res.status(400).json({ error: 'Receiver email is required' });
@@ -45,9 +45,30 @@ exports.sendMail = async (req, res) => {
     to: recipient.id,
     subject,
     content,
-    cc: cc,
+    cc,
     labels: labels || [],
     dateSent: new Date(),
   });
   res.status(201).json({ id: newMail.id });
+}
+
+exports.getMailById = (req, res) => {
+  const id = parseInt(req.params.id); // Gets the id from the path and converts it to a number.
+  const mail = Mail.getMailById(id); // Searching for the mail in the model.
+  
+  // If the user is not found we will return 404.
+  if (!mail) {
+    return res.status(404).json({ error: 'Mail not found' });
+  }
+
+  const { from, to, subject, content, cc, labels, dateSent } = mail;
+  res.json({ id, from, to, subject, content, cc, labels, dateSent }); // Returns the mail data
+};
+
+exports.editMailById = (req, res) => {
+
+}
+
+exports.deleteMailById = (req, res) => {
+
 }
