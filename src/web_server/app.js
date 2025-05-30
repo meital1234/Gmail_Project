@@ -12,9 +12,9 @@ app.use(express.json()); // Allows the application to parse JSON requests and re
 // Connects the routers to the /api/users and /api/tokens and /api/mails paths.
 app.use('/api/users', usersRouter);
 app.use('/api/tokens', tokensRouter);
-app.use('api/mails', mailsRouter)
+app.use('/api/mails', mailsRouter)
 
-const PORT = 8080;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

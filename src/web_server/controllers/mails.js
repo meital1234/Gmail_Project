@@ -1,8 +1,8 @@
 const Users = require('../models/users');   // needed to identify the sender and receiver id by token
 const Mail = require('../models/mails');
 const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
-const { extractLinks } = require('../utils/links');
-const { checkLinksWithTCP } = require('../utils/tcpClient');
+const { extractLinks } = require('../utils/linkExtraction');
+const { checkLinksWithTCP } = require('../utils/TCPclientconnection');
 
 
 exports.getInbox = (req, res) => {
@@ -10,7 +10,7 @@ exports.getInbox = (req, res) => {
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const inbox = Mail.getLatestMailsForUser(sender.id);
+  const inbox = Mail.getLatestMailsForUser(sender.email);
   res.json(inbox);
 }
 
@@ -20,12 +20,13 @@ exports.sendMail = async (req, res) => {
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const { toEmail, subject, content, labels, cc } = req.body;
+  const { toEmail, subject, content } = req.body;
   // Checks that all required fields are present - in this case only the target email
   if (!toEmail) {
     return res.status(400).json({ error: 'Receiver email is required' });
   }
 
+  // TODO: pass multiple recipients as an array??
   // verify the recipient email
   const recipient = Users.getUserByEmail(toEmail);
   if (!recipient) {
@@ -41,32 +42,72 @@ exports.sendMail = async (req, res) => {
 
   // Creates and send the new mail, return the id as a response
   const newMail = Mail.createMail({
-    from: sender.id,
-    to: recipient.id,
+    from: sender.email,
+    to: toEmail,
     subject,
     content,
-    cc,
-    labels: labels || [],
     dateSent: new Date(),
   });
-  res.status(201).json({ id: newMail.id });
+  // TODO: move the new mail id to location
+  res.status(201).location(`/api/mails/${newMail.id}`).send();
 }
 
 exports.getMailById = (req, res) => {
+  // make sure user id is passed by header and is an actual user
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
   const id = parseInt(req.params.id); // Gets the id from the path and converts it to a number.
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid mail ID' });
+  }
+
   const mail = Mail.getMailById(id); // Searching for the mail in the model.
-  
-  // If the user is not found we will return 404.
+  // If the mail is not found we will return 404.
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
   }
 
-  const { from, to, subject, content, cc, labels, dateSent } = mail;
-  res.json({ id, from, to, subject, content, cc, labels, dateSent }); // Returns the mail data
+  // if the mail is found, but the sender/receiver is not the user - return 401 unauthorized
+  const isAuthorized =
+    mail.from === user.email ||
+    mail.to === user.email 
+  if (!isAuthorized) {
+    return res.status(401).json({ error: 'Unauthorized to view this mail' });
+  }
+
+  // TODO: check if the labels should be returned, if it is linked with the mail in that way
+  const { from, to, subject, content, labels, dateSent } = mail;
+  res.json({ id, from, to, subject, content, labels, dateSent }); // Returns the mail data
 };
 
 exports.editMailById = (req, res) => {
+  // make sure user id is passed by header and is an actual user
+  const sender = getAuthenticatedUser(req, res);
+  if (!sender) return;
 
+  const mailId = parseInt(req.params.id);
+  const mail = Mail.getMailById(mailId);
+
+  if (!mail) {
+    return res.status(404).json({ error: 'Mail not found' });
+  }
+
+  // Check if the user is allowed to edit the mail (typically only the sender)
+  if (mail.from !== sender.email) {
+    return res.status(403).json({ error: 'Not authorized to edit this mail' });
+  }
+
+  const { subject, content } = req.body;
+
+  // Optional: validate inputs
+  if (!subject && !content) {
+    return res.status(400).json({ error: 'Nothing to update' });
+  }
+
+  Mail.updateMail(mailId, { subject, content });
+
+  return res.status(204).send(); // No Content
 }
 
 exports.deleteMailById = (req, res) => {

@@ -11,7 +11,7 @@ exports.registerUser = (req, res) => {
 
   // Creates the user and sends a response with his ID.
   const newUser = User.createUser(req.body);
-  res.status(201).json({ id: newUser.id });
+  res.status(201).location(`/api/users/${newUser.id}`).send();
 };
 
 exports.getUserById = (req, res) => {
