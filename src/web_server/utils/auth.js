@@ -1,5 +1,5 @@
 const Users = require('../models/users');       // used to connect to the users we have registered
-const Users = require('../models/tokens');       // used to connect to the users we have logged in
+const Tokens = require('../models/tokens');       // used to connect to the users we have logged in
 
 // helper function to use in the beggining of each authentication proccess
 // for actions where a registered user is needed

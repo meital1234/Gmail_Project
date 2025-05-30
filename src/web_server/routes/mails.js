@@ -10,7 +10,7 @@ router.route('/')
 router.route('/:id')
         .get(controller.getMailById) // GET /mails/:id
         .patch(controller.editMailById)  // PATCH /mails/:id
-        .patch(controller.deleteMailById)    // DELETE /mails/:id
+        .delete(controller.deleteMailById)    // DELETE /mails/:id
 
 
 module.exports = router; // Exports the router so it can be used in app.js.

@@ -30,8 +30,23 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, dateSent
 const getMailById = (id) => mails.find(u => u.id === id);
 
 
+function updateMailById(mailId, updates) {
+  const mail = mails.find(m => m.id === mailId);
+  if (!mail) return false;
+
+  if (updates.subject !== undefined) {
+    mail.subject = updates.subject;
+  }
+  if (updates.content !== undefined) {
+    mail.content = updates.content;
+  }
+
+  return true;
+}
+
 module.exports = {
   createMail,
   getLatestMailsForUser,
-  getMailById
+  getMailById,
+  updateMailById
 };

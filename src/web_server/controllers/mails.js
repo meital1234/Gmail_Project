@@ -98,7 +98,7 @@ exports.editMailById = (req, res) => {
   }
 
   // Check if the user is allowed to edit the mail - the user is the sender
-  if (mail.from !== sender.email) {
+  if (mail.senderId !== sender.id) {
     return res.status(403).json({ error: 'Not authorized to edit this mail' });
   }
 
@@ -109,7 +109,7 @@ exports.editMailById = (req, res) => {
     return res.status(400).json({ error: 'Nothing to update' });
   }
 
-  Mail.updateMail(mailId, { subject, content });
+  Mail.updateMailById(mailId, { subject, content });
 
   return res.status(204).send(); // No Content
 }
