@@ -1,4 +1,5 @@
 const User = require('../models/users');
+const Tokens = require('../models/tokens');
 
 exports.login = (req, res) => {
   const { email, password } = req.body; // Gets username and password from the request body.
@@ -16,6 +17,6 @@ exports.login = (req, res) => {
   }
 
   // Returns a token containing the user id.
-  const token = `${user.id}`;
+  const token = Tokens.createToken(user.id); // saves it in token store
   res.status(200).json({ token });
 };

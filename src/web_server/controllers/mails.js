@@ -12,7 +12,7 @@ exports.getInbox = (req, res) => {
 
   const inbox = Mail.getLatestMailsForUser(sender.email);
   res.json(inbox);
-}
+};
 
 exports.sendMail = async (req, res) => {
   // ---------------- input checks ----------------
@@ -50,7 +50,7 @@ exports.sendMail = async (req, res) => {
   });
   // TODO: move the new mail id to location
   res.status(201).location(`/api/mails/${newMail.id}`).send();
-}
+};
 
 exports.getMailById = (req, res) => {
   // make sure user id is passed by header and is an actual user
