@@ -12,8 +12,18 @@ exports.getInbox = (req, res) => {
   if (!sender) return;
 
   const inbox = Mail.getLatestMailsForUser(sender.id);
-  const {from, to, subject, content, dateSent} = inbox
-  res.json({from, to, subject, content, dateSent});
+
+  // filter only the fields i want to return to the user (no IDs)
+  const filteredInbox = inbox.map(({ id, from, to, subject, content, dateSent, labels }) => ({
+    id,
+    from,
+    to,
+    subject,
+    content,
+    dateSent,
+    labels
+  }));
+  res.json(filteredInbox);
 };
 
 exports.sendMail = async (req, res) => {
@@ -97,7 +107,7 @@ exports.editMailById = (req, res) => {
     return res.status(404).json({ error: 'Mail not found' });
   }
 
-  // Check if the user is allowed to edit the mail - the user is the sender
+  // Check if the user is allowed to edit the mail - only the sender
   if (mail.senderId !== sender.id) {
     return res.status(403).json({ error: 'Not authorized to edit this mail' });
   }
@@ -114,6 +124,24 @@ exports.editMailById = (req, res) => {
   return res.status(204).send(); // No Content
 }
 
-exports.deleteMailById = (req, res) => {
 
+exports.deleteMailById = (req, res) => {
+  // make sure token is passed by header and is an actual user and that the user is logged in
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  // check the mail id's validity
+  const mailId = parseInt(req.params.id);
+  const mail = Mail.getMailById(mailId);
+  if (!mail) {
+    return res.status(404).json({ error: 'Mail not found' });
+  }
+
+  // Check if the user is allowed to delete the mail - only the sender
+  if (mail.senderId !== user.id) {
+    return res.status(403).json({ error: 'Not authorized to delete this mail' });
+  }
+
+  Mail.deleteMailById(mailId);
+  return res.status(204).send(); // No Content
 }

@@ -44,9 +44,21 @@ function updateMailById(mailId, updates) {
   return true;
 }
 
+
+function deleteMailById(mailId) {
+  // find the mail's index in the mails array
+  const index = mails.findIndex(m => m.id === mailId);
+  if (index === -1) return null;
+
+  // preform safe delete
+  const deleted = mails.splice(index, 1)[0];
+  return deleted;
+}
+
 module.exports = {
   createMail,
   getLatestMailsForUser,
   getMailById,
-  updateMailById
+  updateMailById,
+  deleteMailById
 };
