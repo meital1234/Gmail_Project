@@ -3,20 +3,22 @@ const Mail = require('../models/mails');
 const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
 const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinksWithTCP } = require('../utils/TCPclientconnection');
+const send = require('send');
 
 
 exports.getInbox = (req, res) => {
-  // make sure user id is passed by header and is an actual user
+  // make sure token is passed by header and is an actual user and that the user is logged in
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const inbox = Mail.getLatestMailsForUser(sender.email);
-  res.json(inbox);
+  const inbox = Mail.getLatestMailsForUser(sender.id);
+  const {from, to, subject, content, dateSent} = inbox
+  res.json({from, to, subject, content, dateSent});
 };
 
 exports.sendMail = async (req, res) => {
   // ---------------- input checks ----------------
-  // make sure user id is passed by header and is an actual user
+  // make sure token is passed by header and is an actual user and that the user is logged in
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
@@ -44,6 +46,8 @@ exports.sendMail = async (req, res) => {
   const newMail = Mail.createMail({
     from: sender.email,
     to: toEmail,
+    senderId: sender.id,
+    recieverId: recipient.id,
     subject,
     content,
     dateSent: new Date(),
@@ -53,7 +57,7 @@ exports.sendMail = async (req, res) => {
 };
 
 exports.getMailById = (req, res) => {
-  // make sure user id is passed by header and is an actual user
+  // make sure token is passed by header and is an actual user and that the user is logged in
   const user = getAuthenticatedUser(req, res);
   if (!user) return;
 
@@ -82,25 +86,25 @@ exports.getMailById = (req, res) => {
 };
 
 exports.editMailById = (req, res) => {
-  // make sure user id is passed by header and is an actual user
+  // make sure token is passed by header and is an actual user and that the user is logged in
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
+  // check the mail id's validity
   const mailId = parseInt(req.params.id);
   const mail = Mail.getMailById(mailId);
-
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
   }
 
-  // Check if the user is allowed to edit the mail (typically only the sender)
+  // Check if the user is allowed to edit the mail - the user is the sender
   if (mail.from !== sender.email) {
     return res.status(403).json({ error: 'Not authorized to edit this mail' });
   }
 
   const { subject, content } = req.body;
 
-  // Optional: validate inputs
+  // validate that one of them was passed
   if (!subject && !content) {
     return res.status(400).json({ error: 'Nothing to update' });
   }
