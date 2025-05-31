@@ -44,9 +44,31 @@ function updateMailById(mailId, updates) {
   return true;
 }
 
+
+function deleteMailById(mailId) {
+  // find the mail's index in the mails array
+  const index = mails.findIndex(m => m.id === mailId);
+  if (index === -1) return null;
+
+  // preform safe delete
+  const deleted = mails.splice(index, 1)[0];
+  return deleted;
+}
+
+// search through all mail subjects for any mail that contain the query
+function searchMails(query) {
+  const q = query.toLowerCase();
+  return mails.filter(m =>
+    typeof m.subject === 'string' &&
+    m.subject.toLowerCase().includes(q)
+  );
+}
+
 module.exports = {
   createMail,
   getLatestMailsForUser,
   getMailById,
-  updateMailById
+  updateMailById,
+  deleteMailById,
+  searchMails
 };
