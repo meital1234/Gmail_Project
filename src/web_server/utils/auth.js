@@ -4,7 +4,7 @@ const Tokens = require('../models/tokens');       // used to connect to the user
 // helper function to use in the beggining of each authentication proccess
 // for actions where a registered user is needed
 function getAuthenticatedUser(req, res) {
-  const token = parseInt(req.headers['authorization']);
+  const token = req.headers['authorization'];
   if (!token || isNaN(token)) {
     res.status(401).json({ error: 'Missing or invalid Authorization token' });
     return null;

@@ -2,7 +2,7 @@ const Users = require('../models/users');   // needed to identify the sender and
 const Mail = require('../models/mails');
 const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
 const { extractLinks } = require('../utils/linkExtraction');
-const { checkLinksWithTCP } = require('../utils/TCPclientconnection');
+const { checkLinks } = require('../utils/TCPclient');
 const send = require('send');
 
 
@@ -47,7 +47,7 @@ exports.sendMail = async (req, res) => {
 
   // extract all links in the mail for blacklist check
   const links = extractLinks(content);
-  const hasBlacklisted = await checkLinksWithTCP(links);
+  const hasBlacklisted = await checkLinks(links);
   if (hasBlacklisted) {
     return res.status(400).json({ error: 'Mail contains malicious links' });
   }

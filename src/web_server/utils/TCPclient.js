@@ -107,6 +107,16 @@ function sendCommand(commandStr) {
   });
 }
 
+async function checkLinks(links) {
+  for (const link of links) {
+    const response = await sendCommand(`GET ${link}`);
+    if (response.includes('200')) {
+      return true; // at least one blacklisted
+    }
+  }
+  return false; // all clean
+}
+
 // close TCP connection
 function closeConnection() {
   if (clientSocket) {
@@ -118,5 +128,6 @@ function closeConnection() {
 module.exports = {
   initTCP,
   sendCommand,
+  checkLinks,
   closeConnection,
 };
