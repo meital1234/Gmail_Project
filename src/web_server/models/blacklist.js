@@ -1,32 +1,38 @@
-const { sendTCPCommand } = require('../utils/TCPclientconnection');
+const TCP = require('../utils/configLineTCP');
 
-//  send POST command to TCP to ADD URL to blacklist
+// send POST command to TCP to ADD URL to blacklist
 async function addUrl(url) {
-  const cmd = `POST ${url}`;
+  if (typeof url !== 'string' || url.trim() === '') {
+    return false;
+  }
+  // assume TCP.init already called via /api/config.
+  // if not, sendCommand will reject
   try {
-    const raw = await sendTCPCommand(cmd);
-    const code = Number(raw.match(/^\d{3}/)?.[0] || 0);
+    const responseLine = await TCP.sendCommand(`POST ${url}`);
+    const code = Number(responseLine.match(/^\d{3}/)?.[0] || 0);
     return code === 201;
   } catch (err) {
-    console.error(`[BlacklistService] failed to add "${url}":`, err.message);
+    console.error(`[BlacklistModel] addUrl("${url}") error:`, err.message);
     return false;
   }
 }
 
-// Send DELETE command to TCP to DELETE URL from blacklist
+// send DELETE command to TCP to DELETE URL from blacklist
 async function deleteUrl(url) {
-  const cmd = `DELETE ${url}`;
+  if (typeof url !== 'string' || url.trim() === '') {
+    return false;
+  }
   try {
-    const raw = await sendTCPCommand(cmd);
-    const code = Number(raw.match(/^\d{3}/)?.[0] || 0);
+    const responseLine = await TCP.sendCommand(`DELETE ${url}`);
+    const code = Number(responseLine.match(/^\d{3}/)?.[0] || 0);
     return code === 204;
   } catch (err) {
-    console.error(`[BlacklistService] failed to delete "${url}":`, err.message);
+    console.error(`[BlacklistModel] deleteUrl("${url}") error:`, err.message);
     return false;
   }
 }
 
 module.exports = {
   addUrl,
-  deleteUrl,
+  deleteUrl
 };
