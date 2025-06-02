@@ -32,7 +32,7 @@ exports.sendMail = async (req, res) => {
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const { toEmail, subject, content } = req.body;
+  const { toEmail, subject, content, labels } = req.body;
   // Checks that all required fields are present - in this case only the target email
   if (!toEmail) {
     return res.status(400).json({ error: 'Receiver email is required' });
@@ -60,6 +60,7 @@ exports.sendMail = async (req, res) => {
     recieverId: recipient.id,
     subject,
     content,
+    labels,
     dateSent: new Date(),
   });
   // TODO: move the new mail id to location
