@@ -9,6 +9,12 @@ exports.registerUser = (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  // make sure the email address isnt in use already
+  const existing = User.getUserByEmail(email);
+  if (existing) {
+    return res.status(403).json({ error: 'Email address is already in use' });
+  }
+
   // Creates the user and sends a response with his ID.
   const newUser = User.createUser(req.body);
   res.status(201).location(`/api/users/${newUser.id}`).send();

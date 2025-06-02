@@ -1,5 +1,6 @@
 const Users = require('../models/users');   // needed to identify the sender and receiver id by token
 const Mail = require('../models/mails');
+const Label =require('../models/labels')
 const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
 const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinks } = require('../utils/TCPclient');
@@ -45,6 +46,22 @@ exports.sendMail = async (req, res) => {
     return res.status(404).json({ error: 'Recipient not found' });
   }
 
+  // Get label names from the request
+const labelNames = labels || [];
+
+// Convert names to label objects
+const labelObjects = labelNames.map(name =>
+  LabelModel.getAllLabels().find(l => l.name.toLowerCase() === name.toLowerCase())
+);
+
+// Check if any are missing
+if (labelObjects.includes(undefined)) {
+  return res.status(400).json({ error: 'One or more labels do not exist' });
+}
+
+// Convert to label IDs
+const labelIds = labelObjects.map(l => l.id);
+
   // extract all links in the mail for blacklist check
   const links = extractLinks(subject.concat(content));
   const hasBlacklisted = await checkLinks(links);
@@ -60,9 +77,9 @@ exports.sendMail = async (req, res) => {
     recieverId: recipient.id,
     subject,
     content,
-    labels,
+    labelIds,
     dateSent: new Date(),
-  });
+  }); 
   // TODO: move the new mail id to location
   res.status(201).location(`/api/mails/${newMail.id}`).send();
 };
