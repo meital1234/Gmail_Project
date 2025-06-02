@@ -110,7 +110,7 @@ function sendCommand(commandStr) {
 async function checkLinks(links) {
   for (const link of links) {
     const response = await sendCommand(`GET ${link}`);
-    if (response.includes('200')) {
+    if (response.includes('true true')) {
       return true; // at least one blacklisted
     }
   }
