@@ -41,7 +41,9 @@ function updateMailById(mailId, updates) {
   if (updates.content !== undefined) {
     mail.content = updates.content;
   }
-
+  if (updates.labels !== undefined) {
+    mail.labels = updates.labels;
+  }
   return true;
 }
 

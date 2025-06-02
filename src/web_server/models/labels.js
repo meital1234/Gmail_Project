@@ -22,6 +22,10 @@ function updateLabelById(id, newData) {
   return label;
 }
 
+function getLabelByName(name) {
+  return labels.find(l => l.name === name) || null;
+}
+
 function deleteLabelById(id) {
   const index = labels.findIndex(l => l.id === id);
   if (index === -1) return false;
@@ -34,5 +38,6 @@ module.exports = {
   getAllLabels,
   getLabelById,
   updateLabelById,
+  getLabelByName,
   deleteLabelById
 };
