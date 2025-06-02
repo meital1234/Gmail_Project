@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../src/hash/IterativeStdHash.h"
+#include "../src/BloomFilterServer/hash/IterativeStdHash.h"
 #include <limits>
 
 using namespace std;

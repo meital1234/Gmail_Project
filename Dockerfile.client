@@ -2,6 +2,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY src/client.py .
+COPY src/BloomFilterServer/client.py .
 
 CMD ["bash"]

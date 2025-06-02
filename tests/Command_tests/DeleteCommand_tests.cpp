@@ -3,16 +3,16 @@
 // Test 3 - Empty input string should be rejected and have no effect
 // Test 4 - BloomFilter file should be saved after DELETE regardless
 
-#include "commands/DeleteCommand.h"
-#include "hash/IterativeStdHash.h"
-#include "BloomFilterLogic/BloomFilter.h"
-#include "CLIhandler/CLI_handler.h"
+#include "../src/BloomFilterServer/commands/DeleteCommand.h"
+#include "../src/BloomFilterServer/hash/IterativeStdHash.h"
+#include "../src/BloomFilterServer/BloomFilterLogic/BloomFilter.h"
+#include "../src/BloomFilterServer/CLIhandler/CLI_handler.h"
 #include <gtest/gtest.h>
 #include <unordered_set>
 #include <fstream>
 #include <sstream>
 #include <cstdio>
-#include <../src/Constants.h>
+#include <../src/BloomFilterServer/Constants.h>
 
 // helper function to clean test output files
 

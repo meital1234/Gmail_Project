@@ -12,10 +12,10 @@
 #include <string>
 #include <cstdio>
 #include <gtest/gtest.h>  // Include Google Test framework
-#include "CLIhandler/CLI_handler.h"  // Include the CLIHandler class we are testing
-#include <../src/Constants.h>
-#include "../src/commands/CommandResult.h"
-#include "../src/BloomFilterLogic/BloomFilter.h"
+#include "../src/BloomFilterServer/CLIhandler/CLI_handler.h"  // Include the CLIHandler class we are testing
+#include <../src/BloomFilterServer/Constants.h>
+#include "../src/BloomFilterServer/commands/CommandResult.h"
+#include "../src/BloomFilterServer/BloomFilterLogic/BloomFilter.h"
 
 // Helper function to delete output files before each test run.
 // Prevents interference from previous runs.

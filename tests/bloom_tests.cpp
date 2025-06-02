@@ -4,8 +4,8 @@
 #include <map>
 #include <cstdio>
 #include <stdexcept>
-#include "BloomFilterLogic/BloomFilter.h"
-#include "hash/HashFunction.h"
+#include "../src/BloomFilterServer/BloomFilterLogic/BloomFilter.h"
+#include "../src/BloomFilterServer/hash/HashFunction.h"
 
 using namespace std;
 

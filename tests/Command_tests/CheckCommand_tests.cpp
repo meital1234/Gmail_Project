@@ -1,13 +1,13 @@
-#include "commands/AddCommand.h"
-#include "commands/CheckCommand.h"
-#include "commands/DeleteCommand.h"
-#include "hash/IterativeStdHash.h"
-#include "BloomFilterLogic/BloomFilter.h"
+#include "../src/BloomFilterServer/commands/AddCommand.h"
+#include "../src/BloomFilterServer/commands/CheckCommand.h"
+#include "../src/BloomFilterServer/commands/DeleteCommand.h"
+#include "../src/BloomFilterServer/hash/IterativeStdHash.h"
+#include "../src/BloomFilterServer/BloomFilterLogic/BloomFilter.h"
 #include <gtest/gtest.h>
 #include <unordered_set>
 #include <fstream>
 #include <cstdio>
-#include <../src/Constants.h>
+#include <../src/BloomFilterServer/Constants.h>
 
 // helper function to clean test output files
 static void removeTestFiles() {

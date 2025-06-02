@@ -96,14 +96,21 @@ void Server::handleClient(int clientSock) {
     }
 
     // Step 2: Initialize Bloom filter
-    if (!handler->loadOrInitializeBloomFilter(configLine)) {
+    bool ok = false;
+    {
+        std::lock_guard<std::mutex> lock(handlerMutex);
+        ok = handler->loadOrInitializeBloomFilter(configLine);
+    }
+    if (!ok) {
         std::string error = "400 Bad Request\n";
         send(clientSock, error.c_str(), error.size(), 0);
         return;
     }
 
-    handler->registerCommands();
-  
+    {
+        std::lock_guard<std::mutex> lock(handlerMutex);
+        handler->registerCommands();
+    }
     // Step 3: Process commands
     while (true) {
         // Check for full lines already received
@@ -121,7 +128,11 @@ void Server::handleClient(int clientSock) {
         cmdiss >> cmdToken;
 
         // Execute command
-        CommandResult result = handler->handleCommand(line);
+        CommandResult result(StatusCode::BadRequest); // temp value
+        {
+            std::lock_guard<std::mutex> lock(handlerMutex);
+            result = handler->handleCommand(line);
+        }
 
         // Build HTTP-style response
         std::ostringstream out;

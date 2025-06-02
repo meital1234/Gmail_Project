@@ -30,7 +30,6 @@ CLIHandler::~CLIHandler() {
 // this function checks if their is a saved file of BloomFilter
 // if yes it loads it and if no it initializes it according to configuration line
 bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
-    std::unique_lock<std::mutex> lock(resourceMutex); // limit access only for one thread
     // Parse configuration line to initialize bloom filter
     // this "iss" is just like cin but enssure that what he reads from the config line is string
     std::istringstream iss(configLine);
@@ -86,7 +85,6 @@ bool CLIHandler::loadOrInitializeBloomFilter(const std::string& configLine) {
 
 // registers command objects to their corresponding keywords
 void CLIHandler::registerCommands() {
-    std::unique_lock<std::mutex> lock(resourceMutex);
     // AddCommand will have access to bloomFilter & blacklist files
     // each command holds pointers to bloomFilter state & blacklist
 
@@ -99,7 +97,6 @@ void CLIHandler::registerCommands() {
 
 // parses user line into command, validates format, and executes relevant command
 CommandResult CLIHandler::handleCommand(const std::string& line) {
-    std::unique_lock<std::mutex> lock(resourceMutex);
     // deviding each line to relevant tokens
     std::istringstream iss(line);
     std::string commandToken, urlToken, extraToken;
@@ -125,7 +122,6 @@ CommandResult CLIHandler::handleCommand(const std::string& line) {
 
 // loads blacklist URLs from file into in-memory set
 void CLIHandler::loadBlacklistFromFile() {
-    std::unique_lock<std::mutex> lock(resourceMutex);
     std::ifstream in(blacklistFilePath);
     if (!in.is_open()) {
         // std::cerr << "[CLIHandler] Warning: Could not open blacklist file: " << blacklistFilePath << std::endl;
@@ -141,7 +137,6 @@ void CLIHandler::loadBlacklistFromFile() {
 
 // saves blacklist URLs into file (overwrites existing)
 void CLIHandler::saveBlacklistToFile() const {
-    std::unique_lock<std::mutex> lock(resourceMutex);
     std::ofstream out(blacklistFilePath);
     if (!out.is_open()) {
         // std::cerr << "[CLIHandler] Error: Could not open blacklist file for writing: " << blacklistFilePath << std::endl;

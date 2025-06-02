@@ -2,16 +2,16 @@ const User = require('../models/users');
 
 // Defines a post registration function.
 exports.registerUser = (req, res) => {
-  const { username, password, phone_number, birthDate, gender } = req.body;
+  const { email, password, phone_number, birthDate, gender } = req.body;
 
   // Checks that all required fields are present.
-  if (!username || !password || !phone_number|| !birthDate|| !gender) {
+  if (!email || !password || !phone_number|| !birthDate|| !gender) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   // Creates the user and sends a response with his ID.
   const newUser = User.createUser(req.body);
-  res.status(201).json({ id: newUser.id });
+  res.status(201).location(`/api/users/${newUser.id}`).send();
 };
 
 exports.getUserById = (req, res) => {
@@ -23,6 +23,6 @@ exports.getUserById = (req, res) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const { username, phone_number, birthDate, gender, image } = user;
-  res.json({ id, username, phone_number, birthDate, gender, image }); // Returns the user data (without password for security reasons).
+  const { email, phone_number, birthDate, gender, image } = user;
+  res.json({ id, email, phone_number, birthDate, gender, image }); // Returns the user data (without password for security reasons).
 };
