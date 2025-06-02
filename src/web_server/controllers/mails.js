@@ -46,7 +46,7 @@ exports.sendMail = async (req, res) => {
   }
 
   // extract all links in the mail for blacklist check
-  const links = extractLinks(content);
+  const links = extractLinks(subject.concat(content));
   const hasBlacklisted = await checkLinks(links);
   if (hasBlacklisted) {
     return res.status(400).json({ error: 'Mail contains malicious links' });
