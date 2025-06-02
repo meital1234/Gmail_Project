@@ -55,10 +55,20 @@ function deleteMailById(mailId) {
   return deleted;
 }
 
+// search through all mail subjects for any mail that contain the query
+function searchMails(query) {
+  const q = query.toLowerCase();
+  return mails.filter(m =>
+    typeof m.subject === 'string' &&
+    m.subject.toLowerCase().includes(q)
+  );
+}
+
 module.exports = {
   createMail,
   getLatestMailsForUser,
   getMailById,
   updateMailById,
-  deleteMailById
+  deleteMailById,
+  searchMails
 };

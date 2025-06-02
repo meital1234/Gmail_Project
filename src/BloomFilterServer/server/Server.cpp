@@ -90,7 +90,7 @@ void Server::handleClient(int clientSock) {
         if (newlinePos != std::string::npos) {
             configLine = leftover.substr(0, newlinePos);
             leftover = leftover.substr(newlinePos + 1);
-            // std::cerr << "[Server] Config line received: '" << configLine << "'" << std::endl;
+            std::cerr << "[Server] Config line received: '" << configLine << "'" << std::endl;
             break;
         }
     }

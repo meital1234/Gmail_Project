@@ -2,12 +2,10 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/blacklist');
 
-// ---------------- blacklist routes ----------------
-router.route('/')
-        .post(controller.addUrlToBlacklist)  // POST /blacklist
+// POST /api/blacklist
+router.post('/', controller.addUrlToBlacklist);
 
-router.route('/:id')
-        .delete(controller.deleteUrlFromBlacklist)    // DELETE /blacklist/:id
+// DELETE /api/blacklist/:id
+router.delete('/:id', controller.deleteUrlFromBlacklist);
 
-
-module.exports = router; // Exports the router so it can be used in app.js.
+module.exports = router;

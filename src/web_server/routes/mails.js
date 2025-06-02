@@ -3,14 +3,15 @@ const router = express.Router();
 const controller = require('../controllers/mails');
 
 // ---------------- mailing routes ----------------
+router.get('/search/:query', controller.searchMails); // GET /api/mails/search/:query
+
 router.route('/')
         .get(controller.getInbox)   // GET /mails
         .post(controller.sendMail)  // POST /mails
 
 router.route('/:id')
-        .get(controller.getMailById) // GET /mails/:id
+        .get(controller.getMailById)  // GET /mails/:id
         .patch(controller.editMailById)  // PATCH /mails/:id
-        .delete(controller.deleteMailById)    // DELETE /mails/:id
-
+        .delete(controller.deleteMailById)  // DELETE /mails/:id
 
 module.exports = router; // Exports the router so it can be used in app.js.

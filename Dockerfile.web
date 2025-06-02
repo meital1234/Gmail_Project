@@ -1,0 +1,9 @@
+FROM node:18-slim
+WORKDIR /app
+
+COPY src/web_server/package*.json ./
+RUN npm install
+
+COPY src/web_server ./
+
+CMD ["node", "app.js"]

@@ -2,7 +2,7 @@ const Users = require('../models/users');   // needed to identify the sender and
 const Mail = require('../models/mails');
 const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
 const { extractLinks } = require('../utils/linkExtraction');
-const { checkLinksWithTCP } = require('../utils/TCPclientconnection');
+const { checkLinks } = require('../utils/TCPclient');
 const send = require('send');
 
 
@@ -47,7 +47,7 @@ exports.sendMail = async (req, res) => {
 
   // extract all links in the mail for blacklist check
   const links = extractLinks(content);
-  const hasBlacklisted = await checkLinksWithTCP(links);
+  const hasBlacklisted = await checkLinks(links);
   if (hasBlacklisted) {
     return res.status(400).json({ error: 'Mail contains malicious links' });
   }
@@ -145,3 +145,23 @@ exports.deleteMailById = (req, res) => {
   Mail.deleteMailById(mailId);
   return res.status(204).send(); // No Content
 }
+
+// GET /api/mails/search/:query -> returns 200 OK & JSON array of matching mails
+exports.searchMails = (req, res) => {
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+  const { query } = req.params;
+  const allMatches = Mail.searchMails(query);
+  // filter mails user sent \ received
+  const visible = allMatches.filter(m =>
+    m.senderId === user.id || m.recieverId === user.id
+  );
+  const latest50 = visible // sort newest to oldest 
+    .sort((a, b) => b.dateSent - a.dateSent)
+    .slice(0, 50);
+  // project only public fields
+  const payload = latest50.map(({ id, from, to, subject, content, dateSent, labels }) => ({
+    id, from, to, subject, content, dateSent, labels
+  }));
+  return res.status(200).json(payload);
+};
