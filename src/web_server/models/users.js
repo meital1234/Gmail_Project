@@ -1,3 +1,5 @@
+const Labels = require('./labels');
+
 let idCounter = 0;
 const users = []; // array to store all users in memory.
 
@@ -13,6 +15,9 @@ const createUser = ({ email, password, phone_number, birthDate, gender, image })
     gender,
     image: image || null
   };
+
+  // for each new user - create a "draft" label
+  Labels.createLabel({ name: "draft", userId: newUser.id });
 
   // Adds user to the array and than returns him.
   users.push(newUser);

@@ -6,19 +6,13 @@ const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinks } = require('../utils/TCPclient');
 const send = require('send');
 
-// function resolveLabelNames(labelIds) {
-//   return labelIds
-//     .map(id => Labels.getLabelById(id))
-//     .filter(label => label !== null)
-//     .map(label => label.name);
-// }
 
 exports.getInbox = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
 
-  const inbox = Mail.getLatestMailsForUser(sender.id);
+  const inbox = Mail.getLatestMailsForUser(user.id);
 
   // filter only the fields i want to return to the user (no IDs)
   const filteredInbox = inbox.map(({ id, from, to, subject, content, dateSent, labels }) => ({
@@ -52,21 +46,20 @@ exports.sendMail = async (req, res) => {
   }
 
   // Get label names from the request
-  // const labelNames = labels || [];
+  const labelNames = labels || [];
 
   // Convert names to label objects
-  // const labelObjects = labelNames.map(name =>
-  //   Labels.getAllLabels().find(l => l.name === name)
-  // );
+  const labelObjects = labelNames.map(name =>
+    Labels.getAllLabelsByUser(sender.id).find(l => l.name === name)
+  );
 
-  // // Check if any are missing
-  // if (labelObjects.includes(undefined)) {
-  //   return res.status(400).json({ error: 'One or more labels do not exist' });
-  // }
+  // Check if any are missing
+  if (labelObjects.includes(undefined)) {
+    return res.status(400).json({ error: 'One or more labels do not exist' });
+  }
 
   // Convert to label IDs
-  // const labelIds = labelObjects.map(l => l.id);
-  const labelIds = []
+  const labelIds = labelObjects.map(l => l.id);
 
   // extract all links in the mail for blacklist check
   const links = extractLinks(subject.concat(content));
@@ -100,21 +93,23 @@ exports.getMailById = (req, res) => {
     return res.status(400).json({ error: 'Invalid mail ID' });
   }
 
-  const mail = Mail.getMailById(id); // Searching for the mail in the model.
+  const mail = Mail.getMailById({id, userId: user.id}); // Searching for the mail in the model.
   // If the mail is not found we will return 404.
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
   }
+  // if the mail is still in the drafts of the sender - don't show it
+  const draftLabel = Labels.getLabelByName({ name: "טיוטה", userId: mail.senderId });
+  const isDraft = mail.labelIds?.includes(draftLabel?.id);
 
-  // if the mail is found, but the sender/receiver is not the user - return 401 unauthorized
-  const isAuthorized =
-    mail.from === user.email ||
-    mail.to === user.email 
-  if (!isAuthorized) {
-    return res.status(401).json({ error: 'Unauthorized to view this mail' });
+  if (user.id !== mail.senderId && isDraft) {
+    return res.status(403).json({ error: 'Mail is still a draft' });
   }
 
   const { from, to, subject, content, labels, dateSent } = mail;
+
+  const filteredLabels = labels.map(({ id, name }) => ({ id, name }));
+
   res.json({
     id,
     from,
@@ -122,7 +117,7 @@ exports.getMailById = (req, res) => {
     subject,
     content,
     dateSent,
-    labels
+    labels: filteredLabels
   }); // Returns the mail data
 };
 
@@ -133,7 +128,7 @@ exports.editMailById = (req, res) => {
 
   // check the mail id's validity
   const mailId = parseInt(req.params.id);
-  const mail = Mail.getMailById(mailId);
+  const mail = Mail.getMailById({ id: mailId, userId: sender.id });
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
   }
@@ -141,6 +136,14 @@ exports.editMailById = (req, res) => {
   // Check if the user is allowed to edit the mail - only the sender
   if (mail.senderId !== sender.id) {
     return res.status(403).json({ error: 'Not authorized to edit this mail' });
+  }
+
+  // allow editing only for mails in drafts
+  const draftLabel = Labels.getLabelByName({ name: "draft", userId: sender.id });
+  const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
+
+  if (!hasDraftLabel) {
+    return res.status(403).json({ error: 'Only draft mails can be edited' });
   }
 
   const { subject, content, labels } = req.body;
@@ -151,17 +154,18 @@ exports.editMailById = (req, res) => {
   }
 
   let labelIds = undefined;
-  // if (labels) {
-  //   const labelObjects = labels.map(name =>
-  //     Labels.getAllLabels().find(
-  //       l => l.name.trim().toLowerCase() === name.trim().toLowerCase()
-  //     )
-  //   );
-  //   if (labelObjects.includes(undefined)) {
-  //     return res.status(400).json({ error: 'One or more labels do not exist' });
-  //   }
-  //   labelIds = labelObjects.map(l => l.id);
-  // }
+  if (labels) {
+    // make sure the label exists for that user
+    const labelObjects = labels.map(name =>
+      Labels.getLabelByName({ name: name, userId: sender.id })
+    );
+
+    if (labelObjects.includes(null)) {
+      return res.status(400).json({ error: 'One or more labels do not exist' });
+    }
+
+    labelIds = labelObjects.map(l => l.id);
+  }
 
   Mail.updateMailById(mailId, { subject, content, labels: labelIds });
 
@@ -185,6 +189,14 @@ exports.deleteMailById = (req, res) => {
     return res.status(403).json({ error: 'Not authorized to delete this mail' });
   }
 
+  // allow deleting only for mails in drafts
+  const draftLabel = Labels.getLabelByName({ name: "טיוטה", userId: user.id });
+  const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
+
+  if (!hasDraftLabel) {
+    return res.status(403).json({ error: 'Only draft mails can be deleted' });
+  }
+
   Mail.deleteMailById(mailId);
   return res.status(204).send(); // No Content
 }
@@ -194,17 +206,29 @@ exports.searchMails = (req, res) => {
   const user = getAuthenticatedUser(req, res);
   if (!user) return;
   const { query } = req.params;
-  const allMatches = Mail.searchMails(query);
-  // filter mails user sent \ received
-  const visible = allMatches.filter(m =>
-    m.senderId === user.id || m.recieverId === user.id
-  );
-  const latest50 = visible // sort newest to oldest 
+
+  const matchedMails = Mail.searchMails(query, user.id);
+
+  const latest50 = matchedMails
     .sort((a, b) => b.dateSent - a.dateSent)
     .slice(0, 50);
-  // project only public fields
-  const payload = latest50.map(({ id, from, to, subject, content, dateSent, labels }) => ({
-    id, from, to, subject, content, dateSent, labels
-  }));
+
+  const payload = latest50.map(mail => {
+    const filteredLabels = (mail.labelIds || [])
+      .map(id => Labels.getLabelById({ id, userId: user.id }))
+      .filter(label => label)
+      .map(({ id, name }) => ({ id, name }));
+
+    return {
+        id: mail.id,
+        from: mail.from,
+        to: mail.to,
+        subject: mail.subject,
+        content: mail.content,
+        dateSent: mail.dateSent,
+        labels: filteredLabels
+    };
+  });
+
   return res.status(200).json(payload);
 };

@@ -1,3 +1,5 @@
+const Labels =require('../models/labels')
+
 let idCounter = 0;
 const mails = []; // array to store all users in memory.
 
@@ -6,7 +8,18 @@ const getLatestMailsForUser = (userId) => {
   return mails
     .filter(m => m.senderId === userId || m.recieverId === userId)
     .sort((a, b) => b.dateSent - a.dateSent)
-    .slice(0, 50);
+    .slice(0, 50)
+    .map(m => {
+      const labelObjs = (m.labelIds || [])
+        .map(id => Labels.getLabelById({ id, userId }))
+        .filter(label => label)
+        .map(({ id, name }) => ({ id, name }));
+
+      return {
+        ...m,
+        labels: labelObjs
+      };
+    });
 }
 
 
@@ -19,7 +32,7 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds
       recieverId,
       subject,
       content,
-      labels: labelIds || [],  // default is empty if none
+      labelIds: labelIds || [],  // default is empty if none
       dateSent
   };
   // Adds mail to the array and than returns mail.
@@ -28,7 +41,20 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds
 }
 
 
-const getMailById = (id) => mails.find(u => u.id === id);
+const getMailById = ({ id, userId }) => {
+  const mail = mails.find(m => m.id === id && (m.senderId === userId || m.recieverId === userId));
+  if (!mail) return null;
+
+  const labelObjs = (mail.labelIds || [])
+    .map(id => Labels.getLabelById({id, userId}))
+    .filter(label => label)
+    .map(({ id, name }) => ({ id, name }));
+
+  return {
+    ...mail,
+    labels: labelObjs
+  };
+};
 
 
 function updateMailById(mailId, updates) {
@@ -59,12 +85,29 @@ function deleteMailById(mailId) {
 }
 
 // search through all mail subjects for any mail that contain the query
-function searchMails(query) {
-  const q = query.toLowerCase();
-  return mails.filter(m =>
-    typeof m.subject === 'string' &&
-    m.subject.toLowerCase().includes(q)
-  );
+function searchMails(query, userId) {
+  const q = query.trim().toLowerCase();
+
+  return mails.filter(mail => {
+    // match only if user has access
+    if (mail.senderId !== userId && mail.recieverId !== userId) return false;
+
+    const subjectMatch = mail.subject?.toLowerCase().includes(q);
+    const contentMatch = mail.content?.toLowerCase().includes(q);
+    const fromMatch = mail.from?.toLowerCase().includes(q);
+    const toMatch = mail.to?.toLowerCase().includes(q);
+
+    const labelNames = (mail.labelIds || [])
+      .map(id => {
+        const label = Labels.getLabelById({id, userId});
+        return label?.name?.toLowerCase();
+      })
+      .filter(Boolean);
+
+    const labelMatch = labelNames.some(name => name.includes(q));
+
+    return subjectMatch || contentMatch || fromMatch || toMatch || labelMatch;
+  });
 }
 
 module.exports = {
