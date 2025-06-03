@@ -62,10 +62,13 @@ exports.sendMail = async (req, res) => {
   const labelIds = labelObjects.map(l => l.id);
 
   // extract all links in the mail for blacklist check
-  const links = extractLinks(subject.concat(content));
-  const hasBlacklisted = await checkLinks(links);
-  if (hasBlacklisted) {
-    return res.status(400).json({ error: 'Mail contains malicious links' });
+  const textToCheck = [subject, content].filter(Boolean).join(" ");
+  if (textToCheck) {
+    const links = extractLinks(textToCheck);
+    const hasBlacklisted = await checkLinks(links);
+    if (hasBlacklisted) {
+      return res.status(400).json({ error: 'Mail contains malicious links' });
+    }
   }
 
   // Creates and send the new mail, return the id as a response
@@ -121,7 +124,7 @@ exports.getMailById = (req, res) => {
   }); // Returns the mail data
 };
 
-exports.editMailById = (req, res) => {
+exports.editMailById = async (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
@@ -151,6 +154,16 @@ exports.editMailById = (req, res) => {
   // validate that one of them was passed
   if (!subject && !content && !labels) {
     return res.status(400).json({ error: 'Nothing to update' });
+  }
+
+  // check links for blacklisted content
+  const textToCheck = [subject, content].filter(Boolean).join(" ");
+  if (textToCheck) {
+    const links = extractLinks(textToCheck);
+    const hasBlacklisted = await checkLinks(links);
+    if (hasBlacklisted) {
+      return res.status(400).json({ error: 'Mail contains malicious links' });
+    }
   }
 
   let labelIds = undefined;
