@@ -10,7 +10,7 @@ const getLatestMailsForUser = (userId) => {
 }
 
 
-const createMail = ({ from, to, senderId, recieverId, subject, content, dateSent }) => {
+const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) => {
   const mail = {
       id: ++idCounter,
       from,
@@ -19,9 +19,10 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, dateSent
       recieverId,
       subject,
       content,
+      labels: labelIds || [],  // default is empty if none
       dateSent
   };
-  // Adds mail to the array and than returns him.
+  // Adds mail to the array and than returns mail.
   mails.push(mail);
   return mail;
 }
@@ -40,7 +41,9 @@ function updateMailById(mailId, updates) {
   if (updates.content !== undefined) {
     mail.content = updates.content;
   }
-
+  if (updates.labels !== undefined) {
+    mail.labels = updates.labels;
+  }
   return true;
 }
 

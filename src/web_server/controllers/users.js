@@ -1,4 +1,9 @@
 const User = require('../models/users');
+// email nust be in this format xxx@xxx
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// password must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters
+const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+
 
 // Defines a post registration function.
 exports.registerUser = (req, res) => {
@@ -7,6 +12,22 @@ exports.registerUser = (req, res) => {
   // Checks that all required fields are present.
   if (!email || !password || !phone_number|| !birthDate|| !gender) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // make sure the email address isnt in use already
+  const existing = User.getUserByEmail(email);
+  if (existing) {
+    return res.status(403).json({ error: 'Email address is already in use' });
+  }
+
+  if (!emailRegex.test(email.trim().toLowerCase())) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  if (!passwordRegex.test(password)) {
+    return res.status(400).json({ 
+      error: 'Password must be at least 8 characters long and include uppercase, lowercase, and a number' 
+    });
   }
 
   // Creates the user and sends a response with his ID.

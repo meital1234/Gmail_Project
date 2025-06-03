@@ -1,10 +1,17 @@
 const Users = require('../models/users');   // needed to identify the sender and receiver id by token
 const Mail = require('../models/mails');
+const Labels =require('../models/labels')
 const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
 const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinks } = require('../utils/TCPclient');
 const send = require('send');
 
+function resolveLabelNames(labelIds) {
+  return labelIds
+    .map(id => Labels.getLabelById(id))
+    .filter(label => label !== null)
+    .map(label => label.name);
+}
 
 exports.getInbox = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
@@ -21,7 +28,7 @@ exports.getInbox = (req, res) => {
     subject,
     content,
     dateSent,
-    labels
+    labels: resolveLabelNames(labels)
   }));
   res.json(filteredInbox);
 };
@@ -32,7 +39,7 @@ exports.sendMail = async (req, res) => {
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const { toEmail, subject, content } = req.body;
+  const { toEmail, subject, content, labels } = req.body;
   // Checks that all required fields are present - in this case only the target email
   if (!toEmail) {
     return res.status(400).json({ error: 'Receiver email is required' });
@@ -44,6 +51,22 @@ exports.sendMail = async (req, res) => {
   if (!recipient) {
     return res.status(404).json({ error: 'Recipient not found' });
   }
+
+  // Get label names from the request
+  const labelNames = labels || [];
+
+  // Convert names to label objects
+  const labelObjects = labelNames.map(name =>
+    Labels.getAllLabels().find(l => l.name === name)
+  );
+
+  // Check if any are missing
+  if (labelObjects.includes(undefined)) {
+    return res.status(400).json({ error: 'One or more labels do not exist' });
+  }
+
+  // Convert to label IDs
+  const labelIds = labelObjects.map(l => l.id);
 
   // extract all links in the mail for blacklist check
   const links = extractLinks(subject.concat(content));
@@ -60,8 +83,9 @@ exports.sendMail = async (req, res) => {
     recieverId: recipient.id,
     subject,
     content,
+    labelIds,
     dateSent: new Date(),
-  });
+  }); 
   // TODO: move the new mail id to location
   res.status(201).location(`/api/mails/${newMail.id}`).send();
 };
@@ -90,9 +114,16 @@ exports.getMailById = (req, res) => {
     return res.status(401).json({ error: 'Unauthorized to view this mail' });
   }
 
-  // TODO: check if the labels should be returned, if it is linked with the mail in that way
   const { from, to, subject, content, labels, dateSent } = mail;
-  res.json({ id, from, to, subject, content, labels, dateSent }); // Returns the mail data
+  res.json({
+    id,
+    from,
+    to,
+    subject,
+    content,
+    dateSent,
+    labels: resolveLabelNames(labels)
+  }); // Returns the mail data
 };
 
 exports.editMailById = (req, res) => {
@@ -112,18 +143,30 @@ exports.editMailById = (req, res) => {
     return res.status(403).json({ error: 'Not authorized to edit this mail' });
   }
 
-  const { subject, content } = req.body;
+  const { subject, content, labels } = req.body;
 
   // validate that one of them was passed
-  if (!subject && !content) {
+  if (!subject && !content && !labels) {
     return res.status(400).json({ error: 'Nothing to update' });
   }
 
-  Mail.updateMailById(mailId, { subject, content });
+  let labelIds = undefined;
+  if (labels) {
+    const labelObjects = labels.map(name =>
+      Labels.getAllLabels().find(
+        l => l.name.trim().toLowerCase() === name.trim().toLowerCase()
+      )
+    );
+    if (labelObjects.includes(undefined)) {
+      return res.status(400).json({ error: 'One or more labels do not exist' });
+    }
+    labelIds = labelObjects.map(l => l.id);
+  }
+
+  Mail.updateMailById(mailId, { subject, content, labels: labelIds });
 
   return res.status(204).send(); // No Content
 }
-
 
 exports.deleteMailById = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
