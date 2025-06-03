@@ -66,6 +66,8 @@ exports.deleteLabel = (req, res) => {
   if (!existing) {
     return res.status(403).json({ error: 'Label not found' });
   }
+  // if label exists and is the draft label - don't allow deletion
+  if (existing?.name === "draft") return false;
 
   const success = Label.deleteLabelById({id: req.params.id, userId: sender.id});
   if (!success) return res.status(404).json({ error: 'Label not found' });

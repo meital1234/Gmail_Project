@@ -6,7 +6,22 @@ const mails = []; // array to store all users in memory.
 
 const getLatestMailsForUser = (userId) => {
   return mails
-    .filter(m => m.senderId === userId || m.recieverId === userId)
+    .filter(m => {
+      // filter only mails visible to the user
+      const isSender = m.senderId === userId;
+      const isRecipient = m.recieverId === userId;
+
+      // filter only the drafts if the user is the sender
+      if (isRecipient && !isSender) {
+        const hasDraft = (m.labelIds || []).some(labelId => {
+          const label = Labels.getLabelById({ id: labelId, userId: m.senderId });
+          return label?.name === "draft";
+        });
+        return !hasDraft;
+      }
+
+      return isSender || isRecipient;
+    })
     .sort((a, b) => b.dateSent - a.dateSent)
     .slice(0, 50)
     .map(m => {
@@ -68,7 +83,7 @@ function updateMailById(mailId, updates) {
     mail.content = updates.content;
   }
   if (updates.labels !== undefined) {
-    mail.labels = updates.labels;
+    mail.labelIds = updates.labels;
   }
   return true;
 }
@@ -92,6 +107,17 @@ function searchMails(query, userId) {
     // match only if user has access
     if (mail.senderId !== userId && mail.recieverId !== userId) return false;
 
+    // check if the mail is in the drafts of the sender
+    const labelNamesOfSender = (mail.labelIds || [])
+      .map(id => {
+        const label = Labels.getLabelById({ id, userId: mail.senderId });
+        return label?.name?.toLowerCase();
+      })
+      .filter(Boolean);
+    const isSender = mail.senderId === userId;
+    const isDraft = labelNamesOfSender.includes("draft");
+    if (!isSender && isDraft) return false; // if it is don't return it
+
     const subjectMatch = mail.subject?.toLowerCase().includes(q);
     const contentMatch = mail.content?.toLowerCase().includes(q);
     const fromMatch = mail.from?.toLowerCase().includes(q);
@@ -101,9 +127,8 @@ function searchMails(query, userId) {
       .map(id => {
         const label = Labels.getLabelById({id, userId});
         return label?.name?.toLowerCase();
-      })
-      .filter(Boolean);
-
+      }).filter(Boolean);
+    
     const labelMatch = labelNames.some(name => name.includes(q));
 
     return subjectMatch || contentMatch || fromMatch || toMatch || labelMatch;

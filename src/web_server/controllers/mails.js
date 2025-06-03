@@ -99,7 +99,7 @@ exports.getMailById = (req, res) => {
     return res.status(404).json({ error: 'Mail not found' });
   }
   // if the mail is still in the drafts of the sender - don't show it
-  const draftLabel = Labels.getLabelByName({ name: "טיוטה", userId: mail.senderId });
+  const draftLabel = Labels.getLabelByName({ name: "draft", userId: mail.senderId });
   const isDraft = mail.labelIds?.includes(draftLabel?.id);
 
   if (user.id !== mail.senderId && isDraft) {
@@ -179,7 +179,7 @@ exports.deleteMailById = (req, res) => {
 
   // check the mail id's validity
   const mailId = parseInt(req.params.id);
-  const mail = Mail.getMailById(mailId);
+  const mail = Mail.getMailById({id: mailId, userId: user.id});
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
   }
@@ -190,7 +190,7 @@ exports.deleteMailById = (req, res) => {
   }
 
   // allow deleting only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "טיוטה", userId: user.id });
+  const draftLabel = Labels.getLabelByName({ name: "draft", userId: user.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
