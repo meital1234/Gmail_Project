@@ -1,11 +1,9 @@
 # URL Bloom Filter Project - Ex2
 
 ## 📚 About
-This project extends our original URL Bloom Filter into a **TCP-based client-server system**.
-The server manages all Bloom filter logic, while the client sends commands via socket connections.
-The Bloom Filter is used to quickly determine if a URL is blacklisted, with potential false positives but no false negatives.
+This project implements a Node.js-based backend server using the MVC architecture and RESTful API conventions for a simplified Gmail-like system. The server supports multi-threaded-like concurrent access via asynchronous Express handling, and manages functionality including user registration, login, and blacklist management.
 
-This version was rebuilt using **Test Driven Development (TDD)** and clean **SOLID-based** C++ design.
+The solution adheres to SOLID principles, is structured for future extensibility, and was developed using Test-Driven Development (TDD) practices. All data is stored in memory (non-persistent) and reset on server restart.
 Jira link - https://myemenahem.atlassian.net/jira/software/projects/BGE/summary
 
 ---
