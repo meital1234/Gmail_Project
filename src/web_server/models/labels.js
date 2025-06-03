@@ -1,18 +1,19 @@
 let idCounter = 0;
 const labels = []; // array to store all labels in memory.
 
-function createLabel({ name }) {
-  const newLabel = { id: (++idCounter).toString(), name };
+function createLabel({ name, userId }) {
+  const newLabel = { id: (++idCounter).toString(), name, userId };
   labels.push(newLabel);
   return newLabel;
 }
 
-function getAllLabels() {
-  return labels;
+function getAllLabelsByUser(userId) {
+  // return all the labels that are saved by the requesting user
+  return labels.filter(label => label.userId === userId);
 }
 
-function getLabelById(id) {
-  return labels.find(l => l.id === id) || null;
+function getLabelById(id, userId) {
+  return labels.find(l => l.id === id && l.userId === userId) || null;
 }
 
 function updateLabelById(id, newData) {
@@ -22,12 +23,12 @@ function updateLabelById(id, newData) {
   return label;
 }
 
-function getLabelByName(name) {
-  return labels.find(l => l.name === name) || null;
+function getLabelByName(name, userId) {
+  return labels.find(l => l.name === name && l.userId === userId) || null;
 }
 
-function deleteLabelById(id) {
-  const index = labels.findIndex(l => l.id === id);
+function deleteLabelById(id, userId) {
+  const index = labels.findIndex(l => l.id === id && l.userId === userId);
   if (index === -1) return false;
   labels.splice(index, 1);
   return true;
@@ -35,7 +36,7 @@ function deleteLabelById(id) {
 
 module.exports = {
   createLabel,
-  getAllLabels,
+  getAllLabelsByUser,
   getLabelById,
   updateLabelById,
   getLabelByName,

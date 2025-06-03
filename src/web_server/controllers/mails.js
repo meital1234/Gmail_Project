@@ -45,7 +45,6 @@ exports.sendMail = async (req, res) => {
     return res.status(400).json({ error: 'Receiver email is required' });
   }
 
-  // TODO: pass multiple recipients as an array??
   // verify the recipient email
   const recipient = Users.getUserByEmail(toEmail);
   if (!recipient) {
@@ -86,7 +85,6 @@ exports.sendMail = async (req, res) => {
     labelIds,
     dateSent: new Date(),
   }); 
-  // TODO: move the new mail id to location
   res.status(201).location(`/api/mails/${newMail.id}`).send();
 };
 
