@@ -6,12 +6,12 @@ const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinks } = require('../utils/TCPclient');
 const send = require('send');
 
-function resolveLabelNames(labelIds) {
-  return labelIds
-    .map(id => Labels.getLabelById(id))
-    .filter(label => label !== null)
-    .map(label => label.name);
-}
+// function resolveLabelNames(labelIds) {
+//   return labelIds
+//     .map(id => Labels.getLabelById(id))
+//     .filter(label => label !== null)
+//     .map(label => label.name);
+// }
 
 exports.getInbox = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
@@ -28,7 +28,7 @@ exports.getInbox = (req, res) => {
     subject,
     content,
     dateSent,
-    labels: resolveLabelNames(labels)
+    labels
   }));
   res.json(filteredInbox);
 };
@@ -52,20 +52,21 @@ exports.sendMail = async (req, res) => {
   }
 
   // Get label names from the request
-  const labelNames = labels || [];
+  // const labelNames = labels || [];
 
   // Convert names to label objects
-  const labelObjects = labelNames.map(name =>
-    Labels.getAllLabels().find(l => l.name === name)
-  );
+  // const labelObjects = labelNames.map(name =>
+  //   Labels.getAllLabels().find(l => l.name === name)
+  // );
 
-  // Check if any are missing
-  if (labelObjects.includes(undefined)) {
-    return res.status(400).json({ error: 'One or more labels do not exist' });
-  }
+  // // Check if any are missing
+  // if (labelObjects.includes(undefined)) {
+  //   return res.status(400).json({ error: 'One or more labels do not exist' });
+  // }
 
   // Convert to label IDs
-  const labelIds = labelObjects.map(l => l.id);
+  // const labelIds = labelObjects.map(l => l.id);
+  const labelIds = []
 
   // extract all links in the mail for blacklist check
   const links = extractLinks(subject.concat(content));
@@ -85,6 +86,7 @@ exports.sendMail = async (req, res) => {
     labelIds,
     dateSent: new Date(),
   }); 
+  // TODO: move the new mail id to location
   res.status(201).location(`/api/mails/${newMail.id}`).send();
 };
 
@@ -120,7 +122,7 @@ exports.getMailById = (req, res) => {
     subject,
     content,
     dateSent,
-    labels: resolveLabelNames(labels)
+    labels
   }); // Returns the mail data
 };
 
@@ -149,17 +151,17 @@ exports.editMailById = (req, res) => {
   }
 
   let labelIds = undefined;
-  if (labels) {
-    const labelObjects = labels.map(name =>
-      Labels.getAllLabels().find(
-        l => l.name.trim().toLowerCase() === name.trim().toLowerCase()
-      )
-    );
-    if (labelObjects.includes(undefined)) {
-      return res.status(400).json({ error: 'One or more labels do not exist' });
-    }
-    labelIds = labelObjects.map(l => l.id);
-  }
+  // if (labels) {
+  //   const labelObjects = labels.map(name =>
+  //     Labels.getAllLabels().find(
+  //       l => l.name.trim().toLowerCase() === name.trim().toLowerCase()
+  //     )
+  //   );
+  //   if (labelObjects.includes(undefined)) {
+  //     return res.status(400).json({ error: 'One or more labels do not exist' });
+  //   }
+  //   labelIds = labelObjects.map(l => l.id);
+  // }
 
   Mail.updateMailById(mailId, { subject, content, labels: labelIds });
 

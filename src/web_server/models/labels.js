@@ -12,22 +12,22 @@ function getAllLabelsByUser(userId) {
   return labels.filter(label => label.userId === userId);
 }
 
-function getLabelById(id, userId) {
+function getLabelById({id, userId}) {
   return labels.find(l => l.id === id && l.userId === userId) || null;
 }
 
-function updateLabelById(id, newData) {
-  const label = getLabelById(id);
+function updateLabelById({id, userId, newData}) {
+  const label = getLabelById({id, userId});
   if (!label) return null;
   if (newData.name) label.name = newData.name;
   return label;
 }
 
-function getLabelByName(name, userId) {
+function getLabelByName({name, userId}) {
   return labels.find(l => l.name === name && l.userId === userId) || null;
 }
 
-function deleteLabelById(id, userId) {
+function deleteLabelById({id, userId}) {
   const index = labels.findIndex(l => l.id === id && l.userId === userId);
   if (index === -1) return false;
   labels.splice(index, 1);
