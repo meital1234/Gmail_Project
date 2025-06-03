@@ -1,33 +1,64 @@
-# URL Bloom Filter Project - Ex2
+# URL Bloom Filter Project – Ex3
+
+## 📋 Content
+- [About](#-about)
+- [Architecture](#-architecture)
+- [Prerequisites](#-prerequisites)
+- [Quick Start](#-quick-start)
+- [API Documentation](#-api-documentation)
+- [Comparison with Ex2](#-comparison-with-ex2)
+- [Screenshots](#-screenshots)
 
 ## 📚 About
-This project implements a Node.js-based backend server using the MVC architecture and RESTful API conventions for a simplified Gmail-like system. The server supports multi-threaded-like concurrent access via asynchronous Express handling, and manages functionality including user registration, login, and blacklist management.
+This project extends Ex2 by adding a **Node.js/Express REST API** that integrates with the existing C++ Bloom Filter server over TCP. The system provides a comprehensive email management platform with blacklist filtering capabilities.
 
-The solution adheres to SOLID principles, is structured for future extensibility, and was developed using Test-Driven Development (TDD) practices. All data is stored in memory (non-persistent) and reset on server restart.
-Jira link - https://myemenahem.atlassian.net/jira/software/projects/BGE/summary
+### Key Features
+- 🔐 **User Management** - Registration, authentication with JWT tokens  
+- 📧 **Mail Management** - Send, retrieve, update, delete, and search emails  
+- 🏷️ **Label Management** - Organize emails with custom labels  
+- 🚫 **Blacklist Management** - URL filtering via Bloom Filter with persistence  
+- 🐳 **Containerized Deployment** - One-command setup with Docker Compose  
+- 🧪 **Test-Driven Development** - Comprehensive test coverage  
+- 🏗️ **SOLID Principles** - Clean, maintainable architecture  
 
----
+## 🏗️ Architecture
 
-## 🛠️ How It Works
-### Server:
-- The server receives an initial config line from the client: `[bit array size] [list of hash functions]`
-- Then the server listens for user commands:
-  - `POST [URL]` → Add URL to blacklist → returns `201 Created`
-  - `GET [URL]` → Check if URL is blacklisted → returns `200 Ok \n\n [bloomfilter URL status]`
-  - `DELETE [URL]` → Remove URL from blacklist → returns `204 No Content`
+### System Overview
+```
+┌─────────────────┐    HTTP/REST    ┌─────────────────┐    TCP Socket    ┌─────────────────┐
+│   Client Apps   │ ◄──────────────► │  Express API    │ ◄───────────────► │  Bloom Server   │
+│                 │                 │   (Port 3000)   │                  │   (Port 8080)   │
+└─────────────────┘                 └─────────────────┘                  └─────────────────┘
+                                            │                                      │
+                                            ▼                                      ▼
+                                    ┌─────────────────┐                  ┌─────────────────┐
+                                    │  In-Memory Data │                  │ Persistent Data │
+                                    │ • Users         │                  │ • Bit Array     │
+                                    │ • Mails         │                  │ • blacklist.txt │
+                                    │ • Labels        │                  └─────────────────┘
+                                    └─────────────────┘
+```
 
-The output is sent back from the server to the client via socket, accordingly.
-For any command that isn't able to be executed → server returns `404 Not Found`, and for any invalid command → server returns `400 Bad Request`
+### Components
 
-The Bloom filter state and blacklist are automatically saved to files under data/ and reloaded on restart.
+#### 🔧 Bloom Server (C++)
+- **Unchanged from Ex2** - Proven, stable TCP server  
+- **Port:** 8080  
+- **Capabilities:**
+  - Initialize bit array with configurable size and hash functions  
+  - Add URLs to blacklist (`POST <URL>` → `201 Created`)  
+  - Check URL blacklist status (`GET <URL>` → `200 OK` + `true/false`)  
+  - Remove URLs from blacklist (`DELETE <URL>` → `204 No Content`)  
+  - Error handling (`400 Bad Request`, `404 Not Found`)  
+- **Persistence:** Binary bit array + `blacklist.txt` under `data/` directory  
 
-### Client:
-- Takes **server IP** and port as arguments
-- Connects once, then waits for user input
-- Sends input to server and prints back the result
-The client is 'dumb': doesn't know if a command is valid — just send the input to the server and print the result.
-
----
+#### 🌐 Express API (Node.js)
+- **Port:** 3000  
+- **Architecture:** RESTful API with layered design  
+- **Communication:** Persistent TCP client for Bloom Filter integration  
+- **Data Storage:** In-memory models (reset on restart)  
+- **Security:** Bearer token authentication middleware  
+- **Error Handling:** Comprehensive HTTP status codes with JSON responses  
 
 ## ▶️ How to Run
 Make sure you have **Docker** and **Docker Compose** installed.
@@ -36,86 +67,250 @@ Build the everything:
 ```bash
 docker-compose build
 ```
-Builds all three containers (Client, Server and Tests) on docker.
 
-Run the app:
+start all services in detached mode
 ```bash
-docker-compose run client
+docker-compose up  -d
 ```
-(Because the client is dependant on the server, running the client makes sure that the server is running as well).
-Start the client.py program with the relevant arguments:
-```bash
-python client.py 172.17.0.1 8080
-```
-Please notice - after starting the client program, the first line of input should be the configuration line. meaning, `[bit array size] [list of hash functions]`.
 
-Run the unit tests:
+(Optional) some checkings
 ```bash
+# Check running containers
+docker-compose ps
+
+# Check Bloom server logs
+docker-compose logs -f bloom-server
+
+# Check Express API logs
+docker-compose logs -f express-api
+```
+
+Run Tests
+```bash
+# Execute full test suite
 docker-compose run --rm test
 ```
+
+ Cleanup
+```bash
+# Stop and remove containers
+docker-compose down
+```
+
+## 📖 API Documentation
+### Authentication
+All protected endpoints require:
+```
+Authorization: Bearer <token>
+```
+
+### 1. User Management
+
+#### Register
+```http
+POST /api/users
+Content-Type: application/json
+
+{
+  "email": "noa123@gmail.com",
+  "password": "Pass5678",
+  "phone_number": "0501238910",
+  "birthDate": "2001-01-01",
+  "gender": "female"
+}
+```
+201 Created on success
+
+#### Login
+```bash
+POST /api/tokens
+Content-Type: application/json
+
+{
+    "email": "meital123@gmail.com",
+    "password": "Pass1234"
+}
+```
+200 OK → { "token": "<user_id>" }
+
+### 2. Mail Management
+
+#### Send Mail
+```bash
+POST /api/mails
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "to": ["recipient1@example.com", "recipient2@example.com"],
+  "subject": "Important Message",
+  "body": "This is the email content."
+}
+```
+201 Created on success
+
+#### Get All Mails
+```bash
+GET /api/mails
+Authorization: Bearer <token>
+```
+200 OK → mails where subject/body contains <query>
+
+#### Update Mail
+```bash
+PUT /api/mails/<id>
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "subject": "Updated Subject",
+  "body": "Updated content",
+  "labels": ["label_id_1", "label_id_2"]
+}
+```
+204 No Content on success.
+
+#### Delete Mail
+```bash
+DELETE /api/mails/<id>
+Authorization: Bearer <token>
+```
+
+### 3. Label Management
+#### Create Label
+```bash
+POST /api/labels
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Work"
+}
+```
+201 Created → Location: /api/labels/<id>
+
+#### Get All Labels
+```bash
+GET /api/labels
+Authorization: Bearer <token>
+```
+200 OK → list of labels.
+
+#### Update Label
+```bash
+PUT /api/labels/<id>
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Updated Label Name"
+}
+```
+204 No Content on success.
+
+#### Delete Label
+```bash
+DELETE /api/labels/<id>
+Authorization: Bearer <token>
+```
+204 No Content on success.
+
+### 4. Blacklist Management
+
+#### Initialize Bloom Filter
+```bash
+POST /api/config
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "bitArraySize": 1024,
+  "hashFuncs": ["1", "2", "3"]
+}
+```
+200 OK → { "message": "Config line sent to TCP server" }
+
+#### Add URL to Blacklist
+```bash
+POST /api/blacklist
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "url": "malicious-site.com"
+}
+```
+201 Created on success.
+
+#### Check URL Status
+```bash
+GET /api/blacklist/<url>
+Authorization: Bearer <token>
+```
+200 OK → { "blacklisted": true/false }
+
+#### Remove URL from Blacklist
+```bash
+DELETE /api/blacklist/<url>
+Authorization: Bearer <token>
+```
+204 No Content on success
+
+## 📊 Comparison with Ex2
+
+| Aspect               | Ex2                    | Ex3                                             |
+|----------------------|------------------------|-------------------------------------------------|
+| **Interface**        | CLI commands           | REST API endpoints                              |
+| **Communication**    | Direct TCP interaction | Persistent TCP client wrapper                   |
+| **Data Management**  | File-based only        | In-memory models + file persistence             |
+| **Features**         | URL blacklisting       | Full email platform + blacklisting              |
+| **Authentication**   | None                   | JWT-based token system                          |
+| **Error Handling**   | TCP status codes       | HTTP status codes + JSON responses               |
+| **Testing**          | C++ unit tests only    | Multi-language test suite                       |
+| **Deployment**       | Manual setup           | Docker Compose automation                        |
+| **Scalability**      | Single-user CLI        | Multi-user web application                      |
+
+### Development Guidelines
+- Follow SOLID principles  
+- Write tests for new features  
+- Update documentation for API changes  
+- Use conventional commit messages  
+
+---  
+
+## 📸 Screenshots
+
+> The following screenshots illustrate key parts of the Ex3 implementation, including architecture setup, Docker Compose behavior, and example API usage.
+> ### First user created, responded HTTP
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 120803](https://github.com/user-attachments/assets/b4393335-3f34-444d-bbd1-add6a227af73)" />
+> ### Second user created, responded HTTP
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 121228](https://github.com/user-attachments/assets/fe834b69-99fd-45c2-a878-83bf2764a06d)" />
+> ### Auth token retrieved successfully, HTTP 201
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 121517](https://github.com/user-attachments/assets/395d329a-41ab-4abd-a732-645b1ad7d150)" />
+> ###  Login with wrong password, HTTP 401
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 121708](https://github.com/user-attachments/assets/ff98c998-51fa-44aa-89e7-914e9bddf1d8)" />
+> ### Password missing error, returned HTTP 400P
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 121847](https://github.com/user-attachments/assets/1ba1fb38-f498-4fdb-8796-706fb3c64cca)" />
+> ###  Fetched user ID=1, returned HTTP 201
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 122005](https://github.com/user-attachments/assets/484a4c27-0fdf-481f-a04f-fe600e243305)" />
+> ### Fetched user ID=2, returned HTTP 201
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 122152](https://github.com/user-attachments/assets/ef61ad30-4dec-485d-b38b-2a0820bea52b)" />
+> ###  Requested non-existent user, HTTP 404
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 122252](https://github.com/user-attachments/assets/75896f42-1c75-4b4a-8290-ebb1bde7cdc1)" />
+> ### Add URL before config, server error
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 122512](https://github.com/user-attachments/assets/1ec7fbf4-2346-4e51-af7b-9ce6443ed311)" />
+> ### Bloom filter configured successfully, HTTP 201
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 122609](https://github.com/user-attachments/assets/35650ad3-9fc2-44a0-ad68-d33b7e80fdfe)" />
+> ### URL added to blacklist, HTTP 201
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 122644](https://github.com/user-attachments/assets/2189f145-3db4-4da0-9d5f-7cdaef05f737)" />
+> ### URL deletion succeeded, returned HTTP 204
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 123007](https://github.com/user-attachments/assets/1ddf55ad-d511-4f13-8500-f1a6cedc0b9a)" />
+> ### Tried deleting missing URL, HTTP 404
+<img width="420" alt="image" src="![צילום מסך 2025-06-03 123035](https://github.com/user-attachments/assets/e14398c9-0463-428e-9ef4-6f44e9f2a728)" />
+
+---  
+
+Built with ❤️  
+
 ---
-
-## 💬 Example Usage
-```
-8 1 2
-POST www.thebest.com
-201 Created
-POST www.projectever.com
-201 Created
-GET www.thebest.com
-200 Ok
-
-true true
-DELETE www.projectever.com
-204 No Content
-GET www.projectever.com
-200 Ok
-
-true false
-```
-```
-8 3 5 2
-hello
-400 Bad Request
-DELETE www.mye.com
-404 Not Found
-GET www.meital.com
-200 Ok
-
-false
-POST www.noa.com
-201 Created
-```
----
-
-## 🔧 Refactoring & Design Improvements
-As part of the transition from Ex1 to Ex2, we significantly refactored the project to improve maintainability, scalability, and testability. These improvements followed key **SOLID principles** and were driven using **Test-Driven Development (TDD)**.
-
-### ✅ Summary of SOLID Refactoring – Before & After
-
-| Before | After |
-|--------|-------|
-| All command logic (`ADD`, `CHECK`, `DELETE`) was embedded directly in `CLIHandler`, leading to tight coupling and duplicated code. | Logic was refactored into dedicated classes (`AddCommand`, `CheckCommand`, `DeleteCommand`), each implementing a shared `ICommand` interface — following the **Single Responsibility Principle (SRP)**. |
-| Adding a new command required editing the `CLIHandler` class itself. | We introduced a `commandMap` and `registerCommands()` method to support adding new commands without changing existing logic — in line with the **Open/Closed Principle (OCP)**. |
-| `CLIHandler` directly depended on concrete command implementations. | Now `CLIHandler` only communicates via the `ICommand` abstraction — applying the **Dependency Inversion Principle (DIP)**. |
-| Tests were integration-heavy, tightly coupled to multiple components. | We switched to **unit testing** for each command and internal module, following **TDD** practices to drive the design. |
-| `CLIHandler` was responsible for CLI logic, command parsing, file I/O, and Bloom Filter updates. | Each responsibility is now separated: command logic is handled by specific classes, and input parsing remains clean — supporting the **Separation of Concerns** and **SRP**. |
----
-## 🖼️ Screenshots
-### Program Start and Config Input
-<img width="420" alt="image" src="https://github.com/user-attachments/assets/0a033c24-0d59-4590-93ff-87ae9dc286fd" />
-
-### Adding a URL
-<img width="420" alt="image" src="https://github.com/user-attachments/assets/82afbfad-6064-458f-b977-2deb67da335a" />
-
-### Checking a URL
-<img width="420" alt="image" src="https://github.com/user-attachments/assets/55f6fbae-ca69-4df2-b3d1-6660c90a825d" />
-
-### Deleting a URL
-<img width="420" alt="image" src="https://github.com/user-attachments/assets/25314a4b-0e05-4960-8426-49fc381130d4" />
-
-### Running tests on docker
-<img width="630" alt="image" src="https://github.com/user-attachments/assets/755fef0c-cff2-489b-924e-b7fb9f5766c0" />
-<img width="630" alt="image" src="https://github.com/user-attachments/assets/d7077133-7aed-41ed-9f0d-8cc5f5b11042" />
-<img width="630" alt="image" src="https://github.com/user-attachments/assets/e89b76ec-8e27-4ef3-a65b-3f5ee413f6d4" />
 
