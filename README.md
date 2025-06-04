@@ -265,27 +265,12 @@ Authorization: Bearer <token>
 ## 📸 Screenshots
 
 > The following screenshots illustrate key parts of the Ex3 implementation, including architecture setup, Docker Compose behavior, and example API usage.
-> ### First user created, responded HTTP
+> ### Sent BloomFilter configuration line, two users created and signed in as the first user (token)
 <img width="654" alt="image" src="https://github.com/user-attachments/assets/6d5ee0dc-b1ee-4d7d-91bb-2887a0adb627" />
-
-> ### Second user created, responded HTTP
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 121228](https://github.com/user-attachments/assets/fe834b69-99fd-45c2-a878-83bf2764a06d)" />
-> ### Auth token retrieved successfully, HTTP 201
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 121517](https://github.com/user-attachments/assets/395d329a-41ab-4abd-a732-645b1ad7d150)" />
-> ###  Login with wrong password, HTTP 401
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 121708](https://github.com/user-attachments/assets/ff98c998-51fa-44aa-89e7-914e9bddf1d8)" />
-> ### Password missing error, returned HTTP 400P
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 121847](https://github.com/user-attachments/assets/1ba1fb38-f498-4fdb-8796-706fb3c64cca)" />
-> ###  Fetched user ID=1, returned HTTP 201
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 122005](https://github.com/user-attachments/assets/484a4c27-0fdf-481f-a04f-fe600e243305)" />
-> ### Fetched user ID=2, returned HTTP 201
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 122152](https://github.com/user-attachments/assets/ef61ad30-4dec-485d-b38b-2a0820bea52b)" />
-> ###  Requested non-existent user, HTTP 404
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 122252](https://github.com/user-attachments/assets/75896f42-1c75-4b4a-8290-ebb1bde7cdc1)" />
-> ### Add URL before config, server error
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 122512](https://github.com/user-attachments/assets/1ec7fbf4-2346-4e51-af7b-9ce6443ed311)" />
-> ### Bloom filter configured successfully, HTTP 201
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 122609](https://github.com/user-attachments/assets/35650ad3-9fc2-44a0-ad68-d33b7e80fdfe)" />
+> ###  Tried logging in with wrong password and missing password, got fitting HTTP responses
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/e1c6d323-030a-4e58-83ab-a5e35be533ad" />
+> ###  Fetched the two users, returned HTTP 201
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/1ac37e6c-2c28-46e3-a76f-de625ea66a48" />
 > ### URL added to blacklist, HTTP 201
 <img width="420" alt="image" src="![צילום מסך 2025-06-03 122644](https://github.com/user-attachments/assets/2189f145-3db4-4da0-9d5f-7cdaef05f737)" />
 > ### URL deletion succeeded, returned HTTP 204
@@ -295,7 +280,4 @@ Authorization: Bearer <token>
 
 ---  
 
-Built with ❤️  
-
----
-
+Built with ❤️
