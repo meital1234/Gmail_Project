@@ -3,8 +3,7 @@
 ## 📋 Content
 - [About](#-about)
 - [Architecture](#-architecture)
-- [Prerequisites](#-prerequisites)
-- [Quick Start](#-quick-start)
+- [How to Run](#-how-to-run)
 - [API Documentation](#-api-documentation)
 - [Comparison with Ex2](#-comparison-with-ex2)
 - [Screenshots](#-screenshots)
