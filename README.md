@@ -10,11 +10,11 @@
 - [Screenshots](#-screenshots)
 
 ## 📚 About
-This exercise is the third part of a multi-phase project building a full web-based Gmail-like mail system. In this part, we create a **Node.js + Express** web server using the **MVC architecture**, supporting **multi-threaded communication** with a backend C++ server (from Exercise 2). The API supports user authentication, mail management, labeling, blacklisting of URLs, and full CRUD operations.
+This exercise is the third part of a multi-phase project building a Gmail-like mail system. In this part, we create a **Node.js + Express** web server using the **MVC architecture**, supporting **multi-threaded communication** with a backend C++ server (from Exercise 2). The REST API supports user authentication, mail management, label operations, and blacklist filtering.
 
 ### Key Features
 - 🔐 **User Management** - Registration, authentication with tokens (not validated yet at this stage) 
-- 📧 **Mail Management** - Send, retrieve, update, delete, and search emails  
+- 📧 **Mail System** - Send, retrieve, update, delete, and search emails  
 - 🏷️ **Label Management** - Organize emails with custom labels  
 - 🚫 **Blacklist Management** - URL filtering via Bloom Filter with persistence   
 - 🏗️ **SOLID Principles** - Clean, maintainable architecture  
@@ -24,7 +24,7 @@ This exercise is the third part of a multi-phase project building a full web-bas
 ### System Overview
 ```
 ┌─────────────────┐    HTTP/REST    ┌─────────────────┐    TCP Socket    ┌─────────────────┐
-│   Client Apps   │ ◄──────────────► │  Express API    │ ◄───────────────► │  Bloom Server   │
+│   Client Apps   │ ◄─────────────► │  Express API    │ ◄──────────────► │  Bloom Server   │
 │                 │                 │   (Port 3000)   │                  │   (Port 8080)   │
 └─────────────────┘                 └─────────────────┘                  └─────────────────┘
                                             │                                      │
