@@ -1,4 +1,4 @@
-# URL Bloom Filter Project – Ex3
+# Exercise 3 – Gmail-like Web Server (Advanced Programming Systems)
 
 ## 📋 Content
 - [About](#-about)
@@ -10,15 +10,13 @@
 - [Screenshots](#-screenshots)
 
 ## 📚 About
-This project extends Ex2 by adding a **Node.js/Express REST API** that integrates with the existing C++ Bloom Filter server over TCP. The system provides a comprehensive email management platform with blacklist filtering capabilities.
+This exercise is the third part of a multi-phase project building a full web-based Gmail-like mail system. In this part, we create a **Node.js + Express** web server using the **MVC architecture**, supporting **multi-threaded communication** with a backend C++ server (from Exercise 2). The API supports user authentication, mail management, labeling, blacklisting of URLs, and full CRUD operations.
 
 ### Key Features
-- 🔐 **User Management** - Registration, authentication with JWT tokens  
+- 🔐 **User Management** - Registration, authentication with tokens (not validated yet at this stage) 
 - 📧 **Mail Management** - Send, retrieve, update, delete, and search emails  
 - 🏷️ **Label Management** - Organize emails with custom labels  
-- 🚫 **Blacklist Management** - URL filtering via Bloom Filter with persistence  
-- 🐳 **Containerized Deployment** - One-command setup with Docker Compose  
-- 🧪 **Test-Driven Development** - Comprehensive test coverage  
+- 🚫 **Blacklist Management** - URL filtering via Bloom Filter with persistence   
 - 🏗️ **SOLID Principles** - Clean, maintainable architecture  
 
 ## 🏗️ Architecture
@@ -57,7 +55,6 @@ This project extends Ex2 by adding a **Node.js/Express REST API** that integrate
 - **Architecture:** RESTful API with layered design  
 - **Communication:** Persistent TCP client for Bloom Filter integration  
 - **Data Storage:** In-memory models (reset on restart)  
-- **Security:** Bearer token authentication middleware  
 - **Error Handling:** Comprehensive HTTP status codes with JSON responses  
 
 ## ▶️ How to Run
@@ -85,12 +82,6 @@ docker-compose logs -f bloom-server
 docker-compose logs -f express-api
 ```
 
-Run Tests
-```bash
-# Execute full test suite
-docker-compose run --rm test
-```
-
  Cleanup
 ```bash
 # Stop and remove containers
@@ -101,7 +92,7 @@ docker-compose down
 ### Authentication
 All protected endpoints require:
 ```
-Authorization: Bearer <token>
+Authorization: <token>
 ```
 
 ### 1. User Management
