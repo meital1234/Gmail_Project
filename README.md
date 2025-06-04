@@ -138,11 +138,11 @@ Content-Type: application/json
 #### Send Mail
 ```bash
 POST /api/mails
-Authorization: Bearer <token>
+Authorization: <token>
 Content-Type: application/json
 
 {
-  "to": ["recipient1@example.com", "recipient2@example.com"],
+  "to": "recipient@example.com",
   "subject": "Important Message",
   "body": "This is the email content."
 }
@@ -152,14 +152,14 @@ Content-Type: application/json
 #### Get All Mails
 ```bash
 GET /api/mails
-Authorization: Bearer <token>
+Authorization: <token>
 ```
-200 OK → mails where subject/body contains <query>
+200 OK → all mails where the sender/recipients (and the mails are not in drafts) is corresponding with the token
 
 #### Update Mail
 ```bash
 PUT /api/mails/<id>
-Authorization: Bearer <token>
+Authorization: <token>
 Content-Type: application/json
 
 {
@@ -173,14 +173,14 @@ Content-Type: application/json
 #### Delete Mail
 ```bash
 DELETE /api/mails/<id>
-Authorization: Bearer <token>
+Authorization: <token>
 ```
 
 ### 3. Label Management
 #### Create Label
 ```bash
 POST /api/labels
-Authorization: Bearer <token>
+Authorization: <token>
 Content-Type: application/json
 
 {
@@ -192,14 +192,14 @@ Content-Type: application/json
 #### Get All Labels
 ```bash
 GET /api/labels
-Authorization: Bearer <token>
+Authorization: <token>
 ```
-200 OK → list of labels.
+200 OK → list of labels of the asking user.
 
 #### Update Label
 ```bash
 PUT /api/labels/<id>
-Authorization: Bearer <token>
+Authorization: <token>
 Content-Type: application/json
 
 {
@@ -211,7 +211,7 @@ Content-Type: application/json
 #### Delete Label
 ```bash
 DELETE /api/labels/<id>
-Authorization: Bearer <token>
+Authorization: <token>
 ```
 204 No Content on success.
 
@@ -220,7 +220,7 @@ Authorization: Bearer <token>
 #### Initialize Bloom Filter
 ```bash
 POST /api/config
-Authorization: Bearer <token>
+Authorization: <token>
 Content-Type: application/json
 
 {
@@ -233,7 +233,7 @@ Content-Type: application/json
 #### Add URL to Blacklist
 ```bash
 POST /api/blacklist
-Authorization: Bearer <token>
+Authorization: <token>
 Content-Type: application/json
 
 {
@@ -241,13 +241,6 @@ Content-Type: application/json
 }
 ```
 201 Created on success.
-
-#### Check URL Status
-```bash
-GET /api/blacklist/<url>
-Authorization: Bearer <token>
-```
-200 OK → { "blacklisted": true/false }
 
 #### Remove URL from Blacklist
 ```bash
@@ -264,10 +257,7 @@ Authorization: Bearer <token>
 | **Communication**    | Direct TCP interaction | Persistent TCP client wrapper                   |
 | **Data Management**  | File-based only        | In-memory models + file persistence             |
 | **Features**         | URL blacklisting       | Full email platform + blacklisting              |
-| **Authentication**   | None                   | JWT-based token system                          |
 | **Error Handling**   | TCP status codes       | HTTP status codes + JSON responses               |
-| **Testing**          | C++ unit tests only    | Multi-language test suite                       |
-| **Deployment**       | Manual setup           | Docker Compose automation                        |
 | **Scalability**      | Single-user CLI        | Multi-user web application                      |
  
 ---  
@@ -276,7 +266,8 @@ Authorization: Bearer <token>
 
 > The following screenshots illustrate key parts of the Ex3 implementation, including architecture setup, Docker Compose behavior, and example API usage.
 > ### First user created, responded HTTP
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 120803](https://github.com/user-attachments/assets/b4393335-3f34-444d-bbd1-add6a227af73)" />
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/6d5ee0dc-b1ee-4d7d-91bb-2887a0adb627" />
+
 > ### Second user created, responded HTTP
 <img width="420" alt="image" src="![צילום מסך 2025-06-03 121228](https://github.com/user-attachments/assets/fe834b69-99fd-45c2-a878-83bf2764a06d)" />
 > ### Auth token retrieved successfully, HTTP 201
