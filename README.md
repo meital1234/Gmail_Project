@@ -267,16 +267,27 @@ Authorization: Bearer <token>
 > The following screenshots illustrate key parts of the Ex3 implementation, including architecture setup, Docker Compose behavior, and example API usage.
 > ### Sent BloomFilter configuration line, two users created and signed in as the first user (token)
 <img width="654" alt="image" src="https://github.com/user-attachments/assets/6d5ee0dc-b1ee-4d7d-91bb-2887a0adb627" />
+
 > ###  Tried logging in with wrong password and missing password, got fitting HTTP responses
 <img width="654" alt="image" src="https://github.com/user-attachments/assets/e1c6d323-030a-4e58-83ab-a5e35be533ad" />
+
 > ###  Fetched the two users, returned HTTP 201
 <img width="654" alt="image" src="https://github.com/user-attachments/assets/1ac37e6c-2c28-46e3-a76f-de625ea66a48" />
-> ### URL added to blacklist, HTTP 201
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 122644](https://github.com/user-attachments/assets/2189f145-3db4-4da0-9d5f-7cdaef05f737)" />
-> ### URL deletion succeeded, returned HTTP 204
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 123007](https://github.com/user-attachments/assets/1ddf55ad-d511-4f13-8500-f1a6cedc0b9a)" />
-> ### Tried deleting missing URL, HTTP 404
-<img width="420" alt="image" src="![צילום מסך 2025-06-03 123035](https://github.com/user-attachments/assets/e14398c9-0463-428e-9ef4-6f44e9f2a728)" />
+
+> ### URL added two new urls to the blacklist, deleted one of them
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/5cd31848-766d-4494-aff8-5c4df80a0c79" />
+
+> ### Attempted to send mail with blacklisted link, got an error and succeeded after changing to the deleted link (from the blacklist)
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/3812b444-b982-4c12-93fe-73a13499c6b8" />
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/76e4a78e-95d1-4dd4-ae86-1b4148d2af11" />
+
+> ### Sent mail with Draft label, edited it and then tried to GET it from the reciever, got denied. Only the sender can see his drafts
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/5abbd752-cd5c-4af2-9dc5-26756a4aca8d" />
+
+> ### Tried and failed editing and deleting a sent mail
+<img width="654" alt="image" src="https://github.com/user-attachments/assets/b7f6aadc-ed62-41d6-9f34-a3a7de0b3ade" />
+
+
 
 ---  
 
