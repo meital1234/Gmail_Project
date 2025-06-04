@@ -269,13 +269,7 @@ Authorization: Bearer <token>
 | **Testing**          | C++ unit tests only    | Multi-language test suite                       |
 | **Deployment**       | Manual setup           | Docker Compose automation                        |
 | **Scalability**      | Single-user CLI        | Multi-user web application                      |
-
-### Development Guidelines
-- Follow SOLID principles  
-- Write tests for new features  
-- Update documentation for API changes  
-- Use conventional commit messages  
-
+ 
 ---  
 
 ## 📸 Screenshots
