@@ -14,9 +14,10 @@ This exercise is the third part of a multi-phase project building a Gmail-like m
 ### Key Features
 - 🔐 **User Management** - Registration, authentication with tokens (not validated yet at this stage) 
 - 📧 **Mail System** - Send, retrieve, update, delete, and search emails  
-- 🏷️ **Label Management** - Organize emails with custom labels  
-- 🚫 **Blacklist Management** - URL filtering via Bloom Filter with persistence   
-- 🏗️ **SOLID Principles** - Clean, maintainable architecture  
+- 🏷️ **Labels** - Categorize emails with user-defined labels  
+- 🚫 **Blacklist Filtering** - Bloom Filter integration for unsafe URLs
+- 📄 **Drafts** – Support for private editable mail drafts
+- 🚀 **Multithreading Support** – Concurrent TCP handling using thread pool on the C++ server   
 
 ## 🏗️ Architecture
 
@@ -39,8 +40,8 @@ This exercise is the third part of a multi-phase project building a Gmail-like m
 ### Components
 
 #### 🔧 Bloom Server (C++)
-- **Logic unchanged from Ex2** - Proven, stable TCP server
-- **Added multithreaded connection**
+- TCP server reused from Exercise 2
+- Enhanced to support **multithreaded handling** of simultaneous client connections
 - **Port:** 8080  
 - **Capabilities:**
   - Initialize bit array with configurable size and hash functions  
@@ -52,10 +53,10 @@ This exercise is the third part of a multi-phase project building a Gmail-like m
 
 #### 🌐 Express API (Node.js)
 - **Port:** 3000  
-- **Architecture:** RESTful API with layered design  
-- **Communication:** Persistent TCP client for Bloom Filter integration  
-- **Data Storage:** In-memory models (reset on restart)  
-- **Error Handling:** Comprehensive HTTP status codes with JSON responses  
+- Follows MVC pattern with modular structure
+- Maintains a persistent TCP client to the C++ server
+- Stores runtime data in memory
+- Communicates via JSON and returns standard HTTP status codes 
 
 ## ▶️ How to Run
 Make sure you have **Docker** and **Docker Compose** installed.
@@ -79,6 +80,7 @@ docker-compose logs -f bloom-server
 # Check Express API logs
 docker-compose logs -f express-api
 ```
+Communicate with the web sever using curl HTTP commands sent to http://localhost:3000/
 
  Cleanup
 ```bash
@@ -87,7 +89,16 @@ docker-compose down
 ```
 
 ## 📖 API Documentation
-### Authentication
+### Blacklist Management
+⚠️ Important: To enable the ability to send emails, you must first initialize the Bloom Filter configuration. Without this step, the system will not be able to validate URLs and will reject mail submissions that include links.
+Example command:
+```
+curl -i -X POST http://localhost:3000/api/config \
+  -H "Content-Type: application/json" \
+  -d '{"bitArraySize":8,"hashFuncs":["1","2"]}'
+```
+  
+### Authentication header
 All protected endpoints require:
 ```
 Authorization: <token>
