@@ -39,7 +39,8 @@ This exercise is the third part of a multi-phase project building a Gmail-like m
 ### Components
 
 #### 🔧 Bloom Server (C++)
-- **Unchanged from Ex2** - Proven, stable TCP server  
+- **Logic unchanged from Ex2** - Proven, stable TCP server
+- **Added multithreaded connection**
 - **Port:** 8080  
 - **Capabilities:**
   - Initialize bit array with configurable size and hash functions  
@@ -73,10 +74,8 @@ docker-compose up  -d
 ```bash
 # Check running containers
 docker-compose ps
-
 # Check Bloom server logs
 docker-compose logs -f bloom-server
-
 # Check Express API logs
 docker-compose logs -f express-api
 ```
