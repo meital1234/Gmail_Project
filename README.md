@@ -90,7 +90,7 @@ docker-compose down
 
 ## 📖 API Documentation
 ### Blacklist Management
-⚠️ Important: To enable the ability to send emails, you must first initialize the Bloom Filter configuration. Without this step, the system will not be able to validate URLs and will reject mail submissions that include links.
+> ⚠️ Important: To enable the ability to send emails, you must first initialize the Bloom Filter configuration. Without this step, the system will not be able to validate URLs and will reject mail submissions that include links.
 Example command:
 ```
 curl -i -X POST http://localhost:3000/api/config \
