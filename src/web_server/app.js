@@ -1,3 +1,5 @@
+require('dotenv').config(); // loads process.env.BCRYPT_SALT_ROUNDS
+
 const express = require('express');
 const app = express();
 
@@ -9,16 +11,42 @@ const labelsRouter = require('./routes/labels');
 const blacklistRouter = require('./routes/blacklist');
 const configRouter  = require('./routes/config'); 
 const TCP = require('./utils/TCPclient');
+const authMiddleware  = require('./utils/auth').getAuthenticatedUser;
 
 app.use(express.json()); // Allows the application to parse JSON requests and read req.body.
 
-// connects the routers to the /api/users, /api/tokens, /api/mails and /api/blacklist paths.
+// connects the routers to the /api/users, /api/tokens, /api/mails, /api/lables, /api/blacklist & /api/config paths
+// public routs
 app.use('/api/users', usersRouter);
 app.use('/api/tokens', tokensRouter);
-app.use('/api/mails', mailsRouter);
-app.use('/api/labels', labelsRouter);
-app.use('/api/blacklist', blacklistRouter);
-app.use('/api/config', configRouter); 
+// protected routes – wrap each in authMiddleware
+app.use('/api/mails', (req, res, next) => {
+  const user = authMiddleware(req, res);
+  if (!user) return;  // authMiddleware already sent 401/403 if needed
+  req.user = user;
+  next();
+}, mailsRouter);
+
+app.use('/api/labels', (req, res, next) => {
+  const user = authMiddleware(req, res);
+  if (!user) return;
+  req.user = user;
+  next();
+}, labelsRouter);
+
+app.use('/api/blacklist', (req, res, next) => {
+  const user = authMiddleware(req, res);
+  if (!user) return;
+  req.user = user;
+  next();
+}, blacklistRouter);
+
+app.use('/api/config', (req, res, next) => {
+  const user = authMiddleware(req, res);
+  if (!user) return;
+  req.user = user;
+  next();
+}, configRouter);
 
 // Catch-all 404
 app.use((req, res) => {
