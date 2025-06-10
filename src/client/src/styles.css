@@ -36,3 +36,69 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+
+/* ===== Inbox list ===== */
+.inbox-container {
+  max-width: 600px;          /* רוחב סביר לרשימת מיילים */
+  margin: 40px auto;         /* רווח משני הצדדים */
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 24px;
+  font-family: Arial, sans-serif;
+}
+
+.mail-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.mail-row:hover { background-color: #fafafa; }
+
+.mail-row .from     { flex: 0 0 140px; font-weight: bold; }
+.mail-row .subject  { flex: 1 1 auto;  color: #333; }
+.mail-row .date     { flex: 0 0 140px; font-size: 0.85rem; color: #666; text-align: right; }
+
+/* ===== Floating “+” button ===== */
+.fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ea26b6;
+  color: #fff;
+  border: none;
+  font-size: 32px;
+  line-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,.3);
+  cursor: pointer;
+}
+.fab:hover { background: #c81c9b; }
+
+/* ===== Single-mail view ===== */
+.mail-container {
+  max-width: 700px;
+  margin: 60px auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 32px;
+  font-family: Arial, sans-serif;
+}
+
+.mail-container h3 { margin-top: 0; color: #ea26b6; }
+.mail-container pre {
+  white-space: pre-wrap;     /* נשמרים מעברי שורה */
+  font-family: inherit;
+  line-height: 1.4;
+}

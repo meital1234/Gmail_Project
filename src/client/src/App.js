@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './login';
 import Register from './Register';
 import Inbox  from './inbox';
+import Compose from './Compose';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/inbox" element={<Inbox />} />
+        <Route path="/compose" element={<Compose />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
