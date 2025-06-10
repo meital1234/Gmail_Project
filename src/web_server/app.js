@@ -3,6 +3,14 @@ require('dotenv').config(); // loads process.env.BCRYPT_SALT_ROUNDS
 const express = require('express');
 const app = express();
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
+
 // imports the routers from the routes folder
 const usersRouter  = require('./routes/users');
 const tokensRouter  = require('./routes/tokens');

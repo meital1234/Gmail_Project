@@ -12,7 +12,7 @@ exports.registerUser = async (req, res) => {
   const { email, password, displayName, phone_number, birthDate, gender, image } = req.body;
 
   // Checks that all required fields are present.
-  if (!email || !password || !displayName || !phone_number|| !birthDate|| !gender) {
+  if (!email || !password || !phone_number|| !birthDate|| !gender) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
