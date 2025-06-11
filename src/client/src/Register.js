@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import './styles.css'; // including style doc
 
 const Register = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Enables navigation.
 
+  // formData --> An object that contains all the form fields.
+  // setFormData --> A function that updates the field values.
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,13 +19,14 @@ const Register = () => {
 
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Any change to a field updates the corresponding field in formData according to the name.
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevents page refresh by default.
     setErrorMsg('');
 
     const {

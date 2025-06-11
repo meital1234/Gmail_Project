@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import './styles.css'; // including style doc.
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // Holds the values ​​from the fields in the form.
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Enables navigation.
 
-  const handleSubmit = async (e) => {
+  // A function that handles submitting the form.
+  const handleSubmit = async (e) => { 
     e.preventDefault();
     setErrorMsg('');
 
@@ -33,7 +34,7 @@ const Login = () => {
         throw new Error(data.error || 'unknoun eror');
       }
 
-      // if token ok, navigate to your inbox.
+      // The token is saved in local storage for later use.
       localStorage.setItem('token', data.token);
       navigate('/inbox');
     } catch (err) {
