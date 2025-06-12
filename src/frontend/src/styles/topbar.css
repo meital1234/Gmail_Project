@@ -1,0 +1,28 @@
+.topbar {
+  height: 60px;
+  background-color: #f1f3f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.topbar.simple {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #d93025;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #d93025;
+}
+
+.search-bar {
+  width: 40%;
+  padding: 8px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+}

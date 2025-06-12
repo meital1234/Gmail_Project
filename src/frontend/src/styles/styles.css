@@ -1,6 +1,4 @@
-/* styles.css */
-
-/*dark mode*/
+/* =================== GLOBAL =================== */
 :root {
   --bg-color: #ffffff;
   --text-color: #000000;
@@ -31,6 +29,7 @@ body {
   font-family: Arial, sans-serif;
 }
 
+/* =================== FORM =================== */
 form {
   background: white;
   padding: 20px;
@@ -58,7 +57,7 @@ button:hover {
   background-color: #0056b3;
 }
 
-/* ===== Inbox list ===== */
+/* =================== INBOX =================== */
 .inbox-container {
   max-width: 600px;          /* רוחב סביר לרשימת מיילים */
   margin: 40px auto;         /* רווח משני הצדדים */
@@ -85,7 +84,7 @@ button:hover {
 .mail-row .subject  { flex: 1 1 auto;  color: #333; }
 .mail-row .date     { flex: 0 0 140px; font-size: 0.85rem; color: #666; text-align: right; }
 
-/* ===== Single-mail view ===== */
+/* =================== MAIL VIEW =================== */
 .mail-container {
   max-width: 700px;
   margin: 60px auto;
@@ -184,7 +183,7 @@ button:hover {
 }
 
 
-/*even more new*/
+/* =================== COMPOSE =================== */
 .compose-overlay {
   background: rgba(0,0,0,0.2);
   position: fixed;

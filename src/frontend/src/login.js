@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles.css'; // including style doc.
+import './styles/form.css'; // including style doc.
 
 const Login = () => {
   const [email, setEmail] = useState(''); // Holds the values ​​from the fields in the form.

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles.css';
+// import './styles.css';
 import { useTheme } from './ThemeContext';
 
 const Navbar = () => {

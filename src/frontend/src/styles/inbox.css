@@ -1,0 +1,26 @@
+.inbox-container {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 24px;
+}
+
+.mail-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.mail-row:hover {
+  background-color: #fafafa;
+}
+
+.mail-row .from     { flex: 0 0 140px; font-weight: bold; }
+.mail-row .subject  { flex: 1 1 auto;  color: #333; }
+.mail-row .date     { flex: 0 0 140px; font-size: 0.85rem; color: #666; text-align: right; }

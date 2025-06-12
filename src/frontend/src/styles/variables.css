@@ -1,0 +1,12 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --primary-color: #ea26b6;
+  --primary-hover: #c81c9b;
+}
+
+[data-theme="dark"] {
+  --bg-color: #1e1e1e;
+  --text-color: #f2f2f2;
+  --primary-color: #ff69b4;
+}

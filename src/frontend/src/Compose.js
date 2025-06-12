@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles.css';
+import './styles/compose.css';
 
 const Compose = () => {
   const [to,      setTo]      = useState(''); // The recipient's email address.

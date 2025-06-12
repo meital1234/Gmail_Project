@@ -9,10 +9,10 @@ const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 
 // Defines a post registration function.
 exports.registerUser = async (req, res) => {
-  const { email, password, displayName, phone_number, birthDate, gender, image } = req.body;
+  const { email, password, first_name, last_name, phone_number, birthDate, gender, image } = req.body;
 
   // Checks that all required fields are present.
-  if (!email || !password || !phone_number|| !birthDate|| !gender) {
+  if (!email || !password || !first_name || !phone_number|| !birthDate|| !gender) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -39,7 +39,7 @@ exports.registerUser = async (req, res) => {
   // - const newUser = User.createUser(req.body);
   // - res.status(201).location(`/api/users/${newUser.id}`).send();
   try {
-    const newUser = await User.createUser({ email, password, displayName, phone_number, birthDate, gender, image });
+    const newUser = await User.createUser({ email, password, first_name, last_name, phone_number, birthDate, gender, image });
     // return id for user
     return res.status(201).json({ id: newUser.id, email: newUser.email });
   } catch (err) {

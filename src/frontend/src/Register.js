@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles.css'; // including style doc
+import './styles/form.css'; // including style doc
 
 const Register = () => {
   const navigate = useNavigate(); // Enables navigation.
@@ -8,15 +8,18 @@ const Register = () => {
   // formData --> An object that contains all the form fields.
   // setFormData --> A function that updates the field values.
   const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    birth_date: '',
+    gender: '',
+    phone_number: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    phone_number: '',
-    birthDate: '',
-    gender: '',
+    confirm_password: '',
     image: ''
   });
 
+  const [currentStep, setCurrentStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Any change to a field updates the corresponding field in formData according to the name.
@@ -30,23 +33,12 @@ const Register = () => {
     setErrorMsg('');
 
     const {
-      email, password, confirmPassword,
-      phone_number, birthDate, gender, image
+      first_name, last_name, birth_date, gender, phone_number, email, password, confirm_password, image
     } = formData;
 
-    // validetion for varubles.
-    if (!email || !password || !confirmPassword || !phone_number || !birthDate || !gender) {
+    // validetion for variables.
+    if (!first_name || !birth_date || !gender || !phone_number || !email || !password || !confirm_password) {
       return setErrorMsg('Please fill in all fields');
-    }
-
-    // allow only mails ending with the right domain
-    if (!email.endsWith('@bloomly.com')) {
-      return setErrorMsg('Email must end with @bloomly.com');
-    }
-
-    // password & confirmPassword must be identical.
-    if (password !== confirmPassword) {
-      return setErrorMsg('The passwords do not match');
     }
 
     try {
@@ -57,8 +49,10 @@ const Register = () => {
         body: JSON.stringify({
           email,
           password,
+          first_name,
+          last_name,
           phone_number,
-          birthDate,
+          birthDate: birth_date,
           gender,
           image
         })
@@ -77,20 +71,139 @@ const Register = () => {
   };
 
   return (
-    <div className="centered-container">
-      <h2>Registration</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /><br />
-        <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
-        <input type="password" name="confirmPassword" placeholder=" Confirm Password" value={formData.confirmPassword} onChange={handleChange} /><br />
-        <input type="text" name="phone_number" placeholder="phone number" value={formData.phone_number} onChange={handleChange} /><br />
-        <input type="date" name="birthDate" placeholder="birthDate" value={formData.birthDate} onChange={handleChange} /><br />
-        <input type="text" name="gender" placeholder="gender" value={formData.gender} onChange={handleChange} /><br />
-        <input type="text" name="image" placeholder="Profile picture (link)" value={formData.image} onChange={handleChange} /><br />
-        <button type="submit">Register</button>
-        {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-      </form>
-    </div>
+    <div className="register-page">
+      <div className="form-card">
+        <h1 className="form-title">Registration</h1>
+          
+          <div className="progress-bar-outer">
+            <div
+              className="progress-bar-inner"
+              style={{ width: `${(currentStep - 1) * 25}%` }} // 5 steps → 4 jumps = 25% for each step
+            />
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {currentStep === 1 && (
+              <>
+                <h3>Step 1: Name</h3>
+
+                <input type="text" name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} /><br />
+                <input type="text" name="last_name" placeholder="Last name (optional)" value={formData.last_name} onChange={handleChange} /><br />
+                
+                <button type="button" onClick={() => {
+                  if (!formData.first_name) {
+                    setErrorMsg('Please fill in your first name');
+                    return;
+                  }
+                  setErrorMsg('');
+                  setCurrentStep(2);
+                }}>
+                  Next
+                </button>
+              </>
+            )}
+
+            {currentStep === 2 && (
+              <>
+                <h3>Step 2: Personal Info</h3>
+
+                <input type="date" name="birth_date" placeholder="birth date" value={formData.birth_date} onChange={handleChange} /><br />
+                <select name="gender" value={formData.gender} onChange={handleChange} className="input-field">
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Rather not say">Rather not say</option>
+                  <option value="Other">Other</option>
+                </select>
+                <input type="text" name="phone_number" placeholder="phone number" value={formData.phone_number} onChange={handleChange} /><br />
+
+                <button type="button" onClick={() => setCurrentStep(1)}>Back</button>
+                <button type="button" onClick={() => {
+                  if (
+                    !formData.birth_date || !formData.gender || !formData.phone_number
+                  ) {
+                    setErrorMsg("Please fill in all personal info fields");
+                    return;
+                  }
+                  setErrorMsg('');
+                  setCurrentStep(3);
+                }}>
+                  Next
+                </button>
+              </>
+            )}
+
+            {currentStep === 3 && (
+              <>
+                <h3>Step 3: Email</h3>
+
+                <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /><br />
+
+                <button type="button" onClick={() => setCurrentStep(2)}>Back</button>
+
+                <button type="button" onClick={() => {
+                  if (!formData.email) {
+                    setErrorMsg("Please enter your chosen email address");
+                    return;
+                  }
+                  if (!formData.email.endsWith('@bloomly.com')) {
+                    setErrorMsg("Email must end with @bloomly.com");
+                    return;
+                  }
+
+                  setErrorMsg('');
+                  setCurrentStep(4);
+                }}>
+                  Next
+                </button>
+              </>
+            )}
+
+            {currentStep === 4 && (
+              <>
+                <h3>Step 4: Create a Password</h3>
+
+                <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
+                <input type="password" name="confirm_password" placeholder=" Confirm Password" value={formData.confirm_password} onChange={handleChange} /><br />
+
+                <button type="button" onClick={() => setCurrentStep(3)}>Back</button>
+
+                <button type="button" onClick={() => {
+                  if (!formData.password || !formData.confirm_password) {
+                    setErrorMsg("Please fill in both password fields");
+                    return;
+                  }
+                  if (formData.password !== formData.confirm_password) {
+                    setErrorMsg("Passwords do not match");
+                    return;
+                  }
+
+                  setErrorMsg('');
+                  setCurrentStep(5);
+                }}>
+                  Next
+                </button>
+              </>
+            )}
+            
+            {currentStep === 5 && (
+              <>
+                <h3>Step 5: Profile Picture</h3>
+
+                <input type="text" name="image" placeholder="Link to your profile picture" value={formData.image} onChange={handleChange}/>
+
+                <button type="button" onClick={() => setCurrentStep(4)}>Back</button>
+
+                <button type="submit">
+                  Register
+                </button>
+              </>
+            )}
+
+            {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+          </form>
+        </div>
+      </div>
   );
 };
 

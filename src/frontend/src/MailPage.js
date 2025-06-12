@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './styles.css';
+import './styles/mail.css';
 
 const MailPage = () => {
   const { id } = useParams(); // id comes from the URL.
