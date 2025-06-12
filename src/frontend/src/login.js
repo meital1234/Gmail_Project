@@ -31,7 +31,7 @@ const Login = () => {
 
       // if there is no response.
       if (!response.ok) {
-        throw new Error(data.error || 'unknoun eror');
+        throw new Error(data.error || 'unknoun error');
       }
 
       // The token is saved in local storage for later use.

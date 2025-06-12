@@ -1,4 +1,4 @@
-// src/client/src/Layout.jsx
+// src/frontend/src/Layout.jsx
 import React from 'react';
 import Navbar from './NaviBar';
 

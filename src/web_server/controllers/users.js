@@ -16,6 +16,10 @@ exports.registerUser = async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  if (!username.endsWith('@bloomly.com')) {
+    return res.status(400).json({ error: 'Email must end with @bloomly.com' });
+  }
+
   if (!emailRegex.test(email.trim().toLowerCase())) {
     return res.status(400).json({ error: 'Invalid email format' });
   }

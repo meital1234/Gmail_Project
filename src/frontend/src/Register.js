@@ -39,6 +39,11 @@ const Register = () => {
       return setErrorMsg('Please fill in all fields');
     }
 
+    // allow only mails ending with the right domain
+    if (!email.endsWith('@bloomly.com')) {
+      return setErrorMsg('Email must end with @bloomly.com');
+    }
+
     // password & confirmPassword must be identical.
     if (password !== confirmPassword) {
       return setErrorMsg('The passwords do not match');
@@ -75,7 +80,7 @@ const Register = () => {
     <div className="centered-container">
       <h2>Registration</h2>
       <form onSubmit={handleSubmit}>
-        <input type="email" name="email" placeholder="Email_name" value={formData.email} onChange={handleChange} /><br />
+        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /><br />
         <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
         <input type="password" name="confirmPassword" placeholder=" Confirm Password" value={formData.confirmPassword} onChange={handleChange} /><br />
         <input type="text" name="phone_number" placeholder="phone number" value={formData.phone_number} onChange={handleChange} /><br />
