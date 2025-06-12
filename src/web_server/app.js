@@ -1,7 +1,25 @@
 require('dotenv').config(); // loads process.env.BCRYPT_SALT_ROUNDS
 
 const express = require('express');
+const cors    = require('cors');
 const app = express();
+
+// app.use((req, res, next) => {
+  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3001');
+  // res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  // res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // next();
+// });
+
+/* ===== CORS ===== */
+app.use(cors({
+  origin: 'http://localhost:3001',                 // ה-React dev-server
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  // credentials: true  // אם בעתיד תרצי לשלוח עוגיות cross-site
+}));
+app.options('*', cors());                           // תשובה 204 מהירה ל-OPTIONS
+/* =============== */
 
 // imports the routers from the routes folder
 const usersRouter  = require('./routes/users');
