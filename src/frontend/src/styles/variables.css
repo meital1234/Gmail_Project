@@ -1,8 +1,8 @@
 :root {
   --bg-color: #ffffff;
   --text-color: #000000;
-  --primary-color: #ea26b6;
-  --primary-hover: #c81c9b;
+  --primary-color: #efa8cc;
+  --primary-hover: #dc94b8;
 }
 
 [data-theme="dark"] {

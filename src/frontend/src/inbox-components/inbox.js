@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles/inbox.css';
+import '../styles/inbox.css';
 
 const Inbox = () => {
   const [mails,   setMails]   = useState([]); // An array of emails to be received from the server.

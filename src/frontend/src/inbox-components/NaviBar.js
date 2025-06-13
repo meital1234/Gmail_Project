@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 // import './styles.css';
-import { useTheme } from './ThemeContext';
+import { useTheme } from '../ThemeContext';
 
 const Navbar = () => {
   const nav = useNavigate(); // Enables navigation.

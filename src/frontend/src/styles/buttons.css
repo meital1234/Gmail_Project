@@ -3,9 +3,11 @@ button, .new-mail-btn, .logout-btn, .send-btn, .discard-btn {
   color: white;
   border: none;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-weight: bold;
   cursor: pointer;
+  margin: 0 10px;
+  width: 30%;
 }
 
 button:hover, .new-mail-btn:hover, .logout-btn:hover, .send-btn:hover {

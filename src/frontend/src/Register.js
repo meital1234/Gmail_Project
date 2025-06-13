@@ -71,76 +71,79 @@ const Register = () => {
   };
 
   return (
-    <div className="register-page">
+    <div className="form-page">
       <div className="form-card">
-        <h1 className="form-title">Registration</h1>
+        <h1 className="form-title" style={{ textAlign: 'left' }}>Registration</h1>
           
-          <div className="progress-bar-outer">
-            <div
-              className="progress-bar-inner"
-              style={{ width: `${(currentStep - 1) * 25}%` }} // 5 steps → 4 jumps = 25% for each step
-            />
-          </div>
+        <div className="progress-bar-outer">
+          <div
+            className="progress-bar-inner"
+            style={{ width: `${(currentStep - 1) * 25}%` }} // 5 steps → 4 jumps = 25% for each step
+          />
+        </div>
 
-          <form onSubmit={handleSubmit}>
-            {currentStep === 1 && (
-              <>
-                <h3>Step 1: Name</h3>
+        <form onSubmit={handleSubmit}>
+          {currentStep === 1 && (
+            <>
+              <h3>Step 1: Name</h3>
 
-                <input type="text" name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} /><br />
-                <input type="text" name="last_name" placeholder="Last name (optional)" value={formData.last_name} onChange={handleChange} /><br />
-                
+              <input type="text" name="first_name" placeholder="First name" value={formData.first_name} onChange={handleChange} /><br />
+              <input type="text" name="last_name" placeholder="Last name (optional)" value={formData.last_name} onChange={handleChange} /><br />
+              <div className="form-buttons">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!formData.first_name) {
+                            setErrorMsg('Please fill in your first name');
+                            return;
+                          }
+                          setErrorMsg('');
+                          setCurrentStep(currentStep + 1);
+                        }} > Next </button>
+              </div>
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <>
+              <h3>Step 2: Personal Info</h3>
+
+              <input type="date" name="birth_date" placeholder="birth date" value={formData.birth_date} onChange={handleChange} /><br />
+              <select name="gender" value={formData.gender} onChange={handleChange} className="input-field">
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Rather not say">Rather not say</option>
+                <option value="Other">Other</option>
+              </select>
+              <input type="text" name="phone_number" placeholder="phone number" value={formData.phone_number} onChange={handleChange} /><br />
+
+              <div className="action-buttons">
+                <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
-                  if (!formData.first_name) {
-                    setErrorMsg('Please fill in your first name');
-                    return;
-                  }
-                  setErrorMsg('');
-                  setCurrentStep(2);
-                }}>
+                    if (
+                      !formData.birth_date || !formData.gender || !formData.phone_number
+                    ) {
+                      setErrorMsg("Please fill in all personal info fields");
+                      return;
+                    }
+                    setErrorMsg('');
+                    setCurrentStep(currentStep + 1);
+                  }}>
                   Next
                 </button>
-              </>
-            )}
+              </div>
+            </>
+          )}
 
-            {currentStep === 2 && (
-              <>
-                <h3>Step 2: Personal Info</h3>
+          {currentStep === 3 && (
+            <>
+              <h3>Step 3: Email</h3>
 
-                <input type="date" name="birth_date" placeholder="birth date" value={formData.birth_date} onChange={handleChange} /><br />
-                <select name="gender" value={formData.gender} onChange={handleChange} className="input-field">
-                  <option value="">Select gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Rather not say">Rather not say</option>
-                  <option value="Other">Other</option>
-                </select>
-                <input type="text" name="phone_number" placeholder="phone number" value={formData.phone_number} onChange={handleChange} /><br />
-
-                <button type="button" onClick={() => setCurrentStep(1)}>Back</button>
-                <button type="button" onClick={() => {
-                  if (
-                    !formData.birth_date || !formData.gender || !formData.phone_number
-                  ) {
-                    setErrorMsg("Please fill in all personal info fields");
-                    return;
-                  }
-                  setErrorMsg('');
-                  setCurrentStep(3);
-                }}>
-                  Next
-                </button>
-              </>
-            )}
-
-            {currentStep === 3 && (
-              <>
-                <h3>Step 3: Email</h3>
-
-                <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /><br />
-
-                <button type="button" onClick={() => setCurrentStep(2)}>Back</button>
-
+              <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /><br />
+              
+              <div className="action-buttons">
+                <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
                   if (!formData.email) {
                     setErrorMsg("Please enter your chosen email address");
@@ -152,22 +155,21 @@ const Register = () => {
                   }
 
                   setErrorMsg('');
-                  setCurrentStep(4);
-                }}>
-                  Next
-                </button>
-              </>
-            )}
+                  setCurrentStep(currentStep + 1);
+                  }}> Next </button>
+              </div>
+            </>
+          )}
 
-            {currentStep === 4 && (
-              <>
-                <h3>Step 4: Create a Password</h3>
+          {currentStep === 4 && (
+            <>
+              <h3>Step 4: Create a Password</h3>
 
-                <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
-                <input type="password" name="confirm_password" placeholder=" Confirm Password" value={formData.confirm_password} onChange={handleChange} /><br />
+              <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
+              <input type="password" name="confirm_password" placeholder=" Confirm Password" value={formData.confirm_password} onChange={handleChange} /><br />
 
-                <button type="button" onClick={() => setCurrentStep(3)}>Back</button>
-
+              <div className="action-buttons">
+                <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
                   if (!formData.password || !formData.confirm_password) {
                     setErrorMsg("Please fill in both password fields");
@@ -179,31 +181,29 @@ const Register = () => {
                   }
 
                   setErrorMsg('');
-                  setCurrentStep(5);
-                }}>
-                  Next
-                </button>
-              </>
-            )}
-            
-            {currentStep === 5 && (
-              <>
-                <h3>Step 5: Profile Picture</h3>
+                  setCurrentStep(currentStep + 1);
+                  }}> Next </button>
+              </div>
+            </>
+          )}
+          
+          {currentStep === 5 && (
+            <>
+              <h3>Step 5: Profile Picture</h3>
 
-                <input type="text" name="image" placeholder="Link to your profile picture" value={formData.image} onChange={handleChange}/>
+              <input type="text" name="image" placeholder="Link to your profile picture" value={formData.image} onChange={handleChange}/>
+              
+              <div className="action-buttons">
+                <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
+                <button type="submit"> Register </button>
+              </div>
+            </>
+          )}
 
-                <button type="button" onClick={() => setCurrentStep(4)}>Back</button>
-
-                <button type="submit">
-                  Register
-                </button>
-              </>
-            )}
-
-            {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
-          </form>
-        </div>
+          {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+        </form>
       </div>
+    </div>
   );
 };
 

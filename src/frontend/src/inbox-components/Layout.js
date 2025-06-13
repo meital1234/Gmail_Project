@@ -1,19 +1,23 @@
 // src/frontend/src/Layout.jsx
 import React from 'react';
-import Navbar from './NaviBar';
+import Sidebar from './Sidebar'; 
+import NaviBar from './NaviBar';
+
 
 // The Layout component accepts children,
 // that is, internal content that comes from another page (such as Inbox, Compose..).
 const Layout = ({ children }) => {
   return (
     <>
-      <Navbar />
-      <div style={{ paddingTop: '60px', paddingInline: '24px' }}>
-        {children}
+      <NaviBar />
+      <div className="layout">
+        <Sidebar />
+        <div className="main-content">{children}</div>
       </div>
     </>
   );
 };
+
 
 export default Layout;
 
