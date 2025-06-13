@@ -66,8 +66,20 @@ const Register = () => {
         setErrorMsg(data.error || 'An error occurred');
       }
     } catch (err) {
-      setErrorMsg('Network error' + err.message);
+      setErrorMsg('Network error ' + err.message);
     }
+  };
+
+  // Handle image upload and convert to Data URL
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({ ...prev, image: reader.result })); // reader.result is base64 data url
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -190,9 +202,8 @@ const Register = () => {
           {currentStep === 5 && (
             <>
               <h3>Step 5: Profile Picture</h3>
-
-              <input type="text" name="image" placeholder="Link to your profile picture" value={formData.image} onChange={handleChange}/>
-              
+              <label> Profile picture: <input type="file" accept="image/*" onChange={handleImageChange} /></label>
+            
               <div className="action-buttons">
                 <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="submit"> Register </button>

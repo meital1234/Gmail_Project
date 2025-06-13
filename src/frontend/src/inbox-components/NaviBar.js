@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-// import './styles.css';
 import { useTheme } from '../ThemeContext';
+
+const user = { avatar: "/app-logo.png", name: "Noa" };
 
 const Navbar = () => {
   const nav = useNavigate(); // Enables navigation.
@@ -14,17 +15,32 @@ const Navbar = () => {
   };
 
   return (
-    <div className="topbar simple">
-      <span className="logo">myGmail</span>
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        <button onClick={toggleTheme} className="logout-btn">
-          {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-        </button>
-      <button className="logout-btn" onClick={handleLogout}>
-        Logout
-      </button>
+    <header className="topbar">
+
+      <div className="navbar-section logo-area" onClick={() => nav('/inbox')}>
+        <img src="/app-logo.png" alt="" className="app-logo" />
+        <span className="app-name">Bloomly</span>
       </div>
-    </div>
+
+      <div className="navbar-section search-section">
+        <input className="search-bar" placeholder="Search mail…" />
+      </div>
+
+      <div className="navbar-section actions-section">
+        <button onClick={toggleTheme} className="icon-btn" title="Toggle theme">
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
+        <button className="icon-btn" onClick={handleLogout} title="Logout">
+          Logout
+        </button>
+        <img
+          src={user?.avatar}
+          alt={user?.name || "Profile"}
+          className="user-avatar"
+          onClick={() => nav('/profile')}
+        />
+      </div>
+    </header>
   );
 };
 

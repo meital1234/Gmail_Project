@@ -7,7 +7,6 @@ const Sidebar = () => {
 
   return (
     <aside className="sidebar">
-      <h2>Bloomly</h2>
       <ul>
         <li onClick={() => nav('/inbox')}>Inbox</li>
         <li onClick={() => nav('/compose')}>Compose</li>

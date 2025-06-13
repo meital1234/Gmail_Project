@@ -19,7 +19,6 @@ body, html, #root {
   display: flex;
   align-items: center;
   background: #f5f6f7;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .layout {
