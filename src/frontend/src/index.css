@@ -18,6 +18,10 @@ body {
   overflow-y: hidden;
 }
 
+body, input, textarea, select, button {
+  font-family: 'Outfit', sans-serif;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

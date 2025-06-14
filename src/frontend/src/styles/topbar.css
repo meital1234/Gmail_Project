@@ -5,7 +5,9 @@
   height: 60px;
   width: 100vw;
   background: #c9e4ff;
-  padding: 0 28px;
+  padding: 0 20px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   box-sizing: border-box;
   position: fixed;
   top: 0;
@@ -16,7 +18,7 @@
 .navbar-section {
   display: flex;
   align-items: center;
-  gap: 16px;
+  /* gap: 16px; */
 }
 
 .logo-area {
@@ -27,30 +29,50 @@
   height: 47px;      
   width: 47px;
   object-fit: contain;
-  margin: 10px;
+  margin: 7px;
   vertical-align: middle;
 }
 
-.app.name {
+.app-name {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #d87449;
+  color: #f0887b;
   letter-spacing: 1.2px;
+}
+
+.search-bar-wrapper {
+  display: flex;
+  align-items: center;
+  width: 75%;        
+  max-width: 800px;
+  min-width: 250px;
+  background: #b3d0e4;       
+  border-radius: 32px;
+  height: 100%;
+}
+
+.search-bar-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  margin-bottom: 0px;
+  outline: none;
+}
+
+.search-icon {
+  font-size: 1.3rem;
+  color: #7d7d7d;
+  margin-left: 20px;
+  margin-top: 6px; 
 }
 
 .search-section {
   flex: 1;
+  display: flex;
   justify-content: center;
-}
-
-.search-bar {
-  width: clamp(140px, 35vw, 400px);
-  padding: 10px 18px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  background: #fff;
-  font-size: 1rem;
-  margin-bottom: 0px; /* override the form margin */
+  align-items: center;
+  height: 100%;
 }
 
 .actions-section {

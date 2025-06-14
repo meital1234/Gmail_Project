@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
+import { HiOutlineSearch } from "react-icons/hi";
 
 const user = { avatar: "/app-logo.png", name: "Noa" };
 
@@ -23,7 +24,10 @@ const Navbar = () => {
       </div>
 
       <div className="navbar-section search-section">
-        <input className="search-bar" placeholder="Search mail…" />
+        <div className="search-bar-wrapper">
+          <span className="search-icon"><HiOutlineSearch /></span>
+          <input className="search-bar-input" placeholder="Search mail" />
+        </div>
       </div>
 
       <div className="navbar-section actions-section">
