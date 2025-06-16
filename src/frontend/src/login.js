@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles.css'; // including style doc.
+import './styles/form.css'; // including style doc.
 
 const Login = () => {
   const [email, setEmail] = useState(''); // Holds the values ​​from the fields in the form.
@@ -31,7 +31,7 @@ const Login = () => {
 
       // if there is no response.
       if (!response.ok) {
-        throw new Error(data.error || 'unknoun eror');
+        throw new Error(data.error || 'unknoun error');
       }
 
       // The token is saved in local storage for later use.
@@ -43,29 +43,34 @@ const Login = () => {
   };
 
   return (
-    <div className="centered-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        /><br />
-        <input
-          type="password"
-          placeholder="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        /><br />
-        <button type="submit">Login</button>
-        {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
+    <div className="form-page">
+      <div className="form-card">
+        <h1 className="form-title">Login</h1>
 
-        <p>
-            You don't have an account? <a href="/register">register</a>
-        </p>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          /><br />
+          <input
+            type="password"
+            placeholder="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          /><br />
+          <div className="form-buttons">
+            <button type="submit">Login</button>
+          </div>
+          {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 
-      </form>
+          <p>
+              You don't have an account? <a href="/register">register</a>
+          </p>
+
+        </form>
+      </div>
     </div>
   );
 };

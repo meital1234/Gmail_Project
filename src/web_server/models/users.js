@@ -6,7 +6,7 @@ let idCounter = 0;
 const users = []; // array to store all users in memory.
 
 // - const createUser = ({ email, password, phone_number, birthDate, gender, image }) => {
-  async function createUser({ email, password, phone_number, birthDate, gender, image }) {
+  async function createUser({ email, password, first_name, last_name, phone_number, birthDate, gender, image }) {
     const saltRounds = +process.env.BCRYPT_SALT_ROUNDS || 10; // get number of saltrounds or use default -> 10
     // create salt & hash of password
     const salt = await bcrypt.genSalt(saltRounds);
@@ -17,6 +17,8 @@ const users = []; // array to store all users in memory.
     id: ++idCounter,
     email,  
     passwordHash,
+    first_name, 
+    last_name,
     phone_number,
     birthDate,
     gender,

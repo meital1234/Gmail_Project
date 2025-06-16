@@ -1,0 +1,6 @@
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: Arial, sans-serif;
+  transition: background 0.3s, color 0.3s;
+}

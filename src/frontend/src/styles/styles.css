@@ -1,16 +1,14 @@
-/* styles.css */
-
-/*dark mode*/
+/* =================== GLOBAL =================== */
 :root {
   --bg-color: #ffffff;
   --text-color: #000000;
-  --primary-color: #ea26b6;
+  --primary-color: #fbc2e5;
 }
 
 [data-theme="dark"] {
   --bg-color: #1e1e1e;
   --text-color: #f2f2f2;
-  --primary-color: #ff69b4;
+  --primary-color: #bc7ea4;
 }
 
 body {
@@ -31,6 +29,7 @@ body {
   font-family: Arial, sans-serif;
 }
 
+/* =================== FORM =================== */
 form {
   background: white;
   padding: 20px;
@@ -47,7 +46,7 @@ input, button {
 }
 
 button {
-  background-color: #ea26b6;
+  background-color: #bc7ea4;
   color: white;
   border: none;
   cursor: pointer;
@@ -58,7 +57,7 @@ button:hover {
   background-color: #0056b3;
 }
 
-/* ===== Inbox list ===== */
+/* =================== INBOX =================== */
 .inbox-container {
   max-width: 600px;          /* רוחב סביר לרשימת מיילים */
   margin: 40px auto;         /* רווח משני הצדדים */
@@ -85,7 +84,7 @@ button:hover {
 .mail-row .subject  { flex: 1 1 auto;  color: #333; }
 .mail-row .date     { flex: 0 0 140px; font-size: 0.85rem; color: #666; text-align: right; }
 
-/* ===== Single-mail view ===== */
+/* =================== MAIL VIEW =================== */
 .mail-container {
   max-width: 700px;
   margin: 60px auto;
@@ -105,9 +104,9 @@ button:hover {
   overflow-wrap: break-word;
 }
 
-.mail-container h3 { margin-top: 0; color: #ea26b6; }
+.mail-container h3 { margin-top: 0; color: #bc7ea4; }
 .mail-container pre {
-  white-space: pre-wrap;     /* נשמרים מעברי שורה */
+  white-space: pre-wrap;
   font-family: inherit;
   line-height: 1.4;
 }
@@ -126,7 +125,7 @@ button:hover {
 
 
 .new-mail-btn {
-  background-color: #ea26b6;
+  background-color: #bc7ea4;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -137,7 +136,7 @@ button:hover {
   width: auto;
 }
 .new-mail-btn:hover {
-  background-color: #c81c9b;
+  background-color: #bc7ea4;
 }
 
 .topbar {
@@ -184,7 +183,7 @@ button:hover {
 }
 
 
-/*even more new*/
+/* =================== COMPOSE =================== */
 .compose-overlay {
   background: rgba(0,0,0,0.2);
   position: fixed;

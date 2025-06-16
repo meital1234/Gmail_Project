@@ -1,0 +1,28 @@
+/* === Base styles === */
+@import './styles/variables.css';
+@import './styles/theme.css';
+@import './styles/layout.css';
+@import './styles/form.css';
+@import './styles/buttons.css';
+@import './styles/inbox.css';
+@import './styles/mail.css';
+@import './styles/compose.css';
+@import './styles/topbar.css';
+
+
+body {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-y: hidden;
+}
+
+body, input, textarea, select, button {
+  font-family: 'Outfit', sans-serif;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

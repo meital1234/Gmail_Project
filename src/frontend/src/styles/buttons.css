@@ -1,0 +1,25 @@
+button, .new-mail-btn, .logout-btn, .send-btn, .discard-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 10px;
+  width: 30%;
+}
+
+button:hover, .new-mail-btn:hover, .logout-btn:hover, .send-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.discard-btn {
+  background-color: transparent;
+  color: #d93025;
+  border: 1px solid #d93025;
+}
+
+.discard-btn:hover {
+  background-color: #fbeaea;
+}

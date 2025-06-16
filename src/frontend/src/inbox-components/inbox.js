@@ -1,9 +1,8 @@
-// src/client/src/Inbox.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './styles.css';
+import '../styles/inbox.css';
 
-const Inbox = () => {
+const Inbox = ({ searchQuery, searchResults, searching, searchError }) => {
   const [mails,   setMails]   = useState([]); // An array of emails to be received from the server.
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,7 +18,6 @@ const Inbox = () => {
       })
       .then(async (r) => {
         if (!r.ok) {
-         
           const { error } = await r.json().catch(() => ({}));
           throw new Error(error || r.statusText);       
         }
@@ -30,17 +28,12 @@ const Inbox = () => {
       .finally(() => setLoading(false));
   }, [nav]);
 
-  // If the data is still loading, displays loading text.
-  if (loading) return <p className="centered-container">Loading…</p>;
+  // decide which list to display
+  const displayMails = searchQuery ? searchResults : mails;
 
-  // If there is an error, it displays it in red text.
-  if (error) {
-    return (
-      <p className="centered-container" style={{ color: 'red' }}>
-        {error}
-      </p>
-    );
-  }
+  if (loading) return <p className="centered-container">Loading…</p>;
+  if (error) return <p className="centered-container" style={{ color: 'red' }}>{error}</p>;
+  if (searchError) return <p className="centered-container" style={{ color: 'red' }}>{searchError}</p>;
 
   return (
     <div className="inbox-container">
@@ -52,12 +45,13 @@ const Inbox = () => {
           </button>
         </div>
       </div>
-      {mails.length === 0 && <p>No mail yet ✉️</p>}
-      {mails.map(mail => (
+      {searching && <div>Searching…</div>}
+      {!searching && searchQuery && displayMails.length === 0 && <p>No mail found ✉️</p>}
+      {displayMails.map(mail => (
         <div
           key={mail.id}
           className="mail-row"
-          onClick={() => nav(`/mail/${mail.id}`)}   // ניווט לעמוד קריאה
+          onClick={() => nav(`/mail/${mail.id}`)}
         >
           <span className="from">{mail.from}</span>
           <span className="subject">{mail.subject}</span>

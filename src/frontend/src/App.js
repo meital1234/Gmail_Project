@@ -2,9 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './login';
 import Register from './Register';
-import Inbox from './inbox';
+import Inbox from './inbox-components/inbox';
 import Compose from './Compose';
-import Layout from './Layout';
+import Layout from './inbox-components/Layout';
 import MailPage from './MailPage';
 import { ThemeProvider } from './ThemeContext';
 
