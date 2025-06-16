@@ -5,7 +5,7 @@ import { HiOutlineSearch } from "react-icons/hi";
 
 const user = { avatar: "/app-logo.png", name: "Noa" };
 
-const Navbar = () => {
+const Navbar = ({ searchInput, setSearchInput, setSearchQuery}) => {
   const nav = useNavigate(); // Enables navigation.
   const { theme, toggleTheme } = useTheme();
 
@@ -26,7 +26,15 @@ const Navbar = () => {
       <div className="navbar-section search-section">
         <div className="search-bar-wrapper">
           <span className="search-icon"><HiOutlineSearch /></span>
-          <input className="search-bar-input" placeholder="Search mail" />
+          <input
+            className="search-bar-input"
+            placeholder="Search mail"
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") setSearchQuery(searchInput);
+            }}
+          />
         </div>
       </div>
 
