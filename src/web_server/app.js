@@ -23,6 +23,21 @@ const labelsRouter = require('./routes/labels');
 const blacklistRouter = require('./routes/blacklist');
 const configRouter  = require('./routes/config'); 
 const TCP = require('./utils/TCPclient');
+
+// --- 🌟 Default Bloom Filter Config at startup 🌟 ---
+const defaultBitArraySize = parseInt(process.env.BF_SIZE) || 8;
+const defaultHashFuncs = (process.env.BF_HASHES || "1,2").split(',');
+
+(async () => {
+  try {
+    const line = [defaultBitArraySize, ...defaultHashFuncs].join(' ');
+    await TCP.initTCP(line);
+  } catch (err) {
+    console.error('[BloomFilter] Initialization failed:', err.message);
+  }
+})();
+// ---------------------------------------------------
+
 const authMiddleware  = require('./utils/auth').getAuthenticatedUser;
 
 app.use(express.json()); // Allows the application to parse JSON requests and read req.body.
