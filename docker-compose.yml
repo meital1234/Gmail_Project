@@ -32,26 +32,14 @@ services:
      stdin_open: true
      tty: true
 
-  client:
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile.client
-    container_name: client
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    ports:
+      - "3001:3001"
     depends_on:
-      - server
-    volumes:
-      - ./data:/app/data
-    stdin_open: true
-    tty: true
-
-  test:
-    build:
-      context: .
-      dockerfile: Dockerfile.tests
-    container_name: test
-    depends_on:
-      - server
-    volumes:
-      - ./data:/app/data
+      - web
     stdin_open: true
     tty: true
