@@ -25,8 +25,11 @@ const users = []; // array to store all users in memory.
     image: image || null
   };
 
-  // for each new user - create a "draft" label
-  Labels.createLabel({ name: "draft", userId: newUser.id });
+  // Create default labels for this user
+  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Draft", "Spam"];
+  defaultLabels.forEach(labelName => {
+    Labels.createLabel({ name: labelName, userId: newUser.id });
+  });
 
   // Adds user to the array and than returns him.
   users.push(newUser);

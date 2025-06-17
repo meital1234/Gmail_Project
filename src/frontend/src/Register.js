@@ -130,7 +130,7 @@ const Register = () => {
               </select>
               <input type="text" name="phone_number" placeholder="phone number" value={formData.phone_number} onChange={handleChange} /><br />
 
-              <div className="action-buttons">
+              <div className="form-buttons">
                 <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
                     if (
@@ -154,7 +154,7 @@ const Register = () => {
 
               <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} /><br />
               
-              <div className="action-buttons">
+              <div className="form-buttons">
                 <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
                   if (!formData.email) {
@@ -180,7 +180,7 @@ const Register = () => {
               <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
               <input type="password" name="confirm_password" placeholder=" Confirm Password" value={formData.confirm_password} onChange={handleChange} /><br />
 
-              <div className="action-buttons">
+              <div className="form-buttons">
                 <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
                   if (!formData.password || !formData.confirm_password) {
@@ -204,7 +204,7 @@ const Register = () => {
               <h3>Step 5: Profile Picture</h3>
               <label> Profile picture: <input type="file" accept="image/*" onChange={handleImageChange} /></label>
             
-              <div className="action-buttons">
+              <div className="form-buttons">
                 <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="submit"> Register </button>
               </div>

@@ -71,6 +71,18 @@ exports.sendMail = async (req, res) => {
     }
   }
 
+  // get Sent label for sender
+  const senderLabels = Labels.getAllLabelsByUser(sender.id);
+  const sentLabel = senderLabels.find(l => l.name.toLowerCase() === 'sent');
+  if (sentLabel && !labelIds.includes(sentLabel.id)) {
+    labelIds.push(sentLabel.id);
+  }
+
+  // get Inbox label for recipient
+  const recipientLabels = Labels.getAllLabelsByUser(recipient.id);
+  const inboxLabel = recipientLabels.find(l => l.name.toLowerCase() === 'inbox');
+  labelIds.push(inboxLabel.id);  
+  
   // Creates and send the new mail, return the id as a response
   const newMail = Mail.createMail({
     from: sender.email,

@@ -19,33 +19,13 @@ function App() {
           <Route path="/register" element={<Register />} />
 
           {/* The inbox page is displayed with a Layout that also includes the Navbar. */}
-          <Route
-            path="/inbox"
-            element={
-              <Layout>
-                <Inbox />
-              </Layout>
-            }
-          />
-          {/* Writing a new email. */}
-          <Route
-            path="/compose"
-            element={
-              <Layout>
-                <Compose />
-              </Layout>
-            }
-          />
-          {/* Displaying a specific email by ID. */}
-          <Route
-            path="/mail/:id"
-            element={
-              <Layout>
-                <MailPage />
-              </Layout>
-            }
-          />
-
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Inbox />} />
+            <Route path="inbox" element={<Inbox />} />
+            <Route path="label/:id" element={<Inbox />} />
+            <Route path="compose" element={<Compose />} /> 
+            <Route path="mail/:id" element={<MailPage />} />     
+          </Route>
           {/* Any non-existent address will automatically redirect to login.*/}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>

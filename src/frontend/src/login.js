@@ -66,7 +66,7 @@ const Login = () => {
           {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 
           <p>
-              You don't have an account? <a href="/register">register</a>
+              Don't have an account yet? <a href="/register">register</a>
           </p>
 
         </form>

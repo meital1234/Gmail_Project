@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/inbox.css';
+import { useOutletContext } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
-const Inbox = ({ searchQuery, searchResults, searching, searchError }) => {
+
+const Inbox = () => {
+  const { searchQuery, searchResults, searching, searchError } = useOutletContext();
   const [mails,   setMails]   = useState([]); // An array of emails to be received from the server.
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(true);
   const nav = useNavigate(); // Navigation function.
+  const { id: labelId } = useParams();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -29,7 +34,14 @@ const Inbox = ({ searchQuery, searchResults, searching, searchError }) => {
   }, [nav]);
 
   // decide which list to display
-  const displayMails = searchQuery ? searchResults : mails;
+  let displayMails = searchQuery ? searchResults : mails;
+  console.log("labelId from params:", labelId, "type:", typeof labelId);
+  console.log("mail.labelIds for first mail:", displayMails[0]?.labelIds);
+  if (labelId) {
+    displayMails = displayMails.filter(mail =>
+     mail.labels && mail.labels.some(label => label.id === labelId)
+    );
+  }
 
   if (loading) return <p className="centered-container">Loading…</p>;
   if (error) return <p className="centered-container" style={{ color: 'red' }}>{error}</p>;
