@@ -51,11 +51,6 @@ const Inbox = () => {
     <div className="inbox-container">
       <div className="inbox-header">
         <h2 style={{ margin: 0 }}>Inbox</h2>
-        <div className="header-buttons">
-          <button className="new-mail-btn" onClick={() => nav('/compose')}>
-            + New Mail
-          </button>
-        </div>
       </div>
       {searching && <div>Searching…</div>}
       {!searching && searchQuery && displayMails.length === 0 && <p>No mail found ✉️</p>}

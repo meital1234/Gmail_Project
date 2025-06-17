@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import '../styles/sidebar.css';
 import React, { useEffect, useState } from 'react';
-import { MdInbox, MdSend, MdDrafts, MdStar, MdReport, MdLabel } from 'react-icons/md';
-import { Link } from 'react-router-dom';
+import { MdEdit, MdInbox, MdSend, MdDrafts, MdStar, MdReport, MdLabel } from 'react-icons/md';
 
 
 // map default labels to icons to appear in the sidebar
@@ -32,19 +31,24 @@ const Sidebar = () => {
 
   return (
     <div className="sidebar">
-      <h2>Labels</h2>
+      {/* Compose Button */}
+      <button className="new-mail-btn" onClick={() => nav('/compose')}>
+          <MdEdit/>
+          Compose
+        </button>
       <ul>
         {labels.map(label => (
           <li
             key={label.id}
+            onClick={() => nav(`/label/${label.id}`)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
           >
-            <Link to={`/label/${label.id}`}>{label.name}</Link>
             <span>{labelIcons[label.name.toLowerCase()] || <MdLabel />}</span>
             <span>{label.name}</span>
           </li>
         ))}
       </ul>
+      <h2>Labels</h2>
     </div>
   );
 };
