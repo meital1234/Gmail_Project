@@ -26,7 +26,7 @@ button:hover, .logout-btn:hover, .send-btn:hover {
   box-shadow: 0 2px 8px rgba(120, 130, 150, 0.09);
   font-size: 1.20rem;
   padding: 10px 25px 10px 20px;
-  margin: 18px auto 24px auto;
+  margin: 0px auto;
   width: 90%;
   transition: background 0.15s, box-shadow 0.15s;
   cursor: pointer;
