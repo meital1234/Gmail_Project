@@ -1,0 +1,12 @@
+# כלליים
+.git
+.gitignore
+README.md
+*.log
+
+# React (frontend)
+src/frontend/node_modules
+src/frontend/build
+
+# Node.js backend (web_server)
+src/web_server/node_modules
