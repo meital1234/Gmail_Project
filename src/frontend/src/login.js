@@ -15,7 +15,7 @@ const Login = () => {
 
     // validetion for cordentional.
     if (!email || !password) {
-      setErrorMsg('please fill in every thing');
+      setErrorMsg('Please fill in your credentials');
       return;
     }
 
@@ -31,7 +31,7 @@ const Login = () => {
 
       // if there is no response.
       if (!response.ok) {
-        throw new Error(data.error || 'unknoun error');
+        throw new Error(data.error || 'unknown error');
       }
 
       // The token is saved in local storage for later use.

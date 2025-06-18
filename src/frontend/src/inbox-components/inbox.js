@@ -35,8 +35,6 @@ const Inbox = () => {
 
   // decide which list to display
   let displayMails = searchQuery ? searchResults : mails;
-  console.log("labelId from params:", labelId, "type:", typeof labelId);
-  console.log("mail.labelIds for first mail:", displayMails[0]?.labelIds);
   if (labelId) {
     displayMails = displayMails.filter(mail =>
      mail.labels && mail.labels.some(label => label.id === labelId)
