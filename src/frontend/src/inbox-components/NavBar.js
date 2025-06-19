@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
 import { HiOutlineSearch } from "react-icons/hi";
 
-const user = { avatar: "/app-logo.png", name: "Noa" };
 
-const Navbar = ({ searchInput, setSearchInput, setSearchQuery}) => {
+const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
   const nav = useNavigate(); // Enables navigation.
   const { theme, toggleTheme } = useTheme();
 
@@ -46,8 +45,8 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery}) => {
           Logout
         </button>
         <img
-          src={user?.avatar}
-          alt={user?.name || "Profile"}
+          src={user?.image || '/default-avatar.png'}  // dynamically loaded user image
+          alt={user?.name || 'Profile'}
           className="user-avatar"
           onClick={() => nav('/profile')}
         />

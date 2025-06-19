@@ -1,12 +1,13 @@
 :root {
-  --bg-color: #ffffff;
-  --text-color: #000000;
+  --bg-color: #c9e4ff;
+  --text-color: #252525;
   --primary-color: #efa8cc;
   --primary-hover: #dc94b8;
 }
 
 [data-theme="dark"] {
-  --bg-color: #1e1e1e;
+  --bg-color: #435a72;
   --text-color: #f2f2f2;
-  --primary-color: #ff69b4;
+  --primary-color: #ba598a;
+  --primary-hover: #d67aa8;
 }

@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Twinkle+Star&display=swap');
+
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 60px;
   width: 100vw;
-  background: #c9e4ff;
+  background: var(--bg-color);
   padding: 0 20px;
   padding-top: 8px;
   padding-bottom: 8px;
@@ -35,9 +37,12 @@
 
 .app-name {
   font-size: 1.5rem;
-  font-weight: bold;
   color: #f0887b;
   letter-spacing: 1.2px;
+  font-family: "Twinkle Star", cursive;
+  font-weight: 600;
+  font-style: normal;
+  margin-top: 10px;
 }
 
 .search-bar-wrapper {
