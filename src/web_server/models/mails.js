@@ -1,4 +1,6 @@
 const Labels =require('../models/labels')
+const Blacklist = require('../models/blacklist');
+
 
 let idCounter = 0;
 const mails = []; // array to store all users in memory.
@@ -22,6 +24,7 @@ const getLatestMailsForUser = (userId) => {
 
       return isSender || isRecipient;
     })
+    .filter(m => !m.isSpam)
     .sort((a, b) => b.dateSent - a.dateSent)
     .slice(0, 50)
     .map(m => {
@@ -38,7 +41,7 @@ const getLatestMailsForUser = (userId) => {
 }
 
 
-const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) => {
+async function createMail ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) {
   const mail = {
       id: ++idCounter,
       from,
@@ -48,8 +51,19 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds
       subject,
       content,
       labelIds: labelIds || [],  // default is empty if none
-      dateSent
+      dateSent,
+      isSpam: false
   };
+
+  // automatic sends to spam if URL is bad
+  const links = Array.from(content.matchAll(/https?:\/\/[^\s]+/g), m => m[0]);
+  for (const link of links) {
+    if (await Blacklist.isBlacklisted(link)) {
+      mail.isSpam = true;
+      break;
+    }
+  }
+
   // Adds mail to the array and than returns mail.
   mails.push(mail);
   return mail;
@@ -135,11 +149,36 @@ function searchMails(query, userId) {
   });
 }
 
+// this function loads the spam folder
+function getSpamMailsForUser(userId) {
+  return mails
+    .filter(m => m.isSpam && (m.senderId === userId || m.recieverId === userId))
+    .sort((a, b) => b.dateSent - a.dateSent);
+}
+
+async function markMailAsSpamById(mailId) {
+  const mail = mails.find(m => m.id === mailId);
+  if (!mail) return false;
+  mail.isSpam = true;
+
+  const links = Array.from(mail.content.matchAll(/https?:\/\/[^\s]+/g), m => m[0]);
+  for (const link of links) {
+    // if still not in blacklist
+    if (!await Blacklist.isBlacklisted(link)) {
+      await Blacklist.addUrl(link);
+    }
+  }
+
+  return true;
+}
+
 module.exports = {
   createMail,
   getLatestMailsForUser,
   getMailById,
   updateMailById,
   deleteMailById,
-  searchMails
+  searchMails,
+  getSpamMailsForUser,
+  markMailAsSpamById
 };
