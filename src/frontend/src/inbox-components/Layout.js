@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar'; 
 import NavBar from './NavBar';
 import { Outlet } from 'react-router-dom';
@@ -12,9 +13,26 @@ const Layout = ({
   searchResults,
   searching,
   searchError
-}) => (
+}) => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    fetch('http://localhost:3000/api/users/me', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then((res) => res.json())
+      .then(setUser)
+      .catch(err => console.error("Failed to load user:", err));
+  }, []);
+  return (
   <>
     <NavBar
+      user={user}
       searchInput={searchInput}
       setSearchInput={setSearchInput}
       setSearchQuery={setSearchQuery}
@@ -34,7 +52,8 @@ const Layout = ({
       </div>
     </div>
   </>
-);
+  );
+};
 
 
 

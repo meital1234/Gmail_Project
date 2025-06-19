@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import '../styles/inbox.css';
-import { useOutletContext } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
 
 
 const Inbox = () => {
@@ -10,6 +8,7 @@ const Inbox = () => {
   const [mails,   setMails]   = useState([]); // An array of emails to be received from the server.
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const nav = useNavigate(); // Navigation function.
   const { id: labelId } = useParams();
 
@@ -31,6 +30,13 @@ const Inbox = () => {
       .then(setMails) // Saves received emails.
       .catch((err) => setError(err.message))             
       .finally(() => setLoading(false));
+
+      fetch('http://localhost:3000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(setUser)
+      .catch(console.error);
   }, [nav]);
 
   // decide which list to display
@@ -48,23 +54,28 @@ const Inbox = () => {
   return (
     <div className="inbox-container">
       <div className="inbox-header">
-        <h2 style={{ margin: 0 }}>Inbox</h2>
+        <h2 style={{ margin: 0 }}>
+          Hello {user?.first_name || 'User'}, welcome to your Bloomly Mail!
+        </h2>
       </div>
+      
       {searching && <div>Searching…</div>}
       {!searching && searchQuery && displayMails.length === 0 && <p>No mail found ✉️</p>}
-      {displayMails.map(mail => (
-        <div
-          key={mail.id}
-          className="mail-row"
-          onClick={() => nav(`/mail/${mail.id}`)}
-        >
-          <span className="from">{mail.from}</span>
-          <span className="subject">{mail.subject}</span>
-          <span className="date">
-            {new Date(mail.dateSent).toLocaleString('he-IL')}
-          </span>
-        </div>
-      ))}
+      <div className="mail-box">
+        {displayMails.map(mail => (
+          <div
+            key={mail.id}
+            className="mail-row"
+            onClick={() => nav(`/mail/${mail.id}`)}
+          >
+            <span className="from">{mail.from}</span>
+            <span className="subject">{mail.subject}</span>
+            <span className="date">
+              {new Date(mail.dateSent).toLocaleString('he-IL')}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
