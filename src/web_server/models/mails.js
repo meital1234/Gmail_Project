@@ -7,19 +7,22 @@ const mails = []; // array to store all users in memory.
 const getLatestMailsForUser = (userId) => {
   return mails
     .filter(m => {
-      // filter only mails visible to the user
       const isSender = m.senderId === userId;
       const isRecipient = m.recieverId === userId;
 
-      // filter only the drafts if the user is the sender
-      if (isRecipient && !isSender) {
-        const hasDraft = (m.labelIds || []).some(labelId => {
-          const label = Labels.getLabelById({ id: labelId, userId: m.senderId });
-          return label?.name === "draft";
-        });
-        return !hasDraft;
+      const labelNames = (m.labelIds || []).map(id => {
+        const label = Labels.getLabelById({ id, userId: m.senderId });
+        return label?.name?.toLowerCase();
+      });
+
+      const isDraft = labelNames.includes("Draft");
+
+      // If it's a Draft — return only if the user is in the sender (and not in the Inbox).
+      if (isDraft) {
+        return isSender;  // Only the sender sees their draft.
       }
 
+      // Otherwise, Regular Email: If the user is the sender or recipient.
       return isSender || isRecipient;
     })
     .sort((a, b) => b.dateSent - a.dateSent)
@@ -35,8 +38,7 @@ const getLatestMailsForUser = (userId) => {
         labels: labelObjs
       };
     });
-}
-
+};
 
 const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) => {
   const mail = {
@@ -75,6 +77,10 @@ const getMailById = ({ id, userId }) => {
 function updateMailById(mailId, updates) {
   const mail = mails.find(m => m.id === mailId);
   if (!mail) return false;
+
+  if (updates.to !== undefined) {
+    mail.to = updates.to;
+  }
 
   if (updates.subject !== undefined) {
     mail.subject = updates.subject;
