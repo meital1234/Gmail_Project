@@ -26,7 +26,7 @@ const users = []; // array to store all users in memory.
   };
 
   // Create default labels for this user
-  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Draft", "Spam", "Read"];
+  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Drafts", "Spam", "Read"];
   defaultLabels.forEach(labelName => {
     Labels.createLabel({ name: labelName, userId: newUser.id });
   });
