@@ -1,4 +1,7 @@
-# כלליים
+# general
+build
+CMakeCache.txt
+CMakeFiles
 .git
 .gitignore
 README.md
