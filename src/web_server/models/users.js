@@ -5,7 +5,7 @@ const Labels = require('./labels');
 let idCounter = 0;
 const users = []; // array to store all users in memory.
 
-const DEFAULT_PROFILE_IMAGE = 'http://localhost:3001/static/default-profile.png';
+const DEFAULT_PROFILE_IMAGE = 'http://localhost:3000/static/default-profile.png';
 
 // - const createUser = ({ email, password, phone_number, birthDate, gender, image }) => {
   async function createUser({ email, password, first_name, last_name, phone_number, birthDate, gender, image }) {

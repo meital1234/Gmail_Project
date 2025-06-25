@@ -1,8 +1,10 @@
-import { useNavigate } from 'react-router-dom';
-import '../styles/sidebar.css';
 import React, { useEffect, useState } from 'react';
-import { MdEdit, MdInbox, MdSend, MdDrafts, MdStar, MdReport, MdLabel, MdAdd, MdMoreVert } from 'react-icons/md';
-
+import { useNavigate } from 'react-router-dom';
+import {
+  MdEdit, MdInbox, MdSend, MdDrafts, MdStar,
+  MdReport, MdLabel, MdAdd, MdMoreVert
+} from 'react-icons/md';
+import '../styles/sidebar.css';
 
 // map default labels to icons to appear in the sidebar
 const labelIcons = {
@@ -20,6 +22,39 @@ const Sidebar = () => {
   const [labels, setLabels] = useState([]);
   const [menuOpenId, setMenuOpenId] = useState(null); // Track which label menu is open
   const nav = useNavigate();
+
+    useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      nav('/login', { replace: true });
+      return;
+    }
+
+    fetch('http://localhost:3000/api/labels', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async res => {
+        if (!res.ok) throw new Error('unauth');
+        const data = await res.json();
+
+        // always returns array (empty or not)
+        const arr = Array.isArray(data) ? data : data.labels;
+        setLabels(Array.isArray(arr) ? arr : []); 
+      })
+      .catch(err => {
+        console.error('[Sidebar] fetch labels failed:', err);
+        localStorage.removeItem('token');
+        nav('/login', { replace: true });
+      });
+  }, [nav]);
+
+  const safeLabels     = Array.isArray(labels) ? labels : [];
+  const defaultLabels  = safeLabels.filter(l =>
+    defaultLabelNames.includes(l.name?.toLowerCase())
+  );
+  const customLabels   = safeLabels.filter(l =>
+    !defaultLabelNames.includes(l.name?.toLowerCase())
+  );
 
   const handleRename = async (label) => {
     const newName = prompt("Rename label:", label.name);
@@ -49,23 +84,6 @@ const Sidebar = () => {
       setLabels(prev => prev.filter(l => l.id !== labelId));
     }
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetch('http://localhost:3000/api/labels', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => r.json())
-      .then(setLabels)
-      .catch(console.error);
-  }, []);
-
-  const defaultLabels = labels.filter(label =>
-    defaultLabelNames.includes(label.name.toLowerCase())
-  );
-  const customLabels = labels.filter(label =>
-    !defaultLabelNames.includes(label.name.toLowerCase())
-  );
 
   return (
     <div className="sidebar">

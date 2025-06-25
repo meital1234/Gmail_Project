@@ -7,6 +7,7 @@ import Compose from './Compose';
 import Layout from './inbox-components/Layout';
 import MailPage from './MailPage';
 import { ThemeProvider } from './ThemeContext';
+import RequireAuth from './RequireAuth';
 
 
 function App() {
@@ -14,20 +15,23 @@ function App() {
     <ThemeProvider>
       <Router>
         <Routes>
-          {/* Pages like login and registration do not need the Navbar, so they are displayed alone.*/}
-          <Route path="/login" element={<Login />} />
+          {/* Public pages */}
+          <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* The inbox page is displayed with a Layout that also includes the Navbar. */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Inbox />} />
-            <Route path="inbox" element={<Inbox />} />
-            <Route path="label/:id" element={<Inbox />} />
-            <Route path="compose" element={<Compose />} /> 
-            <Route path="mail/:id" element={<MailPage />} />     
+          {/* Everything below requires a token */}
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<Layout />}>
+              <Route index            element={<Inbox />} />
+              <Route path="inbox"     element={<Inbox />} />
+              <Route path="label/:id" element={<Inbox />} />
+              <Route path="compose"   element={<Compose />} /> 
+              <Route path="mail/:id"  element={<MailPage />} />     
+            </Route>
           </Route>
-          {/* Any non-existent address will automatically redirect to login.*/}
-          <Route path="*" element={<Navigate to="/login" />} />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
     </ThemeProvider>

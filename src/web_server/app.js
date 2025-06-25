@@ -1,12 +1,12 @@
 require('dotenv').config(); // loads process.env.BCRYPT_SALT_ROUNDS
 const path = require('path');
-
 const express = require('express');
 const cors    = require('cors');
 const app = express();
+
+app.use('/static', express.static(path.join(__dirname, 'utils')));
 app.use(express.json({ limit: '2mb' }));
 // Serve static files from /web_server/utils
-app.use('/static', express.static(path.join(__dirname, 'web_server', 'utils')));
 
 /* ===== CORS ===== */
 app.use(cors({
