@@ -52,10 +52,14 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
         </div>
       </div>
 
-      <div className="navbar-section actions-section" ref={dropdownRef}>
-        <button onClick={toggleTheme} className="icon-btn" title="Toggle theme">
-          {theme === 'dark' ? <FiSun /> : <FiMoon />}
-        </button>
+      <div className="navbar-section" ref={dropdownRef}>
+          <button
+            onClick={toggleTheme}
+            className="icon-btn"
+            title="Toggle theme"
+          >
+            {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
+          </button>
         <img
           src={user?.image || '/default-avatar.png'}
           alt="Profile"
@@ -65,18 +69,12 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
         {menuOpen && (
           <div className="profile-dropdown">
             <button className="close-btn" onClick={() => setMenuOpen(false)}><FiX size={20} /></button>
-            <div className="profile-email">{user?.username || 'user@email.com'}</div>
-            <div className="profile-pic-ring">
-              <img src={user?.image || '/default-avatar.png'} alt="avatar" className="profile-pic" />
-            </div>
-            <div className="profile-name">Hi, {user?.name || 'User'}!</div>
-            <button className="google-settings-btn">Google Account settings</button>
+            <div className="profile-email">{user?.email}</div>
+            <img src={user?.image || '/default-avatar.png'} alt="avatar" className="profile-pic" />
+            <div className="profile-name">Hi, {user?.first_name}!</div>
             <div className="dropdown-actions">
               <button className="dropdown-btn">➕ Add account</button>
               <button className="dropdown-btn" onClick={handleLogout}>⇨ Sign out</button>
-            </div>
-            <div className="storage-info">☁️ 34% of 100 GB used</div>
-            <div className="privacy-links">
             </div>
           </div>
         )}
