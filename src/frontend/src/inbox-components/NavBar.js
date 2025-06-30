@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
-import { HiOutlineSearch } from "react-icons/hi";
-import { FiSun, FiX, FiMoon } from "react-icons/fi";
 
 const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
   const nav = useNavigate(); // Enables navigation.
@@ -39,7 +37,7 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
 
       <div className="navbar-section search-section">
         <div className="search-bar-wrapper">
-          <span className="search-icon"><HiOutlineSearch /></span>
+          <span className="material-symbols-rounded">search</span>
           <input
             className="search-bar-input"
             placeholder="Search mail"
@@ -58,7 +56,9 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
             className="icon-btn"
             title="Toggle theme"
           >
-            {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
+            {theme === 'dark' ? 
+            <span className="material-symbols-rounded">dark_mode</span> : 
+            <span className="material-symbols-rounded">light_mode</span>}
           </button>
         <img
           src={user?.image || '/default-avatar.png'}
@@ -68,13 +68,22 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
         />
         {menuOpen && (
           <div className="profile-dropdown">
-            <button className="close-btn" onClick={() => setMenuOpen(false)}><FiX size={20} /></button>
-            <div className="profile-email">{user?.email}</div>
-            <img src={user?.image || '/default-avatar.png'} alt="avatar" className="profile-pic" />
-            <div className="profile-name">Hi, {user?.first_name}!</div>
-            <div className="dropdown-actions">
-              <button className="dropdown-btn">➕ Add account</button>
-              <button className="dropdown-btn" onClick={handleLogout}>⇨ Sign out</button>
+            <button className="close-btn" onClick={() => setMenuOpen(false)}>
+              <span className="material-symbols-rounded">close</span>
+            </button>
+
+            <div className="profile-content">
+              <div className="profile-email">{user?.email}</div>
+
+              <div className="profile-header">
+                <img src={user?.image || '/default-avatar.png'} alt="avatar" className="profile-pic" />
+                <div className="profile-name">Hi, {user?.first_name}!</div>
+              </div>
+
+              <div className="dropdown-actions">
+                <button className="dropdown-btn">Add account</button>
+                <button className="dropdown-btn" onClick={handleLogout}>Sign out</button>
+              </div>
             </div>
           </div>
         )}

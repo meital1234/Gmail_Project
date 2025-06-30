@@ -40,7 +40,9 @@ exports.createLabel = (req, res) => {
   }
 
   const newLabel = Label.createLabel({ name, userId: sender.id });
-  res.status(201).location(`/api/labels/${newLabel.id}`).send();
+  res.status(201)
+  .location(`/api/labels/${newLabel.id}`)
+  .json({ id: newLabel.id, name: newLabel.name });
 };
 
 exports.updateLabel = (req, res) => {
