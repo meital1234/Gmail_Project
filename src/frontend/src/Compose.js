@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './styles/compose.css';
 
@@ -7,7 +7,19 @@ const Compose = () => {
   const [subject, setSubject] = useState(''); // The subject of the email.
   const [content, setContent] = useState(''); // The body of the message.
   const [error,   setError]   = useState('');
+  const [availableLabels, setAvailableLabels] = useState([]);
+  const [selectedLabels, setSelectedLabels] = useState([]);
   const nav = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:3000/api/labels', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(setAvailableLabels)
+      .catch(() => alert('Failed to load labels'));
+  }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -24,7 +36,7 @@ const Compose = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ toEmail: to, subject, content })
+        body: JSON.stringify({ toEmail: to, subject, content, labels: selectedLabels })
       });
       if (!res.ok) {
         const { error } = await res.json().catch(()=>({}));
@@ -41,7 +53,7 @@ const Compose = () => {
     <div className="compose-box">
       <div className="compose-header">
         <h3>New Message</h3>
-        <button className="close-btn" onClick={() => nav('/inbox')}>✖</button>
+        <button className="close-btn" onClick={() => nav('/inbox')}><span className="material-symbols-rounded">close</span></button>
       </div>
       <form onSubmit={handleSend}>
         <input
@@ -71,6 +83,31 @@ const Compose = () => {
             setError('');
           }}
         />
+
+        <div className="label-selector">
+          <h4>Labels:</h4>
+          <div className="label-options">
+            {availableLabels.map(label => (
+              <label key={label.id} style={{ marginRight: 10 }}>
+                <input
+                  type="checkbox"
+                  value={label.name}
+                  checked={selectedLabels.includes(label.name)}
+                  onChange={(e) => {
+                    const name = label.name;
+                    setSelectedLabels(prev =>
+                      e.target.checked
+                        ? [...prev, name]
+                        : prev.filter(l => l !== name)
+                    );
+                  }}
+                />
+                {label.name}
+              </label>
+            ))}
+          </div>
+        </div>
+
         {error && <p className="compose-error">{error}</p>}
         <div className="compose-actions">
           <button className="send-btn" type="submit">Send</button>

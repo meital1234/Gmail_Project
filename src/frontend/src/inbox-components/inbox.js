@@ -68,11 +68,21 @@ const Inbox = () => {
             className="mail-row"
             onClick={() => nav(`/mail/${mail.id}`)}
           >
-            <span className="from">{mail.from}</span>
-            <span className="subject">{mail.subject}</span>
-            <span className="date">
-              {new Date(mail.dateSent).toLocaleString('he-IL')}
-            </span>
+            <div className="mail-top-row">
+              <span className="from">{mail.from}</span>
+              <span className="subject">{mail.subject}</span>
+              <span className="date">
+                {new Date(mail.dateSent).toLocaleString('he-IL')}
+              </span>
+            </div>
+
+            <div className="mail-labels">
+              {mail.labels && mail.labels.map(label => (
+                <span key={label.id} className="mail-label">
+                  {label.name}
+                </span>
+              ))}
+            </div>
           </div>
         ))}
       </div>
