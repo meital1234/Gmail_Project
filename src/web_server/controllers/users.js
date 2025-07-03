@@ -1,5 +1,6 @@
 require('dotenv').config();
 const User = require('../models/users');
+const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
 
 // email nust be in this format xxx@xxx
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,6 +30,35 @@ exports.registerUser = async (req, res) => {
       error: 'Password must be at least 8 characters long and include uppercase, lowercase, and a number' 
     });
   }
+
+  // Phone number validation
+  const phonePattern = /^\d{9,15}$/;
+  if (!phonePattern.test(phone_number)) {
+    return res.status(400).json({ error: 'Invalid phone number format' });
+  }
+
+  // Age validation
+  const today = new Date();
+  const userBirthDate = new Date(birthDate);
+  const age = today.getFullYear() - userBirthDate.getFullYear();
+  if (age < 10) {
+    return res.status(400).json({ error: 'You must be at least 10 years old to sign up' });
+  }
+
+  // Image validation
+  if (image) {
+    // Make sure it's a base64 string that starts with a valid prefix
+    if (!image.startsWith('data:image/')) {
+      return res.status(400).json({ error: 'Invalid image format' });
+    }
+
+    // Limit image size (base64 is ~33% bigger than binary)
+    const base64Length = image.length * (3 / 4); // rough estimate
+    const maxBytes = 1 * 1024 * 1024; // 1MB
+    if (base64Length > maxBytes) {
+      return res.status(400).json({ error: 'Image is too large (max 1MB)' });
+    }
+  }
   
   // make sure the email address isnt in use already
   const existing = User.getUserByEmail(email);
@@ -48,15 +78,17 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-// - exports.getUserById = (req, res) => {
-// -   const id = parseInt(req.params.id); // Gets the id from the path and converts it to a number.
-// -   const user = User.getUserById(id); // Searching for the user in the model.
-// -  
-// -   // If the user is not found we will return 404.
-// -   if (!user) {
-// -     return res.status(404).json({ error: 'User not found' });
-// -   }
-// - 
-// -   const { email, phone_number, birthDate, gender, image } = user;
-// -   res.json({ id, email, phone_number, birthDate, gender, image }); // Returns the user data (without password for security reasons).
-// - };
+// GET /api/users/me
+exports.getCurrentUser = (req, res) => {
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  res.status(200).json({
+    id: user.id,
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    gender: user.gender,
+    image: user.image || null
+  });
+};

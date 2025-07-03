@@ -21,6 +21,7 @@ const Register = () => {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState('');
+  const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
 
   // Any change to a field updates the corresponding field in formData according to the name.
   const handleChange = (e) => {
@@ -75,6 +76,11 @@ const Register = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (file.size > MAX_IMAGE_SIZE) {
+      setErrorMsg('Image size must be less than 1MB');
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData((prev) => ({ ...prev, image: reader.result })); // reader.result is base64 data url
@@ -133,10 +139,28 @@ const Register = () => {
               <div className="form-buttons">
                 <button type="button" onClick={() => setCurrentStep(currentStep - 1)}> Back </button>
                 <button type="button" onClick={() => {
+                    const birthDate = new Date(formData.birth_date);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    const dayDiff = today.getDate() - birthDate.getDate();
+                    const phonePattern = /^[0-9]{9,15}$/;
                     if (
                       !formData.birth_date || !formData.gender || !formData.phone_number
                     ) {
                       setErrorMsg("Please fill in all personal info fields");
+                      return;
+                    }
+                    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                      age--;
+                    }
+
+                    if (age < 10) {
+                      setErrorMsg("You must be at least 10 years old to sign up!");
+                      return;
+                    }
+                    if (!phonePattern.test(formData.phone_number)) {
+                      setErrorMsg("Phone number must contain only digits");
                       return;
                     }
                     setErrorMsg('');

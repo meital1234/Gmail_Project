@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import '../styles/sidebar.css';
 import React, { useEffect, useState } from 'react';
-import { MdEdit, MdInbox, MdSend, MdDrafts, MdStar, MdReport, MdLabel } from 'react-icons/md';
+import { MdEdit, MdInbox, MdSend, MdDrafts, MdStar, MdReport, MdLabel, MdAdd, MdMoreVert } from 'react-icons/md';
 
 
 // map default labels to icons to appear in the sidebar
@@ -14,10 +14,41 @@ const labelIcons = {
   spam: <MdReport />
 };
 
+const defaultLabelNames = ["inbox", "sent", "drafts", "important", "starred", "spam"];
+
 const Sidebar = () => {
   const [labels, setLabels] = useState([]);
+  const [menuOpenId, setMenuOpenId] = useState(null); // Track which label menu is open
   const nav = useNavigate();
 
+  const handleRename = async (label) => {
+    const newName = prompt("Rename label:", label.name);
+    if (!newName || newName === label.name) return;
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:3000/api/labels/${label.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ name: newName })
+    });
+    if (res.ok) {
+      setLabels(prev => prev.map(l => l.id === label.id ? { ...l, name: newName } : l));
+    }
+  };
+
+  const handleDelete = async (labelId) => {
+    if (!window.confirm("Are you sure you want to delete this label?")) return;
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:3000/api/labels/${labelId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      setLabels(prev => prev.filter(l => l.id !== labelId));
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -29,6 +60,13 @@ const Sidebar = () => {
       .catch(console.error);
   }, []);
 
+  const defaultLabels = labels.filter(label =>
+    defaultLabelNames.includes(label.name.toLowerCase())
+  );
+  const customLabels = labels.filter(label =>
+    !defaultLabelNames.includes(label.name.toLowerCase())
+  );
+
   return (
     <div className="sidebar">
       {/* Compose Button */}
@@ -37,7 +75,7 @@ const Sidebar = () => {
           Compose
         </button>
       <ul>
-        {labels.map(label => (
+        {defaultLabels.map(label => (
           <li
             key={label.id}
             onClick={() => nav(`/label/${label.id}`)}
@@ -48,7 +86,62 @@ const Sidebar = () => {
           </li>
         ))}
       </ul>
-      <h2>Labels</h2>
+      {/* Section Header for Custom Labels */}
+      <div className="sidebar-labels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+        <h3 style={{ margin: 0 }}>My Labels</h3>
+        <MdAdd
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            const name = prompt("Enter label name:");
+            if (!name) return;
+
+            const token = localStorage.getItem('token');
+            fetch('http://localhost:3000/api/labels', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ name })
+            })
+              .then(r => r.ok ? r.json() : Promise.reject(r))
+              .then(newLabel => setLabels(prev => [...prev, newLabel]))
+              .catch(() => alert('Failed to create label'));
+          }}
+        />
+      </div>
+
+      {/* Custom Labels */}
+      <ul>
+        {customLabels.map(label => (
+          <li
+            key={label.id}
+            className="custom-label-item"
+            onClick={() => nav(`/label/${label.id}`)}
+          >
+            <span className="label-icon"><MdLabel /></span>
+            <span className="label-name">{label.name}</span>
+
+            <span
+              className="label-options"
+              onClick={(e) => {
+                e.stopPropagation(); // Don't trigger nav
+                setMenuOpenId(menuOpenId === label.id ? null : label.id);
+              }}
+            >
+              <MdMoreVert />
+            </span>
+
+            {/* Dropdown menu */}
+            {menuOpenId === label.id && (
+              <div className="label-dropdown" onClick={(e) => e.stopPropagation()}>
+                <div className="dropdown-item" onClick={() => handleRename(label)}>Edit</div>
+                <div className="dropdown-item" onClick={() => handleDelete(label.id)}>Remove label</div>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

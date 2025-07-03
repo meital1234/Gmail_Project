@@ -20,3 +20,11 @@
   margin-top: 0;
   color: var(--primary-color);
 }
+
+.draft-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

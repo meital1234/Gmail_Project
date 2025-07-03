@@ -26,39 +26,33 @@ exports.getInbox = (req, res) => {
   res.json(filteredInbox);
 };
 
+
 exports.sendMail = async (req, res) => {
-  // ---------------- input checks ----------------
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
+    const sender = getAuthenticatedUser(req, res);
+    if (!sender) return;
 
-  const { toEmail, subject, content, labels } = req.body;
-  // Checks that all required fields are present - in this case only the target email
-  if (!toEmail) {
-    return res.status(400).json({ error: 'Receiver email is required' });
-  }
+    const { toEmail, subject, content, labels } = req.body;
 
-  // verify the recipient email
-  const recipient = Users.getUserByEmail(toEmail);
-  if (!recipient) {
-    return res.status(404).json({ error: 'Recipient not found' });
-  }
+    const isDraft = labels && labels.includes('Draft');
 
-  // Get label names from the request
-  const labelNames = labels || [];
+    // If not draft — require recipient
+    if (!toEmail && !isDraft) {
+        return res.status(400).json({ error: 'Receiver email is required' });
+    }
 
-  // Convert names to label objects
-  const labelObjects = labelNames.map(name =>
-    Labels.getAllLabelsByUser(sender.id).find(l => l.name === name)
-  );
+    // If not draft — require recipient to exist
+    let recipient = null;
+    if (!isDraft) {
+        recipient = Users.getUserByEmail(toEmail);
+        if (!recipient) {
+            return res.status(404).json({ error: 'Recipient not found' });
+        }
+    }
 
-  // Check if any are missing
-  if (labelObjects.includes(undefined)) {
-    return res.status(400).json({ error: 'One or more labels do not exist' });
-  }
-
-  // Convert to label IDs
-  const labelIds = labelObjects.map(l => l.id);
+    const labelNames = labels || [];
+    const labelObjects = labelNames.map(name =>
+        Labels.getAllLabelsByUser(sender.id).find(l => l.name === name)
+    );
 
   // extract all links in the mail for blacklist check
   const textToCheck = [subject, content].filter(Boolean).join(" ");
@@ -70,13 +64,12 @@ exports.sendMail = async (req, res) => {
   //     return res.status(400).json({ error: 'Mail contains malicious links' });
   //   }
   // }
+=======
+    if (labelObjects.includes(undefined)) {
+        return res.status(400).json({ error: 'One or more labels do not exist' });
+    }
 
-  // get Sent label for sender
-  const senderLabels = Labels.getAllLabelsByUser(sender.id);
-  const sentLabel = senderLabels.find(l => l.name.toLowerCase() === 'sent');
-  if (sentLabel && !labelIds.includes(sentLabel.id)) {
-    labelIds.push(sentLabel.id);
-  }
+    const labelIds = labelObjects.map(l => l.id);
 
   // get Inbox label for recipient
   const recipientLabels = Labels.getAllLabelsByUser(recipient.id);
@@ -101,6 +94,47 @@ exports.sendMail = async (req, res) => {
     .status(statusCode)
     .location(`/api/mails/${newMail.id}`)
     .json({ id: newMail.id, isSpam: newMail.isSpam });
+=======
+    const textToCheck = [subject, content].filter(Boolean).join(" ");
+    if (textToCheck) {
+        const links = extractLinks(textToCheck);
+        const hasBlacklisted = await checkLinks(links);
+        if (hasBlacklisted) {
+            return res.status(400).json({ error: 'Mail contains malicious links' });
+        }
+    }
+
+    if (!isDraft) {
+      // Not a draft add sent / inbox
+      const senderLabels = Labels.getAllLabelsByUser(sender.id);
+      const sentLabel = senderLabels.find(l => l.name.toLowerCase() === 'sent');
+      if (sentLabel && !labelIds.includes(sentLabel.id)) {
+        labelIds.push(sentLabel.id);
+      }
+
+      if (recipient) {
+        const recipientLabels = Labels.getAllLabelsByUser(recipient.id);
+        const inboxLabel = recipientLabels.find(l => l.name.toLowerCase() === 'inbox');
+        if (inboxLabel) {
+          labelIds.push(inboxLabel.id);
+        }
+      }
+   }
+
+    const newMail = Mail.createMail({
+        from: sender.email,
+        to: toEmail || '',
+        senderId: sender.id,
+        recieverId: isDraft ? null : recipient?.id || null,
+        // recieverId: recipient?.id || null,
+        subject,
+        content,
+        labelIds,
+        dateSent: isDraft ? null : new Date(),
+        // dateSent: new Date(),
+    });
+
+    res.status(201).location(`/api/mails/${newMail.id}`).send();
 };
 
 exports.getMailById = (req, res) => {
@@ -159,14 +193,14 @@ exports.editMailById = async (req, res) => {
   }
 
   // allow editing only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "draft", userId: sender.id });
+  const draftLabel = Labels.getLabelByName({ name: "Draft", userId: sender.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
     return res.status(403).json({ error: 'Only draft mails can be edited' });
   }
 
-  const { subject, content, labels } = req.body;
+  const { toEmail, subject, content, labels } = req.body;
 
   // validate that one of them was passed
   if (!subject && !content && !labels) {
@@ -197,7 +231,7 @@ exports.editMailById = async (req, res) => {
     labelIds = labelObjects.map(l => l.id);
   }
 
-  Mail.updateMailById(mailId, { subject, content, labels: labelIds });
+  Mail.updateMailById(mailId, { to: toEmail, subject, content, labels: labelIds });
 
   return res.status(204).send(); // No Content
 };
@@ -220,7 +254,7 @@ exports.deleteMailById = (req, res) => {
   }
 
   // allow deleting only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "draft", userId: user.id });
+  const draftLabel = Labels.getLabelByName({ name: "Draft", userId: user.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {

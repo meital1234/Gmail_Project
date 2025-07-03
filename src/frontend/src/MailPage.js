@@ -1,44 +1,219 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './styles/mail.css';
 
 const MailPage = () => {
-  const { id } = useParams(); // id comes from the URL.
-  const [mail, setMail] = useState(null); // The variable in which we will store the content of the email.
+  const { id } = useParams(); // Email ID (extracted from the URL).           
   const nav = useNavigate();
+  const [mail, setMail] = useState(null); // The content of the email.
+  const [error, setError] = useState('');
 
-  // We will check if there is a token, if there is no token we will go to the login page.
+  // For editing draft
+  const [to, setTo] = useState('');
+  const [subject, setSubject] = useState('');
+  const [content, setContent] = useState('');
+
   useEffect(() => {
+    const fetchMail = async () => {
+      const token = localStorage.getItem('token'); // Take the token (of the logged-in user) from localStorage.
+      try {
+        // Send a request to the server — retrieve the email by id.
+        const res = await fetch(`http://localhost:3000/api/mails/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const { error } = await res.json().catch(() => ({}));
+          throw new Error(error || res.statusText);
+        }
+        const data = await res.json();
+        setMail(data);
+
+        // If it's Draft — initialize the fields (to, subject, content) so we can edit them.
+        const isDraft = data.labels?.some(l => l.name === 'Draft');
+        if (isDraft) {
+          setTo(data.to);
+          setSubject(data.subject);
+          setContent(data.content);
+        }
+
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+
+    fetchMail();
+  }, [id]); // The effect will rerun every time the id changes.
+
+
+  // When clicking the "Discard" button.
+  const handleSave = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      nav('/login');
+    try {
+      const res = await fetch(`http://localhost:3000/api/mails/${id}`, {
+        // Send PATCH to the server to update the email.
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          toEmail: to,
+          subject,
+          content,
+          labels: mail.labels?.map(l => l.name)
+        })
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || res.statusText);
+      }
+      // After saving return to Inbox.
+      nav('/inbox');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+
+  // Send a DELETE request to the server, delete the Draft.
+  const handleDelete = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:3000/api/mails/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || res.statusText);
+      }
+      nav('/inbox');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+
+  // When a user clicks Send, sending process.
+  const handleSend = async () => {
+    const token = localStorage.getItem('token');
+
+    // Check whether the recipient field is filled.
+    if (!to.trim()) {
+      setError('Recipient email is required');
       return;
     }
 
-    // Sending a GET request to the server with a token.
-    fetch(`http://localhost:3000/api/mails/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('Unauthorized');
-        return r.json();
-      })
-      .then(setMail) // If everything is correct, we will save the content of the email in mail.
-      .catch(() => nav('/login'));
-  }, [id, nav]);
-  // While the email is still null, a loading message is displayed.
-  if (!mail) return <p>Loading…</p>;
+    try {
+      // Send a POST to the server to create a new email.
+      const res = await fetch(`http://localhost:3000/api/mails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          toEmail: to,
+          subject,
+          content
+        })
+      });
 
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || res.statusText);
+      }
+
+      // After sending you can delete the old draft.
+      await fetch(`http://localhost:3000/api/mails/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // return to Inbox.
+      nav('/inbox');
+    } catch (err) {
+      setError(err.message);
+    }
+ };
+
+
+ // Displays "Loading..." until the email loads.
+  if (!mail) {
+    return (
+      <div className="mail-container">
+        <button className="back-btn" onClick={() => nav('/inbox')}>
+          Go Back
+        </button>
+        <p>Loading...</p>
+        {error && <p className="error">{error}</p>}
+      </div>
+    );
+  }
+
+  const isDraft = mail.labels?.some(l => l.name === 'Draft');
+
+  // Displaying an edit form.
+  if (isDraft) {
+    return (
+      <div className="mail-container">
+        <button className="back-btn" onClick={() => nav('/inbox')}>
+          Go Back
+        </button>
+
+        <h3>Editing Draft</h3>
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+          <div>
+            <label>To:</label>
+            <input
+              type="text"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Subject:</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Content:</label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          </div>
+          <div className="draft-buttons">
+            <button type="submit">Discard</button>
+            <button type="button" onClick={handleDelete}>Delete Draft</button>
+            <button type="button" onClick={handleSend}>Send</button>
+          </div>
+        </form>
+
+        {error && <p className="error">{error}</p>}
+      </div>
+    );
+  }
+
+  // Otherwise (not Draft), Show normal view.
   return (
     <div className="mail-container">
       <button className="back-btn" onClick={() => nav('/inbox')}>
         Go Back
       </button>
+
       <h3>{mail.subject}</h3>
       <p><strong>From:</strong> {mail.from}</p>
       <p><strong>To:</strong> {mail.to}</p>
       <hr />
       <div className="mail-content">{mail.content}</div>
+
+      {error && <p className="error">{error}</p>}
     </div>
   );
 };
