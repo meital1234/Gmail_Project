@@ -36,12 +36,43 @@ const Compose = () => {
     }
   };
   
+
+  // Sends a POST to the server with a label of Draft — that is, saves the email as a draft.
+  const saveDraft = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await fetch('http://localhost:3000/api/mails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          toEmail: to,
+          subject,
+          content,
+          labels: ['Draft']
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save draft:', err);
+    }
+  };
+
+  // Clicking "Discard" — first saves as a draft and then returns to the Inbox.
+  const handleDiscard = async () => {
+    await saveDraft();
+    nav('/inbox');
+  };
+
+
+  // screen display.
   return (
   <div className="compose-overlay">
     <div className="compose-box">
       <div className="compose-header">
         <h3>New Message</h3>
-        <button className="close-btn" onClick={() => nav('/inbox')}>✖</button>
+        <button className="close-btn" onClick={handleDiscard}>✖</button>
       </div>
       <form onSubmit={handleSend}>
         <input
@@ -74,7 +105,7 @@ const Compose = () => {
         {error && <p className="compose-error">{error}</p>}
         <div className="compose-actions">
           <button className="send-btn" type="submit">Send</button>
-          <button className="discard-btn" type="button" onClick={() => nav('/inbox')}>Discard</button>
+          <button className="discard-btn" type="button" onClick={handleDiscard}>Discard</button>
         </div>
       </form>
     </div>
