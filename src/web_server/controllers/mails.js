@@ -1,11 +1,10 @@
 const Users = require('../models/users');   // needed to identify the sender and receiver id by token
 const Mail = require('../models/mails');
-const Labels =require('../models/labels')
-const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
+const Labels = require('../models/labels');
+const { getAuthenticatedUser } = require('../utils/auth');  // helper for authenticating a user
 const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinks } = require('../utils/TCPclient');
 const send = require('send');
-
 
 exports.getInbox = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
@@ -55,12 +54,47 @@ exports.sendMail = async (req, res) => {
         Labels.getAllLabelsByUser(sender.id).find(l => l.name === name)
     );
 
+  // extract all links in the mail for blacklist check
+  const textToCheck = [subject, content].filter(Boolean).join(" ");
+  // (moved into model: automatic spam tagging in createMail)
+  // if (textToCheck) {
+  //   const links = extractLinks(textToCheck);
+  //   const hasBlacklisted = await checkLinks(links);
+  //   if (hasBlacklisted) {
+  //     return res.status(400).json({ error: 'Mail contains malicious links' });
+  //   }
+  // }
+=======
     if (labelObjects.includes(undefined)) {
         return res.status(400).json({ error: 'One or more labels do not exist' });
     }
 
     const labelIds = labelObjects.map(l => l.id);
 
+  // get Inbox label for recipient
+  const recipientLabels = Labels.getAllLabelsByUser(recipient.id);
+  const inboxLabel = recipientLabels.find(l => l.name.toLowerCase() === 'inbox');
+  labelIds.push(inboxLabel.id);
+
+  // Creates and send the new mail, return the id as a response
+  const newMail = await Mail.createMail({
+    from: sender.email,
+    to: toEmail,
+    senderId: sender.id,
+    recieverId: recipient.id,
+    subject,
+    content,
+    labelIds,
+    dateSent: new Date(),
+  });
+  // TODO: move the new mail id to location
+  // if the mail was auto-tagged as spam, return 200; otherwise 201
+  const statusCode = newMail.isSpam ? 200 : 201;
+  res
+    .status(statusCode)
+    .location(`/api/mails/${newMail.id}`)
+    .json({ id: newMail.id, isSpam: newMail.isSpam });
+=======
     const textToCheck = [subject, content].filter(Boolean).join(" ");
     if (textToCheck) {
         const links = extractLinks(textToCheck);
@@ -113,7 +147,7 @@ exports.getMailById = (req, res) => {
     return res.status(400).json({ error: 'Invalid mail ID' });
   }
 
-  const mail = Mail.getMailById({id, userId: user.id}); // Searching for the mail in the model.
+  const mail = Mail.getMailById({ id, userId: user.id }); // Searching for the mail in the model.
   // If the mail is not found we will return 404.
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
@@ -200,7 +234,7 @@ exports.editMailById = async (req, res) => {
   Mail.updateMailById(mailId, { to: toEmail, subject, content, labels: labelIds });
 
   return res.status(204).send(); // No Content
-}
+};
 
 exports.deleteMailById = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
@@ -209,7 +243,7 @@ exports.deleteMailById = (req, res) => {
 
   // check the mail id's validity
   const mailId = parseInt(req.params.id);
-  const mail = Mail.getMailById({id: mailId, userId: user.id});
+  const mail = Mail.getMailById({ id: mailId, userId: user.id });
   if (!mail) {
     return res.status(404).json({ error: 'Mail not found' });
   }
@@ -229,9 +263,50 @@ exports.deleteMailById = (req, res) => {
 
   Mail.deleteMailById(mailId);
   return res.status(204).send(); // No Content
-}
+};
 
-// GET /api/mails/search/:query -> returns 200 OK & JSON array of matching mails
+// GET /api/mails/spam -> returns 200 OK & JSON array of spam mails
+exports.getSpam = (req, res) => {
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const spam = Mail.getSpamMailsForUser(user.id)
+    .map(({ id, from, to, subject, content, dateSent, labels }) => ({
+      id,
+      from,
+      to,
+      subject,
+      content,
+      dateSent,
+      labels
+    }));
+  res.json(spam);
+};
+
+// PATCH /api/mails/:id/spam -> mark a mail as spam and add its links to blacklist
+exports.markAsSpam = async (req, res) => {
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const mailId = parseInt(req.params.id, 10);
+  if (isNaN(mailId)) {
+    return res.status(400).json({ error: 'Invalid mail ID' });
+  }
+
+  // verify access
+  const mail = Mail.getMailById({ id: mailId, userId: user.id });
+  if (!mail) {
+    return res.status(404).json({ error: 'Mail not found' });
+  }
+
+  const ok = await Mail.markMailAsSpamById(mailId);
+  if (!ok) {
+    return res.status(500).json({ error: 'Failed to mark as spam' });
+  }
+
+  res.json({ message: 'Mail marked as spam' });
+};
+
 exports.searchMails = (req, res) => {
   const user = getAuthenticatedUser(req, res);
   if (!user) return;
@@ -250,13 +325,13 @@ exports.searchMails = (req, res) => {
       .map(({ id, name }) => ({ id, name }));
 
     return {
-        id: mail.id,
-        from: mail.from,
-        to: mail.to,
-        subject: mail.subject,
-        content: mail.content,
-        dateSent: mail.dateSent,
-        labels: filteredLabels
+      id: mail.id,
+      from: mail.from,
+      to: mail.to,
+      subject: mail.subject,
+      content: mail.content,
+      dateSent: mail.dateSent,
+      labels: filteredLabels
     };
   });
 
