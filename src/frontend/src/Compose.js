@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './styles/compose.css';
 
+const defaultLabelNames = ["inbox", "sent", "drafts", "important", "starred", "spam"];
+
 const Compose = () => {
   const [to,      setTo]      = useState(''); // The recipient's email address.
   const [subject, setSubject] = useState(''); // The subject of the email.
@@ -25,6 +27,31 @@ const Compose = () => {
     })
     .catch(() => alert('Failed to load labels'));
 }, []);
+
+  const handleAddLabel = async () => {
+  const name = prompt("Enter new label name:");
+  if (!name) return;
+
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('http://localhost:3000/api/labels', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ name })
+    });
+
+    if (!res.ok) throw new Error("Failed to create label");
+
+    const newLabel = await res.json();
+    setAvailableLabels(prev => [...prev, newLabel]);
+  } catch (err) {
+    alert("Could not create label");
+  }
+};
+
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -90,22 +117,33 @@ const Compose = () => {
         />
 
         <div className="compose-labels">
-          <h4>Labels:</h4>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Labels:
+            <span
+              className="label-add-btn"
+              title="Add new label"
+              onClick={handleAddLabel}
+            >
+              ➕
+            </span>
+          </h4>
           <div className="label-pills">
-            {availableLabels.map(label => {
-              const selected = selectedLabels.includes(label.name);
-              return (
-                <span
-                  key={label.id}
-                  className={`pill ${selected ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedLabels(prev =>
-                      selected
-                        ? prev.filter(l => l !== label.name)
-                        : [...prev, label.name]
-                    );
-                  }}
-                >
+            {availableLabels
+              .filter(label => !defaultLabelNames.includes(label.name?.toLowerCase()))
+              .map(label => {
+                const selected = selectedLabels.includes(label.name);
+                return (
+                  <span
+                    key={label.id}
+                    className={`pill ${selected ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedLabels(prev =>
+                        selected
+                          ? prev.filter(l => l !== label.name)
+                          : [...prev, label.name]
+                      );
+                    }}
+                  >
                   {label.name}
                 </span>
               );

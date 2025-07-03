@@ -10,7 +10,7 @@ const Inbox = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const nav = useNavigate(); // Navigation function.
-  const { id: labelId } = useParams();
+  const { labelName } = useParams();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -41,9 +41,9 @@ const Inbox = () => {
 
   // decide which list to display
   let displayMails = searchQuery ? searchResults : mails;
-  if (labelId) {
+  if (labelName) {
     displayMails = displayMails.filter(mail =>
-     mail.labels && mail.labels.some(label => label.id === labelId)
+     mail.labels && mail.labels.some(label => label.name === labelName)
     );
   }
 

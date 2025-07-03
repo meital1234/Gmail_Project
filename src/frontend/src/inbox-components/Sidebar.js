@@ -92,7 +92,7 @@ const Sidebar = () => {
         {defaultLabels.map(label => (
           <li
             key={label.id}
-            onClick={() => nav(`/label/${label.id}`)}
+            onClick={() => nav(`/label/${label.name.toLowerCase()}`)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
           >
             <span>{labelIcons[label.name.toLowerCase()] || <span class="material-symbols-rounded">label</span>}</span>

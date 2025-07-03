@@ -36,7 +36,7 @@ const Login = () => {
 
       // The token is saved in local storage for later use.
       localStorage.setItem('token', data.token);
-      navigate('/inbox');
+      navigate('/labels/inbox');
     } catch (err) {
       setErrorMsg(err.message);
     }

@@ -75,3 +75,17 @@
   font-weight: 500;
   border: 1px solid #81c784;
 }
+
+.label-add-btn {
+  background: #eee;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.label-add-btn:hover {
+  background: #ddd;
+}

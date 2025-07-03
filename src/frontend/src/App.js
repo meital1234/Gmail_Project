@@ -23,8 +23,7 @@ function App() {
           <Route element={<RequireAuth />}>
             <Route path="/" element={<Layout />}>
               <Route index            element={<Inbox />} />
-              <Route path="inbox"     element={<Inbox />} />
-              <Route path="label/:id" element={<Inbox />} />
+              <Route path="/label/:labelName" element={<Inbox />} />
               <Route path="compose"   element={<Compose />} /> 
               <Route path="mail/:id"  element={<MailPage />} />     
             </Route>
