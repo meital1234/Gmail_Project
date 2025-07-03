@@ -51,7 +51,7 @@
   width: 75%;        
   max-width: 800px;
   min-width: 250px;
-  background: #aed1f0;       
+  background: var(--secondary-color);       
   border-radius: 32px;
   height: 100%;
 }
@@ -86,7 +86,7 @@
   border-radius: 50%;
   border: none;
 
-  background: #b0d3f9;
+  background: var(--secondary-color);
   color: #fefdfd;
 
   display: flex;

@@ -14,7 +14,7 @@ input, textarea, select {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: #c9e4ff;
+  background-color: var(--bg-color);
   padding: 24px;
 }
 
@@ -23,7 +23,7 @@ input, textarea, select {
   height: clamp(15px, 90%, 60px);
   padding: 60px;
   margin: 0 auto;
-  background: white;
+  background: var(--secondary-color);
   border-radius: 20px;
   box-sizing: border-box;
 }

@@ -16,10 +16,15 @@ const Compose = () => {
     fetch('http://localhost:3000/api/labels', {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(r => r.json())
-      .then(setAvailableLabels)
-      .catch(() => alert('Failed to load labels'));
-  }, []);
+    .then(async res => {
+      if (!res.ok) throw new Error('unauth');
+      const data = await res.json();
+
+      const arr = Array.isArray(data) ? data : data.labels;
+      setAvailableLabels(Array.isArray(arr) ? arr : []);
+    })
+    .catch(() => alert('Failed to load labels'));
+}, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -84,27 +89,27 @@ const Compose = () => {
           }}
         />
 
-        <div className="label-selector">
+        <div className="compose-labels">
           <h4>Labels:</h4>
-          <div className="label-options">
-            {availableLabels.map(label => (
-              <label key={label.id} style={{ marginRight: 10 }}>
-                <input
-                  type="checkbox"
-                  value={label.name}
-                  checked={selectedLabels.includes(label.name)}
-                  onChange={(e) => {
-                    const name = label.name;
+          <div className="label-pills">
+            {availableLabels.map(label => {
+              const selected = selectedLabels.includes(label.name);
+              return (
+                <span
+                  key={label.id}
+                  className={`pill ${selected ? 'selected' : ''}`}
+                  onClick={() => {
                     setSelectedLabels(prev =>
-                      e.target.checked
-                        ? [...prev, name]
-                        : prev.filter(l => l !== name)
+                      selected
+                        ? prev.filter(l => l !== label.name)
+                        : [...prev, label.name]
                     );
                   }}
-                />
-                {label.name}
-              </label>
-            ))}
+                >
+                  {label.name}
+                </span>
+              );
+            })}
           </div>
         </div>
 
