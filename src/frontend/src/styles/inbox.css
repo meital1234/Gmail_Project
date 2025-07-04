@@ -242,3 +242,25 @@
 .add-label:hover {
   color: #007bff;
 }
+
+.mail-container {
+  max-width: 700px;
+  margin: 60px auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 32px;
+}
+
+.mail-container h3 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+.draft-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
