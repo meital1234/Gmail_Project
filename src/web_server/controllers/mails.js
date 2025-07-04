@@ -218,7 +218,12 @@ exports.deleteMailById = (req, res) => {
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
-    return res.status(403).json({ error: 'Only draft mails can be deleted' });
+    const success = Mail.deleteMailByIdForUser(mailId, user.id);
+    if (!success) {
+      return res.status(500).json({ error: 'Could not hide mail' });
+    }
+
+    return res.status(204).send(); // No Content
   }
 
   Mail.deleteMailById(mailId);

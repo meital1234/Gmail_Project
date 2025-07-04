@@ -123,7 +123,6 @@ const Inbox = () => {
       </div>
       
       {searching && <div>Searching…</div>}
-      {!searching && searchQuery && displayMails.length === 0 && <p>No mail found ✉️</p>}
       <div className="mail-box">
         {displayMails.map(mail => (
           <div
@@ -162,7 +161,6 @@ const Inbox = () => {
                     setLabelSearchTerm('');
                   }}
                 >
-                  +
                 </span>
 
                 {addingLabelMailId === mail.id && (

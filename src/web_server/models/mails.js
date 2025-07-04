@@ -48,7 +48,8 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds
       subject,
       content,
       labelIds: labelIds || [],  // default is empty if none
-      dateSent
+      dateSent,
+      hiddenFrom: []
   };
   // Adds mail to the array and than returns mail.
   mails.push(mail);
@@ -57,7 +58,8 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds
 
 
 const getMailById = ({ id, userId }) => {
-  const mail = mails.find(m => m.id === id && (m.senderId === userId || m.recieverId === userId));
+  const mail = mails.find(m => m.id === id && (m.senderId === userId || m.recieverId === userId)  &&
+  !(m.hiddenFrom?.includes(userId)));
   if (!mail) return null;
 
   const labelObjs = (mail.labelIds || [])
@@ -73,7 +75,7 @@ const getMailById = ({ id, userId }) => {
 
 
 function updateMailById(mailId, updates) {
-  const mail = mails.find(m => m.id === mailId);
+  const mail = mails.find(m => m.id === mailId && !(m.hiddenFrom?.includes(userId)));
   if (!mail) return false;
 
   if (updates.subject !== undefined) {
@@ -99,13 +101,21 @@ function deleteMailById(mailId) {
   return deleted;
 }
 
+function deleteMailByIdForUser(mailId, userId) {
+  const mail = mails.find(m => m.id === mailId);
+  if (!mail) return false;
+
+  mail.hiddenFrom = [...new Set([...(mail.hiddenFrom), userId])];
+  return true;
+};
+
 // search through all mail subjects for any mail that contain the query
 function searchMails(query, userId) {
   const q = query.trim().toLowerCase();
 
   return mails.filter(mail => {
     // match only if user has access
-    if (mail.senderId !== userId && mail.recieverId !== userId) return false;
+    if (mail.senderId !== userId && mail.recieverId !== userId && !(m.hiddenFrom?.includes(userId)) ) return false;
 
     // check if the mail is in the drafts of the sender
     const labelNamesOfSender = (mail.labelIds || [])
@@ -141,5 +151,6 @@ module.exports = {
   getMailById,
   updateMailById,
   deleteMailById,
+  deleteMailByIdForUser,
   searchMails
 };

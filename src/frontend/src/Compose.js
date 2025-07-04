@@ -124,7 +124,7 @@ const Compose = () => {
               title="Add new label"
               onClick={handleAddLabel}
             >
-              ➕
+              +
             </span>
           </h4>
           <div className="label-pills">
