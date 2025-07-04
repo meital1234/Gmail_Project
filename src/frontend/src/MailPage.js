@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './styles/inbox.css';
 
@@ -33,7 +32,7 @@ const MailPage = () => {
         setMail(data);
 
         // If it's Draft — initialize the fields (to, subject, content) so we can edit them.
-        const isDraft = data.labels?.some(l => l.name === 'Draft');
+        const isDraft = data.labels?.some(l => l.name === 'Drafts');
         if (isDraft) {
           setTo(data.to);
           setSubject(data.subject);
@@ -46,6 +45,16 @@ const MailPage = () => {
     };
 
     fetchMail();
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:3000/api/labels', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(data => {
+        const arr = Array.isArray(data) ? data : data.labels;
+        setAvailableLabels(Array.isArray(arr) ? arr : []);
+      })
+      .catch(console.error);
   }, [id]); // The effect will rerun every time the id changes.
 
 
@@ -72,7 +81,7 @@ const MailPage = () => {
         throw new Error(error || res.statusText);
       }
       // After saving return to Inbox.
-      nav('/inbox');
+      nav('/');
     } catch (err) {
       setError(err.message);
     }
@@ -91,7 +100,7 @@ const MailPage = () => {
         const { error } = await res.json().catch(() => ({}));
         throw new Error(error || res.statusText);
       }
-      nav('/inbox');
+      nav('/');
     } catch (err) {
       setError(err.message);
     }
@@ -137,18 +146,47 @@ const MailPage = () => {
       });
 
       // return to Inbox.
-      nav('/inbox');
+      nav('/');
     } catch (err) {
       setError(err.message);
     }
  };
 
+  const handleRemoveLabel = async (labelId) => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`http://localhost:3000/api/mails/${id}/labels/${labelId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (res.ok) {
+    setMail(prev => ({
+      ...prev,
+      labels: prev.labels.filter(label => label.id !== labelId)
+    }));
+  }
+};
+
+const handleAddLabel = async (labelId) => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`http://localhost:3000/api/mails/${id}/labels/${labelId}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (res.ok) {
+    const label = availableLabels.find(l => l.id === labelId);
+    setMail(prev => ({
+      ...prev,
+      labels: [...prev.labels, label]
+    }));
+    setAddingLabel(false);
+  }
+};
 
  // Displays "Loading..." until the email loads.
   if (!mail) {
     return (
       <div className="mail-container">
-        <button className="back-btn" onClick={() => nav('/inbox')}>
+        <button className="back-btn" onClick={() => nav('/')}>
           Go Back
         </button>
         <p>Loading...</p>
@@ -157,13 +195,13 @@ const MailPage = () => {
     );
   }
 
-  const isDraft = mail.labels?.some(l => l.name === 'Draft');
+  const isDraft = mail.labels?.some(l => l.name === 'Drafts');
 
   // Displaying an edit form.
   if (isDraft) {
     return (
       <div className="mail-container">
-        <button className="back-btn" onClick={() => nav('/inbox')}>
+        <button className="back-btn" onClick={() => nav('/')}>
           Go Back
         </button>
 

@@ -17,7 +17,7 @@ const getLatestMailsForUser = (userId) => {
         return label?.name?.toLowerCase();
       });
 
-      const isDraft = labelNames.includes("Draft");
+      const isDraft = labelNames.includes("Drafts");
 
       // If it's a Draft — return only if the user is in the sender (and not in the Inbox).
       if (isDraft) {
@@ -90,7 +90,7 @@ const getMailById = ({ id, userId }) => {
 
 
 function updateMailById(mailId, updates) {
-  const mail = mails.find(m => m.id === mailId && !(m.hiddenFrom?.includes(userId)));
+  const mail = mails.find(m => m.id === mailId);
   if (!mail) return false;
 
   if (updates.to !== undefined) {
@@ -144,7 +144,7 @@ function searchMails(query, userId) {
       })
       .filter(Boolean);
     const isSender = mail.senderId === userId;
-    const isDraft = labelNamesOfSender.includes("draft");
+    const isDraft = labelNamesOfSender.includes("drafts");
     if (!isSender && isDraft) return false; // if it is don't return it
 
     const subjectMatch = mail.subject?.toLowerCase().includes(q);
