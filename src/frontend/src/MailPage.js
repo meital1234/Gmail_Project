@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './styles/mail.css';
+import './styles/inbox.css';
 
 const MailPage = () => {
   const { id } = useParams(); // id comes from the URL.
@@ -27,18 +27,43 @@ const MailPage = () => {
       .catch(() => nav('/login'));
   }, [id, nav]);
   // While the email is still null, a loading message is displayed.
-  if (!mail) return <p>Loading…</p>;
+  if (!mail) return <p className="centered-container">Loading…</p>;
 
   return (
-    <div className="mail-container">
-      <button className="back-btn" onClick={() => nav('/inbox')}>
-        Go Back
-      </button>
-      <h3>{mail.subject}</h3>
-      <p><strong>From:</strong> {mail.from}</p>
-      <p><strong>To:</strong> {mail.to}</p>
-      <hr />
-      <div className="mail-content">{mail.content}</div>
+    <div className="inbox-container">
+      <div className="mail-box">
+        <div className="mail-row mail-expanded">
+          {/* Top row with subject and date */}
+          <div className="mail-top-row">
+            <span className="subject">{mail.subject}</span>
+            <span className="date">{new Date(mail.dateSent).toLocaleString('he-IL')}</span>
+          </div>
+
+          {/* Metadata */}
+          <div className="mail-meta">
+            <p><strong>From:</strong> {mail.from}</p>
+            <p><strong>To:</strong> {mail.to}</p>
+          </div>
+
+          {/* Labels */}
+          <div className="mail-labels">
+            {mail.labels?.map(label => (
+              <span key={label.id} className="mail-label">{label.name}</span>
+            ))}
+          </div>
+
+          {/* Content */}
+          <hr />
+          <div className="mail-content">{mail.content}</div>
+
+          {/* Go Back */}
+          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+            <button className="send-btn" onClick={() => nav('/labels/inbox')}>
+              Back to Inbox
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

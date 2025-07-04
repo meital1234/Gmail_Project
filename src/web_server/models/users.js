@@ -28,7 +28,7 @@ const DEFAULT_PROFILE_IMAGE = 'http://localhost:3000/static/default-profile.png'
   };
 
   // Create default labels for this user
-  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Drafts", "Spam", "Read"];
+  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Drafts", "Spam"];
   defaultLabels.forEach(labelName => {
     Labels.createLabel({ name: labelName, userId: newUser.id });
   });

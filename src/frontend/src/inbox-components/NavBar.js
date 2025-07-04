@@ -16,6 +16,10 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
     nav('/login');
   };
 
+  const handleAddAccount = () => {
+    nav('/register');
+  };
+
   // Close the dropdown if clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -81,7 +85,7 @@ const Navbar = ({ searchInput, setSearchInput, setSearchQuery, user }) => {
               </div>
 
               <div className="dropdown-actions">
-                <button className="dropdown-btn">Add account</button>
+                <button className="dropdown-btn" onClick={handleAddAccount}>Add account</button>
                 <button className="dropdown-btn" onClick={handleLogout}>Sign out</button>
               </div>
             </div>

@@ -19,13 +19,13 @@ function App() {
           <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Everything below requires a token */}
+          {/* Protected pages with layout */}
           <Route element={<RequireAuth />}>
             <Route path="/" element={<Layout />}>
-              <Route index            element={<Inbox />} />
-              <Route path="/label/:labelName" element={<Inbox />} />
-              <Route path="compose"   element={<Compose />} /> 
-              <Route path="mail/:id"  element={<MailPage />} />     
+              <Route index element={<Navigate to="labels/inbox" replace />} />
+              <Route path="labels/:labelName" element={<Inbox />} />
+              <Route path="compose" element={<Compose />} /> 
+              <Route path="mail/:id" element={<MailPage />} />     
             </Route>
           </Route>
 

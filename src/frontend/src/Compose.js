@@ -74,7 +74,7 @@ const Compose = () => {
         const { error } = await res.json().catch(()=>({}));
         throw new Error(error || res.statusText);
       }
-      nav('/inbox');  
+      nav('/');  
     } catch (err) {
       setError(err.message);
     }
@@ -85,7 +85,7 @@ const Compose = () => {
     <div className="compose-box">
       <div className="compose-header">
         <h3>New Message</h3>
-        <button className="close-btn" onClick={() => nav('/inbox')}><span className="material-symbols-rounded">close</span></button>
+        <button className="close-btn" onClick={() => nav('/')}><span className="material-symbols-rounded">close</span></button>
       </div>
       <form onSubmit={handleSend}>
         <input
@@ -154,7 +154,7 @@ const Compose = () => {
         {error && <p className="compose-error">{error}</p>}
         <div className="compose-actions">
           <button className="send-btn" type="submit">Send</button>
-          <button className="discard-btn" type="button" onClick={() => nav('/inbox')}>Discard</button>
+          <button className="discard-btn" type="button" onClick={() => nav('/')}>Discard</button>
         </div>
       </form>
     </div>

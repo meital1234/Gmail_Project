@@ -61,7 +61,7 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
           /><br />
           <div className="form-buttons">
-            <button type="submit">Login</button>
+            <button type="submit">Sign in</button>
           </div>
           {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 
