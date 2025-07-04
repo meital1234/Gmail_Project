@@ -69,7 +69,7 @@ const Compose = () => {
           toEmail: to,
           subject,
           content,
-          labels: ['Draft']
+          labels: ['Drafts']
         })
       });
     } catch (err) {
