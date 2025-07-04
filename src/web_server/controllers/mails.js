@@ -258,7 +258,12 @@ exports.deleteMailById = (req, res) => {
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
-    return res.status(403).json({ error: 'Only draft mails can be deleted' });
+    const success = Mail.deleteMailByIdForUser(mailId, user.id);
+    if (!success) {
+      return res.status(500).json({ error: 'Could not hide mail' });
+    }
+
+    return res.status(204).send(); // No Content
   }
 
   Mail.deleteMailById(mailId);
@@ -336,4 +341,51 @@ exports.searchMails = (req, res) => {
   });
 
   return res.status(200).json(payload);
+};
+
+exports.addLabelToMail = (req, res) => {
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const mailId = parseInt(req.params.mailId);
+  const labelId = req.params.labelId;
+
+  const mail = Mail.getMailById({ id: mailId, userId: user.id });
+  if (!mail) return res.status(404).json({ error: 'Mail not found' });
+
+  const label = Labels.getLabelById({ id: labelId, userId: user.id });
+  if (!label) return res.status(404).json({ error: 'Label not found' });
+
+  // avoid duplicates
+  if (!mail.labelIds.includes(labelId)) {
+    mail.labelIds.push(labelId);
+  }
+
+  return res.status(204).send();
+};
+
+exports.removeLabelFromMail = (req, res) => {
+  const user = getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const mailId = parseInt(req.params.mailId);
+  const labelId = req.params.labelId;
+
+  const mail = Mail.getMailById({ id: mailId, userId: user.id });
+  if (!mail) return res.status(404).json({ error: 'Mail not found' });
+
+  const label = Labels.getLabelById({ id: labelId, userId: user.id });
+  if (!label) return res.status(404).json({ error: 'Label not found' });
+
+  // cant allow the removal of draft/sent/recieved labels
+  if (label.name.toLowerCase() === "Drafts" || label.name.toLowerCase() === "Inbox" || label.name.toLowerCase() === "Sent") {
+    return res.status(403).json({ error: 'Cannot remove draft/sent/inbox label' });
+  }
+
+  const index = mail.labelIds.indexOf(labelId);
+  if (index > -1) {
+    mail.labelIds.splice(index, 1);
+  }
+
+  return res.status(204).send();
 };

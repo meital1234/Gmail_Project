@@ -5,6 +5,8 @@ const Labels = require('./labels');
 let idCounter = 0;
 const users = []; // array to store all users in memory.
 
+const DEFAULT_PROFILE_IMAGE = 'http://localhost:3000/static/default-profile.png';
+
 // - const createUser = ({ email, password, phone_number, birthDate, gender, image }) => {
   async function createUser({ email, password, first_name, last_name, phone_number, birthDate, gender, image }) {
     const saltRounds = +process.env.BCRYPT_SALT_ROUNDS || 10; // get number of saltrounds or use default -> 10
@@ -22,11 +24,11 @@ const users = []; // array to store all users in memory.
     phone_number,
     birthDate,
     gender,
-    image: image || null
+    image: image || DEFAULT_PROFILE_IMAGE
   };
 
   // Create default labels for this user
-  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Draft", "Spam", "Read"];
+  const defaultLabels = ["Inbox", "Sent", "Starred", "Important", "Drafts", "Spam"];
   defaultLabels.forEach(labelName => {
     Labels.createLabel({ name: labelName, userId: newUser.id });
   });

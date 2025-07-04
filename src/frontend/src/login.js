@@ -36,7 +36,7 @@ const Login = () => {
 
       // The token is saved in local storage for later use.
       localStorage.setItem('token', data.token);
-      navigate('/inbox');
+      navigate('/labels/inbox');
     } catch (err) {
       setErrorMsg(err.message);
     }
@@ -61,7 +61,7 @@ const Login = () => {
             onChange={(e) => setPassword(e.target.value)}
           /><br />
           <div className="form-buttons">
-            <button type="submit">Login</button>
+            <button type="submit">Sign in</button>
           </div>
           {errorMsg && <p style={{ color: 'red' }}>{errorMsg}</p>}
 

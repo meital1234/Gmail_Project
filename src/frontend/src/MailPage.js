@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './styles/mail.css';
+import './styles/inbox.css';
 
 const MailPage = () => {
   const { id } = useParams(); // Email ID (extracted from the URL).           
   const nav = useNavigate();
   const [mail, setMail] = useState(null); // The content of the email.
   const [error, setError] = useState('');
+  const [availableLabels, setAvailableLabels] = useState([]);
+  const [addingLabel, setAddingLabel] = useState(false);
+  const [labelSearch, setLabelSearch] = useState('');
 
   // For editing draft
   const [to, setTo] = useState('');
@@ -203,13 +207,56 @@ const MailPage = () => {
   // Otherwise (not Draft), Show normal view.
   return (
     <div className="mail-container">
-      <button className="back-btn" onClick={() => nav('/inbox')}>
+      <button className="back-btn" onClick={() => nav('/')}>
         Go Back
       </button>
+
 
       <h3>{mail.subject}</h3>
       <p><strong>From:</strong> {mail.from}</p>
       <p><strong>To:</strong> {mail.to}</p>
+      <div className="mail-labels">
+        {mail.labels?.map(label => (
+          <span key={label.id} className="mail-label">
+            {label.name}
+            <span
+              className="remove-label"
+              onClick={() => handleRemoveLabel(label.id)}
+            >
+              &times;
+            </span>
+          </span>
+        ))}
+        <span className="add-label" onClick={() => setAddingLabel(!addingLabel)}>+</span>
+      </div>
+
+      {addingLabel && (
+        <div className="label-dropdown">
+          <input
+            type="text"
+            placeholder="Search labels..."
+            className="label-search"
+            value={labelSearch}
+            onChange={(e) => setLabelSearch(e.target.value)}
+          />
+          <div className="label-list">
+            {availableLabels
+              .filter(label =>
+                !mail.labels.some(l => l.id === label.id) &&
+                label.name.toLowerCase().includes(labelSearch.toLowerCase())
+              )
+              .map(label => (
+                <div
+                  key={label.id}
+                  className="label-option"
+                  onClick={() => handleAddLabel(label.id)}
+                >
+                  {label.name}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
       <hr />
       <div className="mail-content">{mail.content}</div>
 

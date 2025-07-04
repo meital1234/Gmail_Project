@@ -1,17 +1,15 @@
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/sidebar.css';
-import React, { useEffect, useState } from 'react';
-import { MdEdit, MdInbox, MdSend, MdDrafts, MdStar, MdReport, MdLabel, MdAdd, MdMoreVert } from 'react-icons/md';
-
 
 // map default labels to icons to appear in the sidebar
 const labelIcons = {
-  inbox: <MdInbox />,
-  sent: <MdSend />,
-  drafts: <MdDrafts />,
-  important: <MdStar />,
-  starred: <MdStar />,
-  spam: <MdReport />
+  inbox: <span class="material-symbols-rounded">inbox</span>,
+  sent: <span class="material-symbols-rounded">send</span>,
+  drafts: <span class="material-symbols-rounded">drafts</span>,
+  important: <span class="material-symbols-rounded">exclamation</span>,
+  starred: <span class="material-symbols-rounded">family_star</span>,
+  spam: <span class="material-symbols-rounded">Sentiment_Dissatisfied</span>
 };
 
 const defaultLabelNames = ["inbox", "sent", "drafts", "important", "starred", "spam"];
@@ -20,6 +18,39 @@ const Sidebar = () => {
   const [labels, setLabels] = useState([]);
   const [menuOpenId, setMenuOpenId] = useState(null); // Track which label menu is open
   const nav = useNavigate();
+
+    useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      nav('/login', { replace: true });
+      return;
+    }
+
+    fetch('http://localhost:3000/api/labels', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async res => {
+        if (!res.ok) throw new Error('unauth');
+        const data = await res.json();
+
+        // always returns array (empty or not)
+        const arr = Array.isArray(data) ? data : data.labels;
+        setLabels(Array.isArray(arr) ? arr : []); 
+      })
+      .catch(err => {
+        console.error('[Sidebar] fetch labels failed:', err);
+        localStorage.removeItem('token');
+        nav('/login', { replace: true });
+      });
+  }, [nav]);
+
+  const safeLabels     = Array.isArray(labels) ? labels : [];
+  const defaultLabels  = safeLabels.filter(l =>
+    defaultLabelNames.includes(l.name?.toLowerCase())
+  );
+  const customLabels   = safeLabels.filter(l =>
+    !defaultLabelNames.includes(l.name?.toLowerCase())
+  );
 
   const handleRename = async (label) => {
     const newName = prompt("Rename label:", label.name);
@@ -50,38 +81,21 @@ const Sidebar = () => {
     }
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetch('http://localhost:3000/api/labels', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => r.json())
-      .then(setLabels)
-      .catch(console.error);
-  }, []);
-
-  const defaultLabels = labels.filter(label =>
-    defaultLabelNames.includes(label.name.toLowerCase())
-  );
-  const customLabels = labels.filter(label =>
-    !defaultLabelNames.includes(label.name.toLowerCase())
-  );
-
   return (
     <div className="sidebar">
       {/* Compose Button */}
       <button className="new-mail-btn" onClick={() => nav('/compose')}>
-          <MdEdit/>
+          <span class="material-symbols-rounded">edit</span>
           Compose
         </button>
       <ul>
         {defaultLabels.map(label => (
           <li
             key={label.id}
-            onClick={() => nav(`/label/${label.id}`)}
+            onClick={() => nav(`/labels/${label.name.toLowerCase()}`)}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
           >
-            <span>{labelIcons[label.name.toLowerCase()] || <MdLabel />}</span>
+            <span>{labelIcons[label.name.toLowerCase()] || <span class="material-symbols-rounded">label</span>}</span>
             <span>{label.name}</span>
           </li>
         ))}
@@ -89,7 +103,7 @@ const Sidebar = () => {
       {/* Section Header for Custom Labels */}
       <div className="sidebar-labels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
         <h3 style={{ margin: 0 }}>My Labels</h3>
-        <MdAdd
+        <span class="material-symbols-rounded"
           style={{ cursor: 'pointer' }}
           onClick={() => {
             const name = prompt("Enter label name:");
@@ -107,8 +121,9 @@ const Sidebar = () => {
               .then(r => r.ok ? r.json() : Promise.reject(r))
               .then(newLabel => setLabels(prev => [...prev, newLabel]))
               .catch(() => alert('Failed to create label'));
-          }}
-        />
+          }}>
+          add
+        </span>
       </div>
 
       {/* Custom Labels */}
@@ -117,9 +132,9 @@ const Sidebar = () => {
           <li
             key={label.id}
             className="custom-label-item"
-            onClick={() => nav(`/label/${label.id}`)}
+            onClick={() => nav(`/labels/${label.name.toLowerCase()}`)}
           >
-            <span className="label-icon"><MdLabel /></span>
+            <span class="material-symbols-rounded">label</span>
             <span className="label-name">{label.name}</span>
 
             <span
@@ -129,7 +144,7 @@ const Sidebar = () => {
                 setMenuOpenId(menuOpenId === label.id ? null : label.id);
               }}
             >
-              <MdMoreVert />
+              <span class="material-symbols-rounded">more_vert</span>
             </span>
 
             {/* Dropdown menu */}

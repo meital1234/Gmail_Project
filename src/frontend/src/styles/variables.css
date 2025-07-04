@@ -3,11 +3,17 @@
   --text-color: #252525;
   --primary-color: #efa8cc;
   --primary-hover: #dc94b8;
+  --secondary-color: #adc9e5;
+  --primary-text: #000000;
+  --secondary-text: #3c3c3c;
 }
 
 [data-theme="dark"] {
-  --bg-color: #435a72;
+  --bg-color: #1c324a;
   --text-color: #f2f2f2;
   --primary-color: #ba598a;
   --primary-hover: #d67aa8;
+  --secondary-color: #2c4763;
+  --primary-text: #d6d6d6;
+  --secondary-text: #a1a1a1;
 }

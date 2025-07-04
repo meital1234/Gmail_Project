@@ -36,6 +36,10 @@ const Layout = ({
       searchInput={searchInput}
       setSearchInput={setSearchInput}
       setSearchQuery={setSearchQuery}
+      searchQuery={searchQuery}
+      searchResults={searchResults}
+      searching={searching}
+      searchError={searchError}
     />
     <div className="layout">
       <Sidebar />

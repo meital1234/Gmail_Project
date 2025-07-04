@@ -51,7 +51,7 @@
   width: 75%;        
   max-width: 800px;
   min-width: 250px;
-  background: #b3d0e4;       
+  background: var(--secondary-color);       
   border-radius: 32px;
   height: 100%;
 }
@@ -65,11 +65,10 @@
   outline: none;
 }
 
-.search-icon {
+.search-bar-wrapper .material-symbols-rounded {
   font-size: 1.3rem;
   color: #7d7d7d;
   margin-left: 20px;
-  margin-top: 6px; 
 }
 
 .search-section {
@@ -80,8 +79,33 @@
   height: 100%;
 }
 
-.actions-section {
-  gap: 10px;
+.icon-btn {
+  width: 40px;
+  height: 40px;
+
+  border-radius: 50%;
+  border: none;
+
+  background: var(--secondary-color);
+  color: #fefdfd;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+  transition: background 0.25s ease;
+  padding: 8px 8px;
+}
+
+.icon-btn:hover {
+  background: #666;
+}
+
+.topbar-right {      
+  margin-left: auto;   
+  display: flex;
+  align-items: center; 
 }
 
 .user-avatar {
@@ -92,4 +116,81 @@
   margin-left: 6px;
   border: 2px solid  var(--primary-color);
   cursor: pointer;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 60px;
+  right: 10px;
+  background: white;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 220px;
+  z-index: 999;
+}
+
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #666;
+  font-size: 20px;
+  text-align: right;
+}
+
+.close-btn:hover {
+  color: #000;
+  background: transparent;
+}
+
+.profile-content {
+  padding-top: 24px;
+}
+
+.profile-email {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.profile-pic {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dropdown-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.dropdown-btn {
+  background: var(--primary-color);
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex: 1;
+  margin: 0 4px;
 }

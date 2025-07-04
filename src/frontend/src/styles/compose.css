@@ -46,3 +46,46 @@
   margin-top: -6px;
   margin-bottom: 8px;
 }
+
+.label-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 16px;
+  background-color: #f1f3f4;
+  font-size: 13px;
+  color: #444;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+}
+
+.pill:hover {
+  background-color: #e0e0e0;
+}
+
+.pill.selected {
+  background-color: #c8e6c9;
+  color: #1b5e20;
+  font-weight: 500;
+  border: 1px solid #81c784;
+}
+
+.label-add-btn {
+  background: #eee;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.label-add-btn:hover {
+  background: #ddd;
+}

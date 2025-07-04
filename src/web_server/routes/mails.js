@@ -23,4 +23,8 @@ router.route('/:id')
   .patch(controller.editMailById)     // PATCH /api/mails/:id
   .delete(controller.deleteMailById); // DELETE /api/mails/:id
 
+router.route('/:mailId/labels/:labelId')
+        .post(controller.addLabelToMail)
+        .delete(controller.removeLabelFromMail)
+
 module.exports = router; // exports the router so it can be used in app.js.
