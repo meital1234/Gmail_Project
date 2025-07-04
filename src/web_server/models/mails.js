@@ -1,4 +1,6 @@
 const Labels =require('../models/labels')
+const Blacklist = require('../models/blacklist');
+
 
 let idCounter = 0;
 const mails = []; // array to store all users in memory.
@@ -7,21 +9,25 @@ const mails = []; // array to store all users in memory.
 const getLatestMailsForUser = (userId) => {
   return mails
     .filter(m => {
-      // filter only mails visible to the user
       const isSender = m.senderId === userId;
       const isRecipient = m.recieverId === userId;
 
-      // filter only the drafts if the user is the sender
-      if (isRecipient && !isSender) {
-        const hasDraft = (m.labelIds || []).some(labelId => {
-          const label = Labels.getLabelById({ id: labelId, userId: m.senderId });
-          return label?.name === "draft";
-        });
-        return !hasDraft;
+      const labelNames = (m.labelIds || []).map(id => {
+        const label = Labels.getLabelById({ id, userId: m.senderId });
+        return label?.name?.toLowerCase();
+      });
+
+      const isDraft = labelNames.includes("Draft");
+
+      // If it's a Draft — return only if the user is in the sender (and not in the Inbox).
+      if (isDraft) {
+        return isSender;  // Only the sender sees their draft.
       }
 
+      // Otherwise, Regular Email: If the user is the sender or recipient.
       return isSender || isRecipient;
     })
+    .filter(m => !m.isSpam)
     .sort((a, b) => b.dateSent - a.dateSent)
     .slice(0, 50)
     .map(m => {
@@ -35,10 +41,9 @@ const getLatestMailsForUser = (userId) => {
         labels: labelObjs
       };
     });
-}
+};
 
-
-const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) => {
+async function createMail ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) {
   const mail = {
       id: ++idCounter,
       from,
@@ -51,6 +56,16 @@ const createMail = ({ from, to, senderId, recieverId, subject, content, labelIds
       dateSent,
       hiddenFrom: []
   };
+
+  // automatic sends to spam if URL is bad
+  const links = Array.from(content.matchAll(/https?:\/\/[^\s]+/g), m => m[0]);
+  for (const link of links) {
+    if (await Blacklist.isBlacklisted(link)) {
+      mail.isSpam = true;
+      break;
+    }
+  }
+
   // Adds mail to the array and than returns mail.
   mails.push(mail);
   return mail;
@@ -77,6 +92,10 @@ const getMailById = ({ id, userId }) => {
 function updateMailById(mailId, updates) {
   const mail = mails.find(m => m.id === mailId && !(m.hiddenFrom?.includes(userId)));
   if (!mail) return false;
+
+  if (updates.to !== undefined) {
+    mail.to = updates.to;
+  }
 
   if (updates.subject !== undefined) {
     mail.subject = updates.subject;
@@ -145,6 +164,29 @@ function searchMails(query, userId) {
   });
 }
 
+// this function loads the spam folder
+function getSpamMailsForUser(userId) {
+  return mails
+    .filter(m => m.isSpam && (m.senderId === userId || m.recieverId === userId))
+    .sort((a, b) => b.dateSent - a.dateSent);
+}
+
+async function markMailAsSpamById(mailId) {
+  const mail = mails.find(m => m.id === mailId);
+  if (!mail) return false;
+  mail.isSpam = true;
+
+  const links = Array.from(mail.content.matchAll(/https?:\/\/[^\s]+/g), m => m[0]);
+  for (const link of links) {
+    // if still not in blacklist
+    if (!await Blacklist.isBlacklisted(link)) {
+      await Blacklist.addUrl(link);
+    }
+  }
+
+  return true;
+}
+
 module.exports = {
   createMail,
   getLatestMailsForUser,
@@ -152,5 +194,7 @@ module.exports = {
   updateMailById,
   deleteMailById,
   deleteMailByIdForUser,
-  searchMails
+  searchMails,
+  getSpamMailsForUser,
+  markMailAsSpamById
 };
