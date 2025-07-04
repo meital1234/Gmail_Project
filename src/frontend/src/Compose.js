@@ -28,6 +28,61 @@ const Compose = () => {
     .catch(() => alert('Failed to load labels'));
 }, []);
 
+  const handleSend = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token'); // Gets the token from localStorage.
+
+    // If no recipient address was entered, displays an error.
+    if (!to) { setError('Recipient required'); return; }
+
+    try {
+      // Sends an email to the server via POST with a token (verifies the user).
+      const res = await fetch('http://localhost:3000/api/mails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ toEmail: to, subject, content })
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(()=>({}));
+        throw new Error(error || res.statusText);
+      }
+      nav('/');  
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Sends a POST to the server with a label of Draft — that is, saves the email as a draft.
+  const saveDraft = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await fetch('http://localhost:3000/api/mails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          toEmail: to,
+          subject,
+          content,
+          labels: ['Draft']
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save draft:', err);
+    }
+  };
+
+  // Clicking "Discard" — first saves as a draft and then returns to the Inbox.
+  const handleDiscard = async () => {
+    await saveDraft();
+    nav('/');
+  };
+
   const handleAddLabel = async () => {
   const name = prompt("Enter new label name:");
   if (!name) return;
@@ -52,40 +107,13 @@ const Compose = () => {
   }
 };
 
-
-  const handleSend = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token'); // Gets the token from localStorage.
-
-    // If no recipient address was entered, displays an error.
-    if (!to) { setError('Recipient required'); return; }
-
-    try {
-      // Sends an email to the server via POST with a token (verifies the user).
-      const res = await fetch('http://localhost:3000/api/mails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ toEmail: to, subject, content, labels: selectedLabels })
-      });
-      if (!res.ok) {
-        const { error } = await res.json().catch(()=>({}));
-        throw new Error(error || res.statusText);
-      }
-      nav('/');  
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-  
+  // screen display.
   return (
   <div className="compose-overlay">
     <div className="compose-box">
       <div className="compose-header">
         <h3>New Message</h3>
-        <button className="close-btn" onClick={() => nav('/')}><span className="material-symbols-rounded">close</span></button>
+        <button className="close-btn" onClick={handleDiscard}><span className="material-symbols-rounded">close</span></button>
       </div>
       <form onSubmit={handleSend}>
         <input
