@@ -210,6 +210,8 @@
 
 .label-dropdown {
   position: absolute;
+  top: 100%;
+  left: 0; 
   background: white;
   border: 1px solid #ddd;
   border-radius: 10px;
@@ -244,17 +246,19 @@
 }
 
 .mail-container {
-  max-width: 700px;
-  margin: 60px auto;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 32px;
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
 }
 
 .mail-container h3 {
   margin-top: 0;
   color: var(--primary-color);
+}
+
+.label-container {
+  position: relative;
+  display: inline-block;
 }
 
 .draft-buttons {

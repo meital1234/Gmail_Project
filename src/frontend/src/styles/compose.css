@@ -1,12 +1,17 @@
 .compose-overlay {
-  background: rgba(0,0,0,0.2);
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
+  position: relative;
+  background: transparent;
+  padding: 0;
+  width: 100%;
+  height: auto;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.back-btn {
+  width: 100px;
+  margin-bottom: 10px;
 }
 
 .compose-box {
@@ -14,7 +19,6 @@
   width: 500px;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
   position: relative;
 }
 
@@ -88,4 +92,10 @@
 
 .label-add-btn:hover {
   background: #ddd;
+}
+
+.compose-actions {
+  justify-content: center;
+  align-items: center;
+  display: flex;
 }

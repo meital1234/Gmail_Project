@@ -18,6 +18,10 @@ const Sidebar = () => {
   const [labels, setLabels] = useState([]);
   const [menuOpenId, setMenuOpenId] = useState(null); // Track which label menu is open
   const nav = useNavigate();
+  const [showLabelModal, setShowLabelModal] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editingLabelId, setEditingLabelId] = useState(null);
 
     useEffect(() => {
     const token = localStorage.getItem('token');
@@ -53,20 +57,10 @@ const Sidebar = () => {
   );
 
   const handleRename = async (label) => {
-    const newName = prompt("Rename label:", label.name);
-    if (!newName || newName === label.name) return;
-    const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:3000/api/labels/${label.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({ name: newName })
-    });
-    if (res.ok) {
-      setLabels(prev => prev.map(l => l.id === label.id ? { ...l, name: newName } : l));
-    }
+    setEditMode(true);
+    setNewLabelName(label.name);
+    setEditingLabelId(label.id);
+    setShowLabelModal(true);
   };
 
   const handleDelete = async (labelId) => {
@@ -101,53 +95,121 @@ const Sidebar = () => {
         ))}
       </ul>
       {/* Section Header for Custom Labels */}
-      <div className="sidebar-labels-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+      <div
+        className="sidebar-labels-header"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: '20px'
+        }}
+      >
         <h3 style={{ margin: 0 }}>My Labels</h3>
-        <span class="material-symbols-rounded"
+        <span
+          className="material-symbols-rounded"
           style={{ cursor: 'pointer' }}
-          onClick={() => {
-            const name = prompt("Enter label name:");
-            if (!name) return;
-
-            const token = localStorage.getItem('token');
-            fetch('http://localhost:3000/api/labels', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-              },
-              body: JSON.stringify({ name })
-            })
-              .then(r => r.ok ? r.json() : Promise.reject(r))
-              .then(newLabel => setLabels(prev => [...prev, newLabel]))
-              .catch(() => alert('Failed to create label'));
-          }}>
+          onClick={() => setShowLabelModal(true)}
+        >
           add
         </span>
       </div>
 
+      {showLabelModal && (
+        <div className="sidebar-overlay">
+          <div className="sidebar-modal">
+            <h3>{editMode ? "Rename Label" : "Create New Label"}</h3>
+            <input
+              type="text"
+              placeholder="Label name"
+              value={newLabelName}
+              onChange={(e) => setNewLabelName(e.target.value)}
+            />
+            <div className="sidebar-modal-buttons">
+              <button
+                className="add-btn"
+                onClick={async () => {
+                  const name = newLabelName.trim();
+                  if (!name) return;
+
+                  const token = localStorage.getItem('token');
+
+                  try {
+                    let res, newLabel;
+                    if (editMode) {
+                      res = await fetch(`http://localhost:3000/api/labels/${editingLabelId}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ name })
+                      });
+
+                      if (!res.ok) throw new Error("Failed to rename label");
+
+                      setLabels(prev => prev.map(l =>
+                        l.id === editingLabelId ? { ...l, name } : l
+                      ));
+                    } else {
+                      res = await fetch('http://localhost:3000/api/labels', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ name })
+                      });
+
+                      if (!res.ok) throw new Error("Failed to create label");
+
+                      newLabel = await res.json();
+                      setLabels(prev => [...prev, newLabel]);
+                    }
+
+                    setNewLabelName('');
+                    setShowLabelModal(false);
+                    setEditMode(false);
+                    setEditingLabelId(null);
+                  } catch (err) {
+                    alert(err.message);
+                  }
+                }}
+              >
+                {editMode ? "Rename" : "Add"}
+              </button>
+
+              <button
+                className="cancel-btn"
+                onClick={() => {
+                  setNewLabelName('');
+                  setShowLabelModal(false);
+                  setEditMode(false);
+                  setEditingLabelId(null);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Custom Labels */}
       <ul>
         {customLabels.map(label => (
-          <li
-            key={label.id}
-            className="custom-label-item"
-            onClick={() => nav(`/labels/${label.name.toLowerCase()}`)}
-          >
-            <span class="material-symbols-rounded">label</span>
-            <span className="label-name">{label.name}</span>
+          <li key={label.id} className="custom-label-item" onClick={() => nav(`/labels/${label.name.toLowerCase()}`)}>
+            <div className="label-left">
+              <span className="material-symbols-rounded">label</span>
+              <span className="label-name">{label.name}</span>
+            </div>
 
-            <span
-              className="label-options"
-              onClick={(e) => {
-                e.stopPropagation(); // Don't trigger nav
-                setMenuOpenId(menuOpenId === label.id ? null : label.id);
-              }}
-            >
-              <span class="material-symbols-rounded">more_vert</span>
+            <span className="label-options" onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpenId(menuOpenId === label.id ? null : label.id);
+            }}>
+              <span className="material-symbols-rounded">more_vert</span>
             </span>
 
-            {/* Dropdown menu */}
             {menuOpenId === label.id && (
               <div className="label-dropdown" onClick={(e) => e.stopPropagation()}>
                 <div className="dropdown-item" onClick={() => handleRename(label)}>Edit</div>

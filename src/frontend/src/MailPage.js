@@ -201,43 +201,45 @@ const handleAddLabel = async (labelId) => {
   if (isDraft) {
     return (
       <div className="mail-container">
-        <button className="back-btn" onClick={() => nav('/')}>
-          Go Back
-        </button>
+        <div className='mail-box'>
+          <button className="back-btn" onClick={() => nav('/')}>
+            Go Back
+          </button>
 
-        <h3>Editing Draft</h3>
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-          <div>
-            <label>To:</label>
-            <input
-              type="text"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Subject:</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Content:</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </div>
-          <div className="draft-buttons">
-            <button type="submit">Discard</button>
-            <button type="button" onClick={handleDelete}>Delete Draft</button>
-            <button type="button" onClick={handleSend}>Send</button>
-          </div>
-        </form>
+          <h3>Editing Draft</h3>
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+            <div>
+              <label>To:</label>
+              <input
+                type="text"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Subject:</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Content:</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+            </div>
+            <div className="draft-buttons">
+              <button type="submit">Discard</button>
+              <button type="button" onClick={handleDelete}>Delete Draft</button>
+              <button type="button" onClick={handleSend}>Send</button>
+            </div>
+          </form>
 
-        {error && <p className="error">{error}</p>}
+          {error && <p className="error">{error}</p>}
+        </div>
       </div>
     );
   }
@@ -245,60 +247,63 @@ const handleAddLabel = async (labelId) => {
   // Otherwise (not Draft), Show normal view.
   return (
     <div className="mail-container">
-      <button className="back-btn" onClick={() => nav('/')}>
-        Go Back
-      </button>
+      <div className='mail-box'>
+        <button className="back-btn" onClick={() => nav('/')}>
+          Go Back
+        </button>
 
-
-      <h3>{mail.subject}</h3>
-      <p><strong>From:</strong> {mail.from}</p>
-      <p><strong>To:</strong> {mail.to}</p>
-      <div className="mail-labels">
-        {mail.labels?.map(label => (
-          <span key={label.id} className="mail-label">
-            {label.name}
-            <span
-              className="remove-label"
-              onClick={() => handleRemoveLabel(label.id)}
-            >
-              &times;
-            </span>
-          </span>
-        ))}
-        <span className="add-label" onClick={() => setAddingLabel(!addingLabel)}>+</span>
-      </div>
-
-      {addingLabel && (
-        <div className="label-dropdown">
-          <input
-            type="text"
-            placeholder="Search labels..."
-            className="label-search"
-            value={labelSearch}
-            onChange={(e) => setLabelSearch(e.target.value)}
-          />
-          <div className="label-list">
-            {availableLabels
-              .filter(label =>
-                !mail.labels.some(l => l.id === label.id) &&
-                label.name.toLowerCase().includes(labelSearch.toLowerCase())
-              )
-              .map(label => (
-                <div
-                  key={label.id}
-                  className="label-option"
-                  onClick={() => handleAddLabel(label.id)}
+        <h3>{mail.subject}</h3>
+        <p><strong>From:</strong> {mail.from}</p>
+        <p><strong>To:</strong> {mail.to}</p>
+        <div className="label-container">
+          <div className="mail-labels">
+            {mail.labels?.map(label => (
+              <span key={label.id} className="mail-label">
+                {label.name}
+                <span
+                  className="remove-label"
+                  onClick={() => handleRemoveLabel(label.id)}
                 >
-                  {label.name}
-                </div>
-              ))}
+                  &times;
+                </span>
+              </span>
+            ))}
+            <span className="add-label" onClick={() => setAddingLabel(!addingLabel)}>+</span>
           </div>
-        </div>
-      )}
-      <hr />
-      <div className="mail-content">{mail.content}</div>
 
-      {error && <p className="error">{error}</p>}
+          {addingLabel && (
+            <div className="label-dropdown">
+              <input
+                type="text"
+                placeholder="Search labels..."
+                className="label-search"
+                value={labelSearch}
+                onChange={(e) => setLabelSearch(e.target.value)}
+              />
+              <div className="label-list">
+                {availableLabels
+                  .filter(label =>
+                    !mail.labels.some(l => l.id === label.id) &&
+                    label.name.toLowerCase().includes(labelSearch.toLowerCase())
+                  )
+                  .map(label => (
+                    <div
+                      key={label.id}
+                      className="label-option"
+                      onClick={() => handleAddLabel(label.id)}
+                    >
+                      {label.name}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <hr />
+        <div className="mail-content">{mail.content}</div>
+
+        {error && <p className="error">{error}</p>}
+      </div>
     </div>
   );
 };

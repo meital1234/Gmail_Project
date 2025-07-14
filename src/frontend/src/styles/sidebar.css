@@ -41,6 +41,7 @@
   padding: 6px 8px;
   position: relative;
   cursor: pointer;
+  width: 100%
 }
 
 .label-icon {
@@ -78,4 +79,123 @@
 
 .dropdown-item:hover {
   background-color: #f0f0f0;
+}
+
+.label-input-container {
+  margin-top: 10px;
+  padding-left: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label-input {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background-color: #f7faff;
+  color: #333;
+  outline: none;
+}
+
+.label-input-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.label-add-btn,
+.label-cancel-btn {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: #ecedf6;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.label-add-btn:hover {
+  background-color: #d3e0f4;
+}
+
+.label-cancel-btn:hover {
+  background-color: #f5c4c4;
+}
+
+.new-label-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 10px 0 16px 0;
+  gap: 6px;
+}
+
+.new-label-form input {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 160px;
+}
+
+.label-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.label-buttons button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f0eefc;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.label-buttons button:hover {
+  background-color: #e0dcf8;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.sidebar-modal {
+  background: white;
+  padding: 20px;
+  width: 300px;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-modal input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.sidebar-modal-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.label-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
