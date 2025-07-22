@@ -200,7 +200,6 @@ const Register = () => {
           {currentStep === 4 && (
             <>
               <h3>Step 4: Create a Password</h3>
-
               <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} /><br />
               <input type="password" name="confirm_password" placeholder=" Confirm Password" value={formData.confirm_password} onChange={handleChange} /><br />
 
@@ -213,6 +212,11 @@ const Register = () => {
                   }
                   if (formData.password !== formData.confirm_password) {
                     setErrorMsg("Passwords do not match");
+                    return;
+                  }
+                  const passPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+                  if (!passPattern.test(formData.password)) {
+                    setErrorMsg("Password must be at least 8 characters long and include uppercase, lowercase, and a number");
                     return;
                   }
 
