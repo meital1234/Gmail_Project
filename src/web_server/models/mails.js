@@ -35,6 +35,7 @@ const getLatestMailsForUser = (userId) => {
       // Otherwise, Regular Email: If the user is the sender or recipient.
       return isSender || isRecipient;
     })
+    .filter(m => !(m.hiddenFrom?.includes(userId)))
     .sort((a, b) => b.dateSent - a.dateSent)
     .slice(0, 50)
     .map(m => {

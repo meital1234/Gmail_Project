@@ -84,7 +84,7 @@ const Inbox = () => {
       setMails(prev =>
         prev.map(m =>
           m.id === mailId
-            ? { ...m, labels: m.labels.filter(l => l.id !== labelId) }
+            ? { ...m, labels: m.labels.filter(l => l.id !== String(labelId)) }
             : m
         )
       );
@@ -95,7 +95,10 @@ const Inbox = () => {
     const token = localStorage.getItem('token');
     const res = await fetch(`http://localhost:3000/api/mails/${mailId}/labels/${labelId}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
 
     if (res.ok) {
@@ -160,7 +163,7 @@ const Inbox = () => {
                     setAddingLabelMailId(mail.id === addingLabelMailId ? null : mail.id);
                     setLabelSearchTerm('');
                   }}
-                >
+                >+
                 </span>
 
                 {addingLabelMailId === mail.id && (

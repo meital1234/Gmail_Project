@@ -299,7 +299,7 @@ exports.addLabelToMail = async (req, res) => {
   if (!user) return;
 
   const mailId  = parseInt(req.params.mailId);
-  const labelId = parseInt(req.params.labelId);
+  const labelId = req.params.labelId;
 
   const mail = Mail.getMailById({ id: mailId, userId: user.id });
   if (!mail) return res.status(404).json({ error: 'Mail not found' });
