@@ -73,28 +73,29 @@ docker-compose down
 
 > The following screenshots illustrate key parts of the Ex4 implementation- Login, registration, inbox, sending and managing emails, theme switching, and search results
 > ### Login page with form validation
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/7ee755f7-8267-47b1-9735-5831b1c03a71" />
 
-> ### Attempting to access protected pages when not logged in
-Example screenshot here
+> ### Registration page with form validation
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/e2e212f4-957c-4e05-9a95-b8493372cc26" />
 
 > ###  Registration with profile picture upload and validation
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/eb1fbfff-a5a0-4cf1-aeab-18a13ed83941" />
 
 > ###  Inbox view after login
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/0da0fc84-3070-43a3-ac31-568790a776c6" />
 
 > ### Email compose screen and successful email send
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/0a0bb6b8-dca9-4ffa-b31a-34cd70ccd726" />
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/a7fdfed1-0526-4fc0-864a-b033d7d40a8b" />
 
 > ###  Inbox view showing emails with labels (Draft, spam .. )
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/098b5923-5b8a-4e75-9995-616ba440a70c" />
 
 > ### Theme switching between light and dark modes
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/4e6dc810-3470-4234-af6c-5506b8967f78" />
 
 > ### Search functionality and results
-Example screenshot here
+<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/601804b7-12de-4bae-8cae-7becd3f20b19" />
 
 ---  
 
