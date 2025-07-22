@@ -253,8 +253,8 @@ const handleAddLabel = async (labelId) => {
         </button>
 
         <h3>{mail.subject}</h3>
-        <p><strong>From:</strong> {mail.from}</p>
-        <p><strong>To:</strong> {mail.to}</p>
+        <p><strong style={{ color: '#202124' }}>From:</strong> <span style={{ color: '#202124' }}>{mail.from}</span></p>
+        <p><strong style={{ color: '#202124' }}>To:</strong> <span style={{ color: '#202124' }}>{mail.to}</span></p>
         <div className="label-container">
           <div className="mail-labels">
             {mail.labels?.map(label => (
