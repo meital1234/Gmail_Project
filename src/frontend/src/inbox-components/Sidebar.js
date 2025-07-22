@@ -117,7 +117,7 @@ const Sidebar = () => {
       {showLabelModal && (
         <div className="sidebar-overlay">
           <div className="sidebar-modal">
-            <h3>{editMode ? "Rename Label" : "Create New Label"}</h3>
+            <h3><span style={{ color: '#202124' }}>{editMode ? "Rename Label" : "Create New Label"}</span></h3>
             <input
               type="text"
               placeholder="Label name"

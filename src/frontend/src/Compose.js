@@ -146,7 +146,9 @@ const Compose = () => {
 
         <div className="compose-labels">
           <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Labels:
+            <span style={{ color: '#202124' }}>
+              Labels:
+            </span>
             <span
               className="label-add-btn"
               title="Add new label"
