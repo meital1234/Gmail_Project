@@ -7,6 +7,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
+  z-index: 2000;  
 }
 
 .sidebar h2 {

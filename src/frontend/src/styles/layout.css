@@ -51,5 +51,7 @@ body, html, #root {
   overflow-x: auto;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 100;
 }
 

@@ -182,7 +182,7 @@ const Compose = () => {
         {error && <p className="compose-error">{error}</p>}
         <div className="compose-actions">
           <button className="send-btn" type="submit">Send</button>
-          <button className="discard-btn" type="button" onClick={(handleDiscard) => nav('/')}>Discard</button>
+          <button className="discard-btn" type="button" onClick={(handleDiscard)}>Discard</button>
         </div>
       </form>
     </div>
