@@ -16,10 +16,15 @@
 
 .compose-box {
   background: white;
-  width: 500px;
+  width: 80%;
+  max-width: 600px;
+  height: auto;
+  max-height: 80vh; 
+  overflow-y: auto;
   padding: 20px;
   border-radius: 10px;
   position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .compose-box input,
