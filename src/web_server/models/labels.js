@@ -13,7 +13,7 @@ function getAllLabelsByUser(userId) {
 }
 
 function getLabelById({id, userId}) {
-  return labels.find(l => l.id === id && l.userId === userId) || null;
+  return labels.find(l => Number(l.id) === Number(id) && l.userId === userId) || null;
 }
 
 function updateLabelById({id, userId, newData}) {
@@ -24,7 +24,9 @@ function updateLabelById({id, userId, newData}) {
 }
 
 function getLabelByName({name, userId}) {
-  return labels.find(l => l.name === name && l.userId === userId) || null;
+  return labels.find(
+    l => l.userId === userId && l.name.toLowerCase() === name.toLowerCase()
+  ) || null;
 }
 
 function deleteLabelById({id, userId}) {

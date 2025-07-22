@@ -33,10 +33,15 @@ const defaultHashFuncs = (process.env.BF_HASHES || "1,2").split(',');
 
 (async () => {
   try {
-    const line = [defaultBitArraySize, ...defaultHashFuncs].join(' ');
-    await TCP.initTCP(line);
+    const cfgLine = [defaultBitArraySize, ...defaultHashFuncs].join(' ');
+    await TCP.initTCP(cfgLine);                // מחכים עד שהחיבור מצליח
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () =>
+      console.log(`Express server running on http://localhost:${PORT}`)
+    );
   } catch (err) {
-    console.error('[BloomFilter] Initialization failed:', err.message);
+    console.error('[BloomFilter] init failed:', err.message);
+    process.exit(1);                           // אל תעלה שרת בלי Bloom
   }
 })();
 // ---------------------------------------------------
@@ -81,9 +86,4 @@ app.use('/api/config', (req, res, next) => {
 // Catch-all 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Express server running on http://localhost:${PORT}`);
 });

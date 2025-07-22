@@ -1,10 +1,10 @@
 const Users = require('../models/users');   // needed to identify the sender and receiver id by token
 const Mail = require('../models/mails');
 const Labels = require('../models/labels');
+const Blacklist = require('../models/blacklist');
 const { getAuthenticatedUser } = require('../utils/auth');  // helper for authenticating a user
 const { extractLinks } = require('../utils/linkExtraction');
 const { checkLinks } = require('../utils/TCPclient');
-const send = require('send');
 
 exports.getInbox = (req, res) => {
   // make sure token is passed by header and is an actual user and that the user is logged in
@@ -26,14 +26,13 @@ exports.getInbox = (req, res) => {
   res.json(filteredInbox);
 };
 
-
 exports.sendMail = async (req, res) => {
   const sender = getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const { toEmail, subject, content, labels } = req.body;
+  const { toEmail, subject, content, labels = [] } = req.body;
 
-  const isDraft = labels && labels.includes('Drafts');
+  const isDraft = labels.map(l => l.toLowerCase()).includes('drafts');
 
   // If not draft — require recipient
   if (!toEmail && !isDraft) {
@@ -82,7 +81,7 @@ exports.sendMail = async (req, res) => {
     from: sender.email,
     to: toEmail,
     senderId: sender.id,
-    recieverId: recipient?.id,
+    receiverId: recipient?.id,
     subject,
     content,
     labelIds,
@@ -154,7 +153,7 @@ exports.editMailById = async (req, res) => {
   }
 
   // allow editing only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "Drafts", userId: sender.id });
+  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: sender.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
@@ -215,7 +214,7 @@ exports.deleteMailById = (req, res) => {
   }
 
   // allow deleting only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "Drafts", userId: user.id });
+  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: user.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
@@ -232,46 +231,37 @@ exports.deleteMailById = (req, res) => {
 };
 
 // GET /api/mails/spam -> returns 200 OK & JSON array of spam mails
-exports.getSpam = (req, res) => {
-  const user = getAuthenticatedUser(req, res);
-  if (!user) return;
+// exports.getSpam = (req, res) => {
+//   const user = getAuthenticatedUser(req, res);
+//   if (!user) return;
 
-  const spam = Mail.getSpamMailsForUser(user.id)
-    .map(({ id, from, to, subject, content, dateSent, labels }) => ({
-      id,
-      from,
-      to,
-      subject,
-      content,
-      dateSent,
-      labels
-    }));
-  res.json(spam);
-};
+//   const spam = Mail.getSpamMailsForUser(user.id)
+//     .map(({ id, from, to, subject, content, dateSent, labels }) => ({
+//       id,
+//       from,
+//       to,
+//       subject,
+//       content,
+//       dateSent,
+//       labels
+//     }));
+//   res.json(spam);
+// };
 
-// PATCH /api/mails/:id/spam -> mark a mail as spam and add its links to blacklist
-exports.markAsSpam = async (req, res) => {
-  const user = getAuthenticatedUser(req, res);
-  if (!user) return;
+// mark a mail as spam and add its links to blacklist
+async function _markMailAsSpam(mail) {
+  // use the model's logic to handle blacklist adding
+  const ok = await Mail.markMailAsSpamById(mail.id);
+  if (!ok) throw new Error('Failed to mark as spam');
 
-  const mailId = parseInt(req.params.id, 10);
-  if (isNaN(mailId)) {
-    return res.status(400).json({ error: 'Invalid mail ID' });
-  }
-
-  // verify access
-  const mail = Mail.getMailById({ id: mailId, userId: user.id });
-  if (!mail) {
-    return res.status(404).json({ error: 'Mail not found' });
-  }
-
-  const ok = await Mail.markMailAsSpamById(mailId);
-  if (!ok) {
-    return res.status(500).json({ error: 'Failed to mark as spam' });
-  }
-
-  res.json({ message: 'Mail marked as spam' });
-};
+  // and label adding to mail on both sides
+  const maybeAttach = (userId) => {
+    const lbl = Labels.getLabelByName({ name: 'spam', userId });
+    if (lbl && !mail.labelIds.includes(lbl.id)) mail.labelIds.push(lbl.id);
+  };
+  maybeAttach(mail.senderId);
+  maybeAttach(mail.receiverId);
+}
 
 exports.searchMails = (req, res) => {
   const user = getAuthenticatedUser(req, res);
@@ -304,11 +294,11 @@ exports.searchMails = (req, res) => {
   return res.status(200).json(payload);
 };
 
-exports.addLabelToMail = (req, res) => {
+exports.addLabelToMail = async (req, res) => {
   const user = getAuthenticatedUser(req, res);
   if (!user) return;
 
-  const mailId = parseInt(req.params.mailId);
+  const mailId  = parseInt(req.params.mailId);
   const labelId = req.params.labelId;
 
   const mail = Mail.getMailById({ id: mailId, userId: user.id });
@@ -318,14 +308,24 @@ exports.addLabelToMail = (req, res) => {
   if (!label) return res.status(404).json({ error: 'Label not found' });
 
   // avoid duplicates
-  if (!mail.labelIds.includes(labelId)) {
-    mail.labelIds.push(labelId);
+  if (mail.labelIds.includes(labelId)) return res.sendStatus(204);
+
+  // if the requested label is SPAM - handle accordingly      
+  if (label.name.toLowerCase() === 'spam') {
+    try {
+      await _markMailAsSpam(mail);    // helper
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  } else {
+    mail.labelIds.push(labelId);       
   }
 
-  return res.status(204).send();
+  return res.sendStatus(204);
+
 };
 
-exports.removeLabelFromMail = (req, res) => {
+exports.removeLabelFromMail = async (req, res) => {
   const user = getAuthenticatedUser(req, res);
   if (!user) return;
 
@@ -338,15 +338,34 @@ exports.removeLabelFromMail = (req, res) => {
   const label = Labels.getLabelById({ id: labelId, userId: user.id });
   if (!label) return res.status(404).json({ error: 'Label not found' });
 
-  // cant allow the removal of draft/sent/recieved labels
-  if (label.name.toLowerCase() === "Drafts" || label.name.toLowerCase() === "Inbox" || label.name.toLowerCase() === "Sent") {
-    return res.status(403).json({ error: 'Cannot remove draft/sent/inbox label' });
+  const idx = mail.labelIds.indexOf(labelId);
+  if (idx === -1) return res.sendStatus(204);   // nothing to remove
+
+  /* protect core system labels */
+  const core = ['drafts', 'inbox', 'sent'];
+  const lname = label.name.toLowerCase();
+  if (core.includes(lname))
+    return res.status(403).json({ error: `Cannot remove ${label.name} label` });
+
+  // handle spam label removal
+  if (lname === 'spam') {
+    mail.labelIds.splice(idx, 1);   // remove the label
+    mail.isSpam = false;            // mail considered clean
+
+    // extract its URLs and drop them from blacklist
+    const links = extractLinks(mail.content);
+    for (const link of links) {
+      // remove link if it esixts in the blacklist
+      if (await Blacklist.isBlacklisted(link)) {
+        await Blacklist.deleteUrl(link);
+      }
+    }
+
+    return res.sendStatus(204);
   }
 
-  const index = mail.labelIds.indexOf(labelId);
-  if (index > -1) {
-    mail.labelIds.splice(index, 1);
-  }
+  // handle normal label removal
+  mail.labelIds.splice(idx, 1);
+  return res.sendStatus(204);
 
-  return res.status(204).send();
 };

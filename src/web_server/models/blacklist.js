@@ -1,4 +1,4 @@
-// const TCP = require('../utils/TCPClient');
+const TCP = require('../utils/TCPclient');
 
 // send POST command to TCP to ADD URL to blacklist
 async function addUrl(url) {
@@ -9,6 +9,7 @@ async function addUrl(url) {
   // if not, sendCommand will reject
   try {
     const responseLine = await TCP.sendCommand(`POST ${url}`);
+    console.log(`[BlacklistModel] addUrl("${url}") response:`, responseLine);
     const code = Number(responseLine.match(/^\d{3}/)?.[0] || 0);
     return code === 201;
   } catch (err) {
@@ -37,11 +38,16 @@ async function isBlacklisted(url) {
   try {
     // sent GET to check if wxists
     const responseLine = await TCP.sendCommand(`GET ${url}`);
-    const code = Number(responseLine.match(/^\d{3}/)?.[0] || 0);
-    return code === 200;  // if exists return 200 OK
+    console.log(`[BlacklistModel] isBlacklisted("${url}") response:`, responseLine);
+    const lines = responseLine.split(/\r?\n/);
+    const statusLine = lines[0] || '';
+    const code = Number(statusLine.match(/^\d{3}/)?.[0] || 0);
+
+    return code === 200 && lines[2]?.trim() === 'true true';  // explicitly check that second line says "true"
+
   } catch (err) {
     console.error(`[BlacklistModel] isBlacklisted("${url}") error:`, err.message);
-    return false;
+    throw new Error("TCP not initialized");
   }
 }
 
