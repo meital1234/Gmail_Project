@@ -35,7 +35,6 @@ const getLatestMailsForUser = (userId) => {
       // Otherwise, Regular Email: If the user is the sender or recipient.
       return isSender || isRecipient;
     })
-    .filter(m => !m.isSpam)
     .sort((a, b) => b.dateSent - a.dateSent)
     .slice(0, 50)
     .map(m => {
@@ -66,7 +65,7 @@ async function createMail ({ from, to, senderId, receiverId, subject, content, l
   };
 
   // automatic sends to spam if URL is bad
-  const links = Array.from(content.matchAll(/https?:\/\/[^\s]+/g), m => m[0]);
+  const links = Array.from(content.matchAll(/((https?:\/\/)?(www\.)?[\w.-]+\.[a-z]{2,}(\/\S*)?)/gi), m => m[0]);
   for (const link of links) {
     if (await Blacklist.isBlacklisted(link)) {
       mail.isSpam = true;
@@ -175,11 +174,11 @@ function searchMails(query, userId) {
 }
 
 // this function loads the spam folder
-function getSpamMailsForUser(userId) {
-  return mails
-    .filter(m => m.isSpam && (m.senderId === userId || m.receiverId === userId))
-    .sort((a, b) => b.dateSent - a.dateSent);
-}
+// function getSpamMailsForUser(userId) {
+//   return mails
+//     .filter(m => m.isSpam && (m.senderId === userId || m.receiverId === userId))
+//     .sort((a, b) => b.dateSent - a.dateSent);
+// }
 
 async function markMailAsSpamById(mailId) {
   const mail = mails.find(m => m.id === mailId);
@@ -208,6 +207,5 @@ module.exports = {
   deleteMailById,
   deleteMailByIdForUser,
   searchMails,
-  getSpamMailsForUser,
   markMailAsSpamById
 };

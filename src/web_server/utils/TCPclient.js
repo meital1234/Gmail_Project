@@ -1,4 +1,3 @@
-
 // single & persistent TCP client for BF server
 // call initTCP once & then use sendCommand to send GET/POST/DELETE
 // if needed it can close connection to shut socket down

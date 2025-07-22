@@ -153,7 +153,7 @@ exports.editMailById = async (req, res) => {
   }
 
   // allow editing only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "Drafts", userId: sender.id });
+  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: sender.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
@@ -214,7 +214,7 @@ exports.deleteMailById = (req, res) => {
   }
 
   // allow deleting only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "Drafts", userId: user.id });
+  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: user.id });
   const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
 
   if (!hasDraftLabel) {
@@ -260,7 +260,7 @@ async function _markMailAsSpam(mail) {
     if (lbl && !mail.labelIds.includes(lbl.id)) mail.labelIds.push(lbl.id);
   };
   maybeAttach(mail.senderId);
-  maybeAttach(mail.recieverId);
+  maybeAttach(mail.receiverId);
 }
 
 exports.searchMails = (req, res) => {

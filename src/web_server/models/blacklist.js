@@ -9,6 +9,7 @@ async function addUrl(url) {
   // if not, sendCommand will reject
   try {
     const responseLine = await TCP.sendCommand(`POST ${url}`);
+    console.log(`[BlacklistModel] addUrl("${url}") response:`, responseLine);
     const code = Number(responseLine.match(/^\d{3}/)?.[0] || 0);
     return code === 201;
   } catch (err) {
@@ -37,6 +38,7 @@ async function isBlacklisted(url) {
   try {
     // sent GET to check if wxists
     const responseLine = await TCP.sendCommand(`GET ${url}`);
+    console.log(`[BlacklistModel] isBlacklisted("${url}") response:`, responseLine);
     const code = Number(responseLine.match(/^\d{3}/)?.[0] || 0);
     return code === 200;  // if exists return 200 OK
   } catch (err) {
