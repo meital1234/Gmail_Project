@@ -1,4 +1,4 @@
-// const TCP = require('../utils/TCPClient');
+const TCP = require('../utils/TCPclient');
 
 // send POST command to TCP to ADD URL to blacklist
 async function addUrl(url) {
@@ -41,7 +41,7 @@ async function isBlacklisted(url) {
     return code === 200;  // if exists return 200 OK
   } catch (err) {
     console.error(`[BlacklistModel] isBlacklisted("${url}") error:`, err.message);
-    return false;
+    throw new Error("TCP not initialized");
   }
 }
 

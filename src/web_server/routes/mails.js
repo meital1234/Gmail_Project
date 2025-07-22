@@ -13,10 +13,10 @@ router.route('/')
   .post(controller.sendMail); // POST /mails
 
 // GET /api/mails/spam
-router.get('/spam', controller.getSpam);
+// router.get('/spam', controller.getSpam);
 
 // PATCH /api/mails/:id/spam
-router.patch('/:id/spam', controller.markAsSpam);
+// router.patch('/:id/spam', controller.markAsSpam);
 
 router.route('/:id')
   .get(controller.getMailById)        // GET /api/mails/:id

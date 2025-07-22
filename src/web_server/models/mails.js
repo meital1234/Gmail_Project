@@ -5,19 +5,27 @@ const Blacklist = require('../models/blacklist');
 let idCounter = 0;
 const mails = []; // array to store all users in memory.
 
+// helper function to deal with adding the spam label to a mail
+function _attachSpamLabel(mail, userId) {
+  // assume this exists - Labels.getLabelByName({ name, userId })
+  const spamLbl = Labels.getLabelByName({ name: 'spam', userId });
+  if (spamLbl && !mail.labelIds.includes(spamLbl.id)) {
+    mail.labelIds.push(spamLbl.id);
+  }
+}
 
 const getLatestMailsForUser = (userId) => {
   return mails
     .filter(m => {
       const isSender = m.senderId === userId;
-      const isRecipient = m.recieverId === userId;
+      const isRecipient = m.receiverId === userId;
 
       const labelNames = (m.labelIds || []).map(id => {
         const label = Labels.getLabelById({ id, userId: m.senderId });
         return label?.name?.toLowerCase();
       });
 
-      const isDraft = labelNames.includes("Drafts");
+      const isDraft = labelNames.includes("drafts");
 
       // If it's a Draft — return only if the user is in the sender (and not in the Inbox).
       if (isDraft) {
@@ -43,13 +51,13 @@ const getLatestMailsForUser = (userId) => {
     });
 };
 
-async function createMail ({ from, to, senderId, recieverId, subject, content, labelIds, dateSent }) {
+async function createMail ({ from, to, senderId, receiverId, subject, content, labelIds, dateSent }) {
   const mail = {
       id: ++idCounter,
       from,
       to,
       senderId, 
-      recieverId,
+      receiverId,
       subject,
       content,
       labelIds: labelIds || [],  // default is empty if none
@@ -62,6 +70,8 @@ async function createMail ({ from, to, senderId, recieverId, subject, content, l
   for (const link of links) {
     if (await Blacklist.isBlacklisted(link)) {
       mail.isSpam = true;
+      _attachSpamLabel(mail, senderId);
+      _attachSpamLabel(mail, receiverId);
       break;
     }
   }
@@ -73,7 +83,7 @@ async function createMail ({ from, to, senderId, recieverId, subject, content, l
 
 
 const getMailById = ({ id, userId }) => {
-  const mail = mails.find(m => m.id === id && (m.senderId === userId || m.recieverId === userId)  &&
+  const mail = mails.find(m => m.id === id && (m.senderId === userId || m.receiverId === userId)  &&
   !(m.hiddenFrom?.includes(userId)));
   if (!mail) return null;
 
@@ -134,7 +144,7 @@ function searchMails(query, userId) {
 
   return mails.filter(mail => {
     // match only if user has access
-    if (mail.senderId !== userId && mail.recieverId !== userId && !(m.hiddenFrom?.includes(userId)) ) return false;
+    if (mail.senderId !== userId && mail.receiverId !== userId && !(mail.hiddenFrom?.includes(userId)) ) return false;
 
     // check if the mail is in the drafts of the sender
     const labelNamesOfSender = (mail.labelIds || [])
@@ -167,7 +177,7 @@ function searchMails(query, userId) {
 // this function loads the spam folder
 function getSpamMailsForUser(userId) {
   return mails
-    .filter(m => m.isSpam && (m.senderId === userId || m.recieverId === userId))
+    .filter(m => m.isSpam && (m.senderId === userId || m.receiverId === userId))
     .sort((a, b) => b.dateSent - a.dateSent);
 }
 
@@ -175,6 +185,9 @@ async function markMailAsSpamById(mailId) {
   const mail = mails.find(m => m.id === mailId);
   if (!mail) return false;
   mail.isSpam = true;
+
+  _attachSpamLabel(mail, mail.senderId);
+  _attachSpamLabel(mail, mail.receiverId);
 
   const links = Array.from(mail.content.matchAll(/https?:\/\/[^\s]+/g), m => m[0]);
   for (const link of links) {
