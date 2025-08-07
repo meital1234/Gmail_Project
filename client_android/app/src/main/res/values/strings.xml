@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Gmail_android</string>
+    <string name="logo_text">MyGmail</string>
+    <string name="login_text">Sign in</string>
+    <string name="signBut_text">"Don't have an account? Sign up"</string>
+    <string name="password_hint">Password</string>
+    <string name="Email_hint">Email</string>
 </resources>
