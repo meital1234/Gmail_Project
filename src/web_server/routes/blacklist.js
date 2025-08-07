@@ -1,11 +1,11 @@
 const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/blacklist');
+const router  = express.Router();
+const controller    = require('../controllers/blacklist');
 
-// POST /api/blacklist
-router.post('/', controller.addUrlToBlacklist);
-
+// POST   /api/blacklist
 // DELETE /api/blacklist/:id
-router.delete('/:id', controller.deleteUrlFromBlacklist);
+router
+  .post('/', controller.addUrlToBlacklist)
+  .delete('/:id', controller.deleteUrlFromBlacklist);
 
 module.exports = router;

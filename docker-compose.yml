@@ -1,4 +1,6 @@
 services:
+
+  # TCP server (Bloom Filter)
   server:
     build:
       context: .
@@ -10,7 +12,10 @@ services:
       - ./data:/app/data
     stdin_open: true
     tty: true
+    depends_on:
+      - mongo # Ensure MongoDB is ready before the server starts
 
+  # Web API (Express)
   web:
      build:
        context: .
@@ -18,6 +23,7 @@ services:
      container_name: web
      depends_on:
        - server
+       - mongo  # Web API requires MongoDB
      ports:
        - "3000:3000"
      environment:
@@ -25,12 +31,21 @@ services:
        - TCP_PORT=8080
        - BF_SIZE=8
        - BF_HASHES=1,2
-
+       - MONGODB_URI=mongodb://mongo:27017/thebestgmail  # Connection string for Mongoose
      volumes:
-      - ./src/web_server:/app
+       - ./src/web_server:/app
      stdin_open: true
      tty: true
+  
+  mongo:
+    image: mongo:latest
+    container_name: bloomly_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db 
 
+  # React frontend
   frontend:
     build:
       context: .
@@ -42,3 +57,7 @@ services:
       - web
     stdin_open: true
     tty: true
+
+# Named volumes
+volumes:
+  mongo_data:

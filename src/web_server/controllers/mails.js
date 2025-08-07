@@ -1,129 +1,152 @@
-const Users = require('../models/users');   // needed to identify the sender and receiver id by token
-const Mail = require('../models/mails');
-const Labels = require('../models/labels');
-const Blacklist = require('../models/blacklist');
-const { getAuthenticatedUser } = require('../utils/auth');  // helper for authenticating a user
-const { extractLinks } = require('../utils/linkExtraction');
-const { checkLinks } = require('../utils/TCPclient');
+/*
+ * Mail Controller
+ * ---------------
+ * Validates requests, calls service layer, formats response for API.
+ */
 
-exports.getInbox = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const user = getAuthenticatedUser(req, res);
+const Users      = require('../services/users');
+const Mail       = require('../services/mails');
+const Labels     = require('../services/labels');
+const Blacklist  = require('../services/blacklist');
+const { getAuthenticatedUser } = require('../utils/auth');
+const { extractLinks } = require('../utils/linkExtraction');
+const { checkLinks }  = require('../utils/TCPclient');
+
+/**
+ * GET /api/mails
+ * Returns the latest 50 mails visible to the current user.
+ */
+exports.getInbox = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
   if (!user) return;
 
-  const inbox = Mail.getLatestMailsForUser(user.id);
-
-  // filter only the fields i want to return to the user (no IDs)
-  const filteredInbox = inbox.map(({ id, from, to, subject, content, dateSent, labels }) => ({
-    id,
-    from,
-    to,
-    subject,
-    content,
-    dateSent,
-    labels
-  }));
+  const inbox = await Mail.getLatestMailsForUser(user._id);
+  const filteredInbox = inbox.map(
+    ({ mailId, from, to, subject, content, dateSent, labels }) => ({
+      id: mailId,
+      from,
+      to,
+      subject,
+      content,
+      dateSent,
+      labels
+    })
+  );
   res.json(filteredInbox);
 };
 
+/**
+ * POST /api/mails
+ * Composes and sends (or drafts) a new mail.
+ * Handles validation, resolves recipient, maps label names to ObjectIds, auto-adds Sent/Inbox labels.
+ * Returns mail id and spam flag.
+ */
 exports.sendMail = async (req, res) => {
-  const sender = getAuthenticatedUser(req, res);
+  const sender = await getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  const { toEmail, subject, content, labels = [] } = req.body;
+  try {
+    const {
+      receiverId,
+      toEmail,
+      subject,
+      content,
+      labels = []
+    } = req.body;
 
-  const isDraft = labels.map(l => l.toLowerCase()).includes('drafts');
+    // Determine if mail is a draft
+    const isDraft = labels.map(l => l.toLowerCase()).includes('drafts');
 
-  // If not draft — require recipient
-  if (!toEmail && !isDraft) {
-    return res.status(400).json({ error: 'Receiver email is required' });
-  }
-
-  // If not draft — require recipient to exist
-  let recipient = null;
-  if (!isDraft) {
-    recipient = Users.getUserByEmail(toEmail);
-    if (!recipient) {
-      return res.status(404).json({ error: 'Recipient not found' });
-    }
-  }
-
-  const labelNames = labels || [];
-  const labelObjects = labelNames.map(name =>
-    Labels.getAllLabelsByUser(sender.id).find(l => l.name === name)
-  );
-
-  if (labelObjects.includes(undefined)) {
-    return res.status(400).json({ error: 'One or more labels do not exist' });
-  }
-
-  const labelIds = labelObjects.map(l => l.id);
-
-  if (!isDraft) {
-    // Not a draft — add Sent label for sender
-    const senderLabels = Labels.getAllLabelsByUser(sender.id);
-    const sentLabel = senderLabels.find(l => l.name.toLowerCase() === 'sent');
-    if (sentLabel && !labelIds.includes(sentLabel.id)) {
-      labelIds.push(sentLabel.id);
+    // Find receiver if only email is provided
+    let finalReceiverId = receiverId;
+    if (!isDraft && !finalReceiverId && toEmail) {
+      const rec = await Users.getUserByEmail(toEmail);
+      if (!rec)
+        return res.status(404).json({ error: 'Recipient not found' });
+      finalReceiverId = rec._id;
     }
 
-    if (recipient) {
-      const recipientLabels = Labels.getAllLabelsByUser(recipient.id);
-      const inboxLabel = recipientLabels.find(l => l.name.toLowerCase() === 'inbox');
-      if (inboxLabel) {
-        labelIds.push(inboxLabel.id);
+    // Must have recipient if not a draft
+    if (!isDraft && !finalReceiverId) {
+      return res
+        .status(400)
+        .json({ error: 'receiverId or toEmail is required' });
+    }
+
+    // Map label names to ObjectIds for the sender
+    const senderLabels = await Labels.getAllLabelsByUser(sender._id);
+    const labelObjects = labels.map(name =>
+      senderLabels.find(l => l.name.toLowerCase() === name.toLowerCase())
+    );
+    if (labelObjects.includes(undefined)) {
+      return res.status(400).json({ error: 'One or more labels do not exist' });
+    }
+    const labelIds = labelObjects.map(l => l._id);
+
+    // Auto-add Sent (for sender) and Inbox (for receiver) labels if not a draft
+    if (!isDraft) {
+      const sentLbl = senderLabels.find(l => l.name.toLowerCase() === 'sent');
+      if (sentLbl && !labelIds.includes(sentLbl._id)) labelIds.push(sentLbl._id);
+
+      if (finalReceiverId) {
+        const recLabels = await Labels.getAllLabelsByUser(finalReceiverId);
+        const inboxLbl  = recLabels.find(l => l.name.toLowerCase() === 'inbox');
+        if (inboxLbl) labelIds.push(inboxLbl._id);
       }
     }
+
+    // Create mail via service
+    const newMail = await Mail.createMail({
+      from: sender.email,
+      to: toEmail,
+      senderId: sender._id,
+      receiverId: finalReceiverId,
+      subject,
+      content,
+      labelIds,
+      dateSent: new Date()
+    });
+
+    // 200 if spam, 201 otherwise
+    const statusCode = newMail.isSpam ? 200 : 201;
+    return res
+      .status(statusCode)
+      .location(`/api/mails/${newMail.mailId}`)
+      .json({ id: newMail.mailId, isSpam: newMail.isSpam });
+
+  } catch (err) {
+    // Prevents crash if mail couldn't be created (e.g., discard with missing fields)
+    console.error(err);
+    return res.status(400).json({ error: err.message });
   }
-
-  // Create and send the mail
-  const newMail = await Mail.createMail({
-    from: sender.email,
-    to: toEmail,
-    senderId: sender.id,
-    receiverId: recipient?.id,
-    subject,
-    content,
-    labelIds,
-    dateSent: new Date(),
-  });
-
-  // Determine proper response status
-  const statusCode = newMail.isSpam ? 200 : 201;
-
-  return res
-    .status(statusCode)
-    .location(`/api/mails/${newMail.id}`)
-    .json({ id: newMail.id, isSpam: newMail.isSpam });
 };
 
-exports.getMailById = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const user = getAuthenticatedUser(req, res);
+/**
+ * GET /api/mails/:id
+ * Returns a single mail by its mailId, if the user is authorized to see it.
+ * Blocks reading someone else's draft.
+ */
+exports.getMailById = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
   if (!user) return;
 
-  const id = parseInt(req.params.id); // Gets the id from the path and converts it to a number.
-  if (isNaN(id)) {
+  // Expect mailId to be a number (not MongoDB ObjectId)
+  const id = Number(req.params.id);
+  if (Number.isNaN(id))
     return res.status(400).json({ error: 'Invalid mail ID' });
-  }
 
-  const mail = Mail.getMailById({ id, userId: user.id }); // Searching for the mail in the model.
-  // If the mail is not found we will return 404.
-  if (!mail) {
-    return res.status(404).json({ error: 'Mail not found' });
-  }
-  // if the mail is still in the drafts of the sender - don't show it
-  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: mail.senderId });
-  const isDraft = mail.labelIds?.includes(draftLabel?.id);
+  const mail = await Mail.getMailById({ id, userId: user._id });
+  if (!mail) return res.status(404).json({ error: 'Mail not found' });
 
-  if (user.id !== mail.senderId && isDraft) {
+  // Only sender can read draft mails
+  const draftLabel = await Labels.getLabelByName({ name: 'drafts', userId: mail.senderId });
+  const isDraft = mail.labelIds?.some(lid =>
+    lid.toString() === draftLabel?._id?.toString()
+  );
+  if (!user._id.equals(mail.senderId) && isDraft)
     return res.status(403).json({ error: 'Mail is still a draft' });
-  }
 
   const { from, to, subject, content, labels, dateSent } = mail;
-
-  const filteredLabels = labels.map(({ id, name }) => ({ id, name }));
-
   res.json({
     id,
     from,
@@ -131,241 +154,205 @@ exports.getMailById = (req, res) => {
     subject,
     content,
     dateSent,
-    labels: filteredLabels
-  }); // Returns the mail data
+    labels: labels.map(({ id: lId, name }) => ({ id: lId, name }))
+  });
 };
 
+/**
+ * PATCH /api/mails/:id
+ * Edits a draft mail (only sender can do this).
+ * Blocks edit for non-drafts or for non-senders.
+ * Checks for malicious links.
+ */
 exports.editMailById = async (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
+  const sender = await getAuthenticatedUser(req, res);
   if (!sender) return;
 
-  // check the mail id's validity
-  const mailId = parseInt(req.params.id);
-  const mail = Mail.getMailById({ id: mailId, userId: sender.id });
-  if (!mail) {
-    return res.status(404).json({ error: 'Mail not found' });
-  }
+  const mailId = Number(req.params.id);
+  const mail   = await Mail.getMailById({ id: mailId, userId: sender._id });
+  if (!mail) return res.status(404).json({ error: 'Mail not found' });
 
-  // Check if the user is allowed to edit the mail - only the sender
-  if (mail.senderId !== sender.id) {
+  if (!mail.senderId.equals(sender._id))
     return res.status(403).json({ error: 'Not authorized to edit this mail' });
-  }
 
-  // allow editing only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: sender.id });
-  const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
-
-  if (!hasDraftLabel) {
+  // --- FIX: Always compare labelIds as strings/ObjectId, not by name ---
+  const draftLabel = await Labels.getLabelByName({ name: 'drafts', userId: sender._id });
+  const hasDraftLabel = mail.labelIds?.some(lid =>
+    lid.toString() === draftLabel?._id?.toString()
+  );
+  if (!hasDraftLabel)
     return res.status(403).json({ error: 'Only draft mails can be edited' });
+
+  // Accept PATCH body with label names (["Drafts"]) or ObjectIds
+  let { toEmail, subject, content, labels } = req.body;
+
+  // If labels are names, map to ObjectIds
+  let labelIds = undefined;
+  if (labels && labels.length > 0) {
+    const allLabels = await Labels.getAllLabelsByUser(sender._id);
+    labelIds = labels.map(lab => {
+      // Accept both ObjectId and string name
+      const match =
+        allLabels.find(l => l._id.toString() === lab) ||
+        allLabels.find(l => l.name.toLowerCase() === lab.toLowerCase());
+      if (!match)
+        throw new Error('One or more labels do not exist');
+      return match._id;
+    });
   }
 
-  const { toEmail, subject, content, labels } = req.body;
-
-  // validate that one of them was passed
-  if (!subject && !content && !labels) {
+  // Allow updating any fields (even to empty string) -- only check if at least one field is different
+  const nothingToUpdate =
+    (toEmail === undefined || toEmail === mail.to) &&
+    (subject === undefined || subject === mail.subject) &&
+    (content === undefined || content === mail.content) &&
+    (!labelIds || (labelIds.length === (mail.labelIds || []).length &&
+      labelIds.every((lid, i) => lid.toString() === mail.labelIds[i].toString()))
+    );
+  if (nothingToUpdate) {
     return res.status(400).json({ error: 'Nothing to update' });
   }
 
-  // check links for blacklisted content
-  const textToCheck = [subject, content].filter(Boolean).join(" ");
+  // Full link-spam check before editing mail (optional for drafts; only if fields present)
+  const textToCheck = [subject, content].filter(Boolean).join(' ');
   if (textToCheck) {
     const links = extractLinks(textToCheck);
     const hasBlacklisted = await checkLinks(links);
-    if (hasBlacklisted) {
+    if (hasBlacklisted)
       return res.status(400).json({ error: 'Mail contains malicious links' });
-    }
   }
 
-  let labelIds = undefined;
-  if (labels) {
-    // make sure the label exists for that user
-    const labelObjects = labels.map(name =>
-      Labels.getLabelByName({ name: name, userId: sender.id })
-    );
-
-    if (labelObjects.includes(null)) {
-      return res.status(400).json({ error: 'One or more labels do not exist' });
-    }
-
-    labelIds = labelObjects.map(l => l.id);
-  }
-
-  Mail.updateMailById(mailId, { to: toEmail, subject, content, labels: labelIds });
-
-  return res.status(204).send(); // No Content
-};
-
-exports.deleteMailById = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const user = getAuthenticatedUser(req, res);
-  if (!user) return;
-
-  // check the mail id's validity
-  const mailId = parseInt(req.params.id);
-  const mail = Mail.getMailById({ id: mailId, userId: user.id });
-  if (!mail) {
-    return res.status(404).json({ error: 'Mail not found' });
-  }
-
-  // Check if the user is allowed to delete the mail - only the sender
-  if (mail.senderId !== user.id) {
-    return res.status(403).json({ error: 'Not authorized to delete this mail' });
-  }
-
-  // allow deleting only for mails in drafts
-  const draftLabel = Labels.getLabelByName({ name: "drafts", userId: user.id });
-  const hasDraftLabel = mail.labelIds?.includes(draftLabel?.id);
-
-  if (!hasDraftLabel) {
-    const success = Mail.deleteMailByIdForUser(mailId, user.id);
-    if (!success) {
-      return res.status(500).json({ error: 'Could not hide mail' });
-    }
-
-    return res.status(204).send(); // No Content
-  }
-
-  Mail.deleteMailById(mailId);
-  return res.status(204).send(); // No Content
-};
-
-// GET /api/mails/spam -> returns 200 OK & JSON array of spam mails
-// exports.getSpam = (req, res) => {
-//   const user = getAuthenticatedUser(req, res);
-//   if (!user) return;
-
-//   const spam = Mail.getSpamMailsForUser(user.id)
-//     .map(({ id, from, to, subject, content, dateSent, labels }) => ({
-//       id,
-//       from,
-//       to,
-//       subject,
-//       content,
-//       dateSent,
-//       labels
-//     }));
-//   res.json(spam);
-// };
-
-// mark a mail as spam and add its links to blacklist
-async function _markMailAsSpam(mail) {
-  // use the model's logic to handle blacklist adding
-  const ok = await Mail.markMailAsSpamById(mail.id);
-  if (!ok) throw new Error('Failed to mark as spam');
-
-  // and label adding to mail on both sides
-  const maybeAttach = (userId) => {
-    const lbl = Labels.getLabelByName({ name: 'spam', userId });
-    if (lbl && !mail.labelIds.includes(lbl.id)) mail.labelIds.push(lbl.id);
-  };
-  maybeAttach(mail.senderId);
-  maybeAttach(mail.receiverId);
-}
-
-exports.searchMails = (req, res) => {
-  const user = getAuthenticatedUser(req, res);
-  if (!user) return;
-  const { query } = req.params;
-
-  const matchedMails = Mail.searchMails(query, user.id);
-
-  const latest50 = matchedMails
-    .sort((a, b) => b.dateSent - a.dateSent)
-    .slice(0, 50);
-
-  const payload = latest50.map(mail => {
-    const filteredLabels = (mail.labelIds || [])
-      .map(id => Labels.getLabelById({ id, userId: user.id }))
-      .filter(label => label)
-      .map(({ id, name }) => ({ id, name }));
-
-    return {
-      id: mail.id,
-      from: mail.from,
-      to: mail.to,
-      subject: mail.subject,
-      content: mail.content,
-      dateSent: mail.dateSent,
-      labels: filteredLabels
-    };
+  // Update the mail by mailId!
+  await Mail.updateMailById(mailId, {
+    to: toEmail,
+    subject,
+    content,
+    labels: labelIds
   });
 
-  return res.status(200).json(payload);
+  res.sendStatus(204);
 };
 
-exports.addLabelToMail = async (req, res) => {
-  const user = getAuthenticatedUser(req, res);
+/**
+ * DELETE /api/mails/:id
+ * Deletes a mail. Only sender can delete.
+ * If mail is a draft, delete permanently. Otherwise, only "hide" it (soft delete).
+ */
+exports.deleteMailById = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
   if (!user) return;
 
-  const mailId  = parseInt(req.params.mailId);
-  const labelId = req.params.labelId;
-
-  const mail = Mail.getMailById({ id: mailId, userId: user.id });
+  const mailId = Number(req.params.id);
+  const mail   = await Mail.getMailById({ id: mailId, userId: user._id });
   if (!mail) return res.status(404).json({ error: 'Mail not found' });
 
-  const label = Labels.getLabelById({ id: labelId, userId: user.id });
-  if (!label) return res.status(404).json({ error: 'Label not found' });
+  if (!mail.senderId.equals(user._id))
+    return res.status(403).json({ error: 'Not authorized to delete this mail' });
 
-  // avoid duplicates
-  if (mail.labelIds.includes(labelId)) return res.sendStatus(204);
+  const draftLabel = await Labels.getLabelByName({ name: 'drafts', userId: user._id });
+  const hasDraftLabel = mail.labelIds?.some(lid =>
+    lid.toString() === draftLabel?._id?.toString()
+  );
 
-  // if the requested label is SPAM - handle accordingly      
-  if (label.name.toLowerCase() === 'spam') {
-    try {
-      await _markMailAsSpam(mail);    // helper
-    } catch (e) {
-      return res.status(500).json({ error: e.message });
-    }
-  } else {
-    mail.labelIds.push(labelId);       
-  }
-
-  return res.sendStatus(204);
-
-};
-
-exports.removeLabelFromMail = async (req, res) => {
-  const user = getAuthenticatedUser(req, res);
-  if (!user) return;
-
-  const mailId = parseInt(req.params.mailId);
-  const labelId = req.params.labelId;
-
-  const mail = Mail.getMailById({ id: mailId, userId: user.id });
-  if (!mail) return res.status(404).json({ error: 'Mail not found' });
-
-  const label = Labels.getLabelById({ id: labelId, userId: user.id });
-  if (!label) return res.status(404).json({ error: 'Label not found' });
-
-  const idx = mail.labelIds.indexOf(labelId);
-  if (idx === -1) return res.sendStatus(204);   // nothing to remove
-
-  /* protect core system labels */
-  const core = ['drafts', 'inbox', 'sent'];
-  const lname = label.name.toLowerCase();
-  if (core.includes(lname))
-    return res.status(403).json({ error: `Cannot remove ${label.name} label` });
-
-  // handle spam label removal
-  if (lname === 'spam') {
-    mail.labelIds.splice(idx, 1);   // remove the label
-    mail.isSpam = false;            // mail considered clean
-
-    // extract its URLs and drop them from blacklist
-    const links = extractLinks(mail.content);
-    for (const link of links) {
-      // remove link if it esixts in the blacklist
-      if (await Blacklist.isBlacklisted(link)) {
-        await Blacklist.deleteUrl(link);
-      }
-    }
-
+  if (!hasDraftLabel) {
+    const success = await Mail.deleteMailByIdForUser(mailId, user._id);
+    if (!success) return res.status(500).json({ error: 'Could not hide mail' });
     return res.sendStatus(204);
   }
 
-  // handle normal label removal
-  mail.labelIds.splice(idx, 1);
-  return res.sendStatus(204);
+  await Mail.deleteMailById(mailId);
+  res.sendStatus(204);
+};
 
+/**
+ * GET /api/mails/search/:query
+ * Search for mails by text (subject/content) for current user.
+ * Always returns the latest 50 matches, with their labels.
+ */
+exports.searchMails = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const { query } = req.params;
+  const matched = await Mail.searchMails(query, user._id);
+  const latest50 = matched.sort((a, b) => b.dateSent - a.dateSent).slice(0, 50);
+
+  const payload = await Promise.all(
+    latest50.map(async mail => {
+      const filteredLabels = (
+        await Promise.all(
+          (mail.labelIds || []).map(id =>
+            Labels.getLabelById({ id, userId: user._id })
+          )
+        )
+      )
+        .filter(Boolean)
+        .map(({ _id, name }) => ({ id: _id, name }));
+      return {
+        id: mail.mailId,
+        from: mail.from,
+        to: mail.to,
+        subject: mail.subject,
+        content: mail.content,
+        dateSent: mail.dateSent,
+        labels: filteredLabels
+      };
+    })
+  );
+  res.json(payload);
+};
+
+/*
+ * Fetch all mails for the current user that are tagged with a specific label.
+ * Used for sidebar label view (e.g. show all mails in "Work" label).
+ * Route: GET /api/mails/label/:labelId
+ */
+exports.getMailsByLabel = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const { labelId } = req.params;
+  if (!labelId) return res.status(400).json({ error: 'labelId is required' });
+
+  // Find all mails (sent or received) by the user that have the labelId in their labelIds array
+  const mails = await Mail.getMailsByLabel(labelId, user._id);
+
+  // Standardize the payload
+  const payload = mails.map(mail => ({
+    id: mail.mailId,
+    from: mail.from,
+    to: mail.to,
+    subject: mail.subject,
+    content: mail.content,
+    dateSent: mail.dateSent,
+    labels: mail.labels || [] // Already populated by the service
+  }));
+
+  res.json(payload);
+};
+
+// Add a label to a mail (POST /api/mails/:mailId/labels/:labelId)
+exports.addLabelToMail = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
+  const { mailId, labelId } = req.params;
+  try {
+    const updated = await Mail.addLabelToMail(mailId, labelId, user._id);
+    return res.status(200).json({ success: true, mail: updated });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+};
+
+// Remove a label from a mail (DELETE /api/mails/:mailId/labels/:labelId)
+exports.removeLabelFromMail = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
+  const { mailId, labelId } = req.params;
+  try {
+    const updated = await Mail.removeLabelFromMail(mailId, labelId, user._id);
+    return res.status(200).json({ success: true, mail: updated });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 };

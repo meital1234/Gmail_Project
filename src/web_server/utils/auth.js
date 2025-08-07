@@ -1,50 +1,47 @@
 require('dotenv').config();
-const jwt = require('jsonwebtoken');
-const Users = require('../models/users');       // used to connect to the users we have registered
-const Tokens = require('../models/tokens');       // used to connect to the users we have logged in
+const jwt           = require('jsonwebtoken');
+const userService   = require('../services/users');
+const tokenService  = require('../services/tokens');
 
-// helper function to use in the beggining of each authentication proccess
-// for actions where a registered user is needed
-function getAuthenticatedUser(req, res) {
-  // extract the Authorization header, expecting format "Bearer <token>"
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+/**
+ * Validate Bearer JWT, check token store, and return the user object.
+ * On failure, sends a 4xx response and returns null.
+ */
+async function getAuthenticatedUser(req, res) {
+  // 1) Extract "Bearer <token>"
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Missing or invalid Authorization header' });
     return null;
   }
-  // obtain the raw token string
-  // const token = req.headers['authorization'];
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.slice(7).trim();
   if (!token) {
-    res.status(401).json({ error: 'Missing or invalid Authorization token' });
+    res.status(401).json({ error: 'Missing or invalid token' });
     return null;
   }
-  // verify that the token didnt become invalid
-  if (!Tokens.isValidToken(token)) {
-    res.status(403).json({ error: 'Token is not valid or has been logged out' });
+
+  // 2) Ensure token is still in store (not logged out)
+  const userId = await tokenService.getUserByToken(token);
+  if (!userId) {
+    res.status(403).json({ error: 'Token is invalid or has been revoked' });
     return null;
   }
-  // verify JWT signature & expiration using the secret from .env
+
+  // 3) Verify signature & expiration
   let payload;
-  try { // verifies token valid & signatures correct and not expired
+  try {
     payload = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {  // if error we check its type
+  } catch (err) {
     if (err.name === 'TokenExpiredError') {
-      res.status(401).json({ error: 'Token expired' }); // error tokens expiration
+      res.status(401).json({ error: 'Token expired' });
     } else {
-      res.status(403).json({ error: 'Token invalid' }); // error signatures validity
+      res.status(403).json({ error: 'Token invalid' });
     }
     return null;
   }
-  // Extract userId from payload & fetch the user object
-  const userId = payload.sub;
-  const user = Users.getUserById(userId);
-  // if (!userId) {
-  //   res.status(401).json({ error: 'Invalid or expired token' });
-  //   return null;
-  // }
 
-  // translate userID to the user object itself
+  // 4) Fetch the user via service
+  const user = await userService.getUserById(userId);
   if (!user) {
     res.status(401).json({ error: 'User not found' });
     return null;

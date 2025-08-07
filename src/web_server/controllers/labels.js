@@ -1,77 +1,85 @@
-const Label = require('../models/labels');
-const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
+// src/web_server/controllers/labels.js
+const labelSvc            = require('../services/labels');
+const { getAuthenticatedUser } = require('../utils/auth');
 
+/**
+ * GET /api/labels
+ */
+exports.getAllLabels = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
 
-exports.getAllLabels = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
-
-  // filter only specific fields to display to the user
-  const labels = Label.getAllLabelsByUser(sender.id);
-  const filteredLabels = labels.map(({ id, name }) => ({ id, name }));
-  res.json(filteredLabels);
+  const labels = await labelSvc.getAllLabelsByUser(user._id);
+  res.json(labels.map(({ _id, name }) => ({ id: _id, name })));
 };
 
-exports.getByLabelId = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
+/**
+ * GET /api/labels/:id
+ */
+exports.getByLabelId = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
 
-  const label = Label.getLabelById({id: req.params.id, userId: sender.id});
+  const label = await labelSvc.getLabelById({ id: req.params.id, userId: user._id });
   if (!label) return res.status(404).json({ error: 'Label not found' });
-  // filter only specific fields to display to the user
-  const filteredLabel = { id: label.id, name: label.name };
-  res.json(filteredLabel);
+
+  res.json({ id: label._id, name: label.name });
 };
 
-exports.createLabel = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
+/**
+ * POST /api/labels
+ */
+exports.createLabel = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
 
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
 
-  // make sure the label isnt in use for that user already
-  const existing = Label.getLabelByName({name, userId: sender.id});
-  if (existing) {
-    return res.status(403).json({ error: 'Label already exists' });
+  if (await labelSvc.getLabelByName({ name, userId: user._id })) {
+    return res.status(409).json({ error: 'Label already exists' });
   }
 
-  const newLabel = Label.createLabel({ name, userId: sender.id });
-  res.status(201)
-  .location(`/api/labels/${newLabel.id}`)
-  .json({ id: newLabel.id, name: newLabel.name });
+  const label = await labelSvc.createLabel({ name, userId: user._id });
+  res.status(201).location(`/api/labels/${label._id}`).json({ id: label._id, name: label.name });
 };
 
-exports.updateLabel = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
-  
-  // make sure there is a label in that name for that user
-  const exists = Label.getLabelById({id: req.params.id, userId: sender.id});
+/**
+ * PATCH /api/labels/:id
+ */
+exports.updateLabel = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
+
+  const exists = await labelSvc.getLabelById({ id: req.params.id, userId: user._id });
   if (!exists) return res.status(404).json({ error: 'Label not found' });
-  const updated = Label.updateLabelById({id: req.params.id, userId: sender.id, newData: req.body});
-  if (!updated) return res.status(404).json({ error: 'Label not found not during update' });
-  res.status(204).send();
+
+  const updated = await labelSvc.updateLabelById({
+    id: req.params.id,
+    userId: user._id,
+    newName: req.body.name
+  });
+  if (!updated) return res.status(404).json({ error: 'Label not found during update' });
+
+  res.sendStatus(204);
 };
 
-exports.deleteLabel = (req, res) => {
-  // make sure token is passed by header and is an actual user and that the user is logged in
-  const sender = getAuthenticatedUser(req, res);
-  if (!sender) return;
+/**
+ * DELETE /api/labels/:id
+ */
+exports.deleteLabel = async (req, res) => {
+  const user = await getAuthenticatedUser(req, res);
+  if (!user) return;
 
-  // make sure the labels exists for the requesting user
-  const existing = Label.getLabelById({id: req.params.id, userId: sender.id});
-  if (!existing) {
-    return res.status(403).json({ error: 'Label not found' });
+  const label = await labelSvc.getLabelById({ id: req.params.id, userId: user._id });
+  if (!label) return res.status(404).json({ error: 'Label not found' });
+
+  if (['inbox', 'sent', 'drafts', 'spam'].includes(label.name.toLowerCase())) {
+    return res.status(403).json({ error: `Cannot delete core label "${label.name}"` });
   }
-  // if label exists and is the draft label - don't allow deletion
-  if (existing?.name === "draft") return false;
 
-  const success = Label.deleteLabelById({id: req.params.id, userId: sender.id});
-  if (!success) return res.status(404).json({ error: 'Label not found' });
-  res.status(204).send();
+  const ok = await labelSvc.deleteLabelById({ id: req.params.id, userId: user._id });
+  if (!ok) return res.status(404).json({ error: 'Label not found' });
+
+  res.sendStatus(204);
 };

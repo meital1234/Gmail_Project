@@ -1,12 +1,11 @@
 const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/users');
-console.log("controller:", controller); // שורת הבדיקה
+const router  = express.Router();
+const controller    = require('../controllers/users');
 
-router.route('/')
-  .post(controller.registerUser); // POST /api/users
+// POST /api/users
+router.post('/', controller.registerUser);
 
-router.route('/me')
-  .get(controller.getCurrentUser);  // GET /api/users/:id
+// GET /api/users/me
+router.get('/me', controller.getCurrentUser);
 
-module.exports = router; // Exports the router so it can be used in app.js.
+module.exports = router;
