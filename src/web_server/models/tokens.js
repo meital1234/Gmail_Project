@@ -1,33 +1,18 @@
-// In-memory token store
-const tokens = []; // Each entry: { token: '1', userId: 1 }
+const mongoose = require('mongoose');
+const { Schema, model, Types } = mongoose;
 
-//gets userId & jwToken & stores them as object in memory
-function storeToken(userId, jwtToken) {
-  // - const token = { token: jwtToken, userId } 
-  tokens.push({ token: jwtToken, userId });
-  // - return token;
-}
+// Stored JWT tokens for logout and session invalidation
+const tokenSchema = new Schema({
+  // Reference to the User who owns this token
+  user: { type: Types.ObjectId, ref: 'User', required: true },
 
-// checks if a JWT is valid
-function isValidToken(jwtToken) {
-  return tokens.some(entry => entry.token === jwtToken);
-}
+  // The JWT string itself (unique)
+  token: { type: String, required: true, unique: true, index: true },
 
-// gets jwToken & removes from list (for logout for example)
-function removeToken(jwtToken) {
-  const idx = tokens.findIndex(entry => entry.token === jwtToken);
-  if (idx !== -1) tokens.splice(idx, 1);
-}
+  // Creation time, automatically expires (TTL) after 30 days
+  createdAt: { type: Date, default: Date.now, expires: '30d' }
+}, {
+  versionKey: false
+});
 
-
-function getUserByToken(token) {
-  const entry = tokens.find(t => t.token === token);
-  return entry ? entry.userId : null;
-}
-
-module.exports = {
-  storeToken,
-  isValidToken,
-  removeToken,
-  getUserByToken
-};
+module.exports = model('Token', tokenSchema);

@@ -1,94 +1,74 @@
-require('dotenv').config();
-const User = require('../models/users');
-const { getAuthenticatedUser } = require('../utils/auth');  // helper function for the proccess of authenticating a user when needed
+const userService           = require('../services/users');
+const { getAuthenticatedUser } = require('../utils/auth');
 
-// email nust be in this format xxx@xxx
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// password must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters
+const emailRegex    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 
-
-// Defines a post registration function.
+/**
+ * POST /api/users
+ * Register new user + default labels.
+ */
 exports.registerUser = async (req, res) => {
-  const { email, password, first_name, last_name, phone_number, birthDate, gender, image } = req.body;
+  try {
+    const { email, password, first_name, last_name, phone_number, birthDate, gender, image } = req.body;
 
-  // Checks that all required fields are present.
-  if (!email || !password || !first_name || !phone_number|| !birthDate|| !gender) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  if (!email.endsWith('@bloomly.com')) {
-    return res.status(400).json({ error: 'Email must end with @bloomly.com' });
-  }
-
-  if (!emailRegex.test(email.trim().toLowerCase())) {
-    return res.status(400).json({ error: 'Invalid email format' });
-  }
-
-  if (!passwordRegex.test(password)) {
-    return res.status(400).json({ 
-      error: 'Password must be at least 8 characters long and include uppercase, lowercase, and a number' 
-    });
-  }
-
-  // Phone number validation
-  const phonePattern = /^\d{9,15}$/;
-  if (!phonePattern.test(phone_number)) {
-    return res.status(400).json({ error: 'Invalid phone number format' });
-  }
-
-  // Age validation
-  const today = new Date();
-  const userBirthDate = new Date(birthDate);
-  const age = today.getFullYear() - userBirthDate.getFullYear();
-  if (age < 10) {
-    return res.status(400).json({ error: 'You must be at least 10 years old to sign up' });
-  }
-
-  // Image validation
-  if (image) {
-    // Make sure it's a base64 string that starts with a valid prefix
-    if (!image.startsWith('data:image/')) {
+    // basic field checks
+    if (!email || !password || !first_name || !phone_number || !birthDate || !gender) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (!email.endsWith('@bloomly.com') || !emailRegex.test(email.trim())) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        error: 'Password must be ≥8 chars, include uppercase, lowercase & number'
+      });
+    }
+    if (!/^\d{9,15}$/.test(phone_number)) {
+      return res.status(400).json({ error: 'Invalid phone number format' });
+    }
+    // age check
+    const age = new Date().getFullYear() - new Date(birthDate).getFullYear();
+    if (age < 10) {
+      return res.status(400).json({ error: 'Must be at least 10 years old' });
+    }
+    // optional image size/type
+    if (image && !image.startsWith('data:image/')) {
       return res.status(400).json({ error: 'Invalid image format' });
     }
 
-    // Limit image size (base64 is ~33% bigger than binary)
-    const base64Length = image.length * (3 / 4); // rough estimate
-    const maxBytes = 1 * 1024 * 1024; // 1MB
-    if (base64Length > maxBytes) {
-      return res.status(400).json({ error: 'Image is too large (max 1MB)' });
+    // uniqueness
+    if (await userService.getUserByEmail(email)) {
+      return res.status(409).json({ error: 'Email already in use' });
     }
-  }
-  
-  // make sure the email address isnt in use already
-  const existing = User.getUserByEmail(email);
-  if (existing) {
-    return res.status(403).json({ error: 'Email address is already in use' });
-  }
-  // - // Creates the user and sends a response with his ID.
-  // - const newUser = User.createUser(req.body);
-  // - res.status(201).location(`/api/users/${newUser.id}`).send();
-  try {
-    const newUser = await User.createUser({ email, password, first_name, last_name, phone_number, birthDate, gender, image });
-    // return id for user
-    return res.status(201).json({ id: newUser.id, email: newUser.email });
+
+    // create
+    const user = await userService.createUser({ email, password, first_name, last_name, phone_number, birthDate, gender, image });
+    res.status(201).json({ id: user._id, email: user.email });
   } catch (err) {
-    console.error('Error in createUser:', err);
-    return res.status(404).json({ error: 'User not found' });
+    console.error('[UserController.registerUser]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-// GET /api/users/me
-exports.getCurrentUser = (req, res) => {
-  const user = getAuthenticatedUser(req, res);
-  if (!user) return;
-
-  res.status(200).json({
-    id: user.id,
-    email: user.email,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    gender: user.gender,
-    image: user.image || null
-  });
+/**
+ * GET /api/users/me
+ * Return current user’s public profile.
+ */
+exports.getCurrentUser = async (req, res) => {
+  try {
+    const user = await getAuthenticatedUser(req, res);
+    if (!user) return;
+    res.json({
+      id:         user._id,
+      email:      user.email,
+      first_name: user.first_name,
+      last_name:  user.last_name,
+      gender:     user.gender,
+      image:      user.image
+    });
+  } catch (err) {
+    console.error('[UserController.getCurrentUser]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };

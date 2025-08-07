@@ -1,46 +1,15 @@
-let idCounter = 0;
-const labels = []; // array to store all labels in memory.
+const mongoose = require('mongoose');
+const { Schema, model, Types } = mongoose;
 
-function createLabel({ name, userId }) {
-  const newLabel = { id: (++idCounter).toString(), name, userId };
-  labels.push(newLabel);
-  return newLabel;
-}
+// Label for organizing mails (per user)
+const labelSchema = new Schema({
+  // Name of the label (e.g. 'Inbox', 'Spam', etc.)
+  name: { type: String, required: true },
 
-function getAllLabelsByUser(userId) {
-  // return all the labels that are saved by the requesting user
-  return labels.filter(label => label.userId === userId);
-}
+  // Owner of this label
+  userId: { type: Types.ObjectId, ref: 'User', required: true }
+}, {
+  versionKey: false
+});
 
-function getLabelById({id, userId}) {
-  return labels.find(l => Number(l.id) === Number(id) && l.userId === userId) || null;
-}
-
-function updateLabelById({id, userId, newData}) {
-  const label = getLabelById({id, userId});
-  if (!label) return null;
-  if (newData.name) label.name = newData.name;
-  return label;
-}
-
-function getLabelByName({name, userId}) {
-  return labels.find(
-    l => l.userId === userId && l.name.toLowerCase() === name.toLowerCase()
-  ) || null;
-}
-
-function deleteLabelById({id, userId}) {
-  const index = labels.findIndex(l => l.id === id && l.userId === userId);
-  if (index === -1) return false;
-  labels.splice(index, 1);
-  return true;
-}
-
-module.exports = {
-  createLabel,
-  getAllLabelsByUser,
-  getLabelById,
-  updateLabelById,
-  getLabelByName,
-  deleteLabelById
-};
+module.exports = model('Label', labelSchema);

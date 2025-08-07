@@ -1,54 +1,32 @@
 require('dotenv').config();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const jwt          = require('jsonwebtoken');
+const bcrypt       = require('bcrypt');
+const userService  = require('../services/users');
+const tokenService = require('../services/tokens');
 
-const User = require('../models/users');
-const Tokens = require('../models/tokens');
+/**
+ * POST /api/tokens
+ * Authenticate and issue a JWT; store it for logout support.
+ */
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'email and password are required' });
+    }
+    const user = await userService.getUserByEmail(email);
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-exports.login = async(req, res) => {
-  const { email, password } = req.body; // Gets username and password from the request body.
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
-  // Checks that all required fields are present.
-  if (!email || !password) {
-    return res.status(400).json({ error: 'email and password are required' });
+    const payload = { sub: user._id, email: user.email };
+    const token   = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+    await tokenService.storeToken(user._id, token);
+
+    res.json({ token, expiresIn: process.env.JWT_EXPIRES_IN });
+  } catch (err) {
+    console.error('[AuthController.login]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-
-  const user = User.getUserByEmail(email);
-  // Checks if the user exists with the login information. if not we will return 401.
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  // matching password & hashpassword
-  const match = await bcrypt.compare(password, user.passwordHash);
-  if (!match) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  // JWT for building payload
-  const payload = {
-    sub: user.id,
-    email: user.email
-  };
-
-  
-  // creating signed JWT with secret & expressin from .env
-  const token = jwt.sign(
-    payload,
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
-
-  // - // Returns a token containing the user id.
-  // - const token = Tokens.createToken(user.id); // saves it in token store
-  // - res.status(200).json({ token });
-  
-  // saving token in memory
-  Tokens.storeToken(user.id, token);
-
-  // returnig answer to user
-  res.status(200).json({
-    token,
-    expiresIn: process.env.JWT_EXPIRES_IN
-  });
 };

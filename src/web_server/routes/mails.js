@@ -1,30 +1,34 @@
 const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/mails');
+const router  = express.Router();
+const controller    = require('../controllers/mails');
 
-// ---------------- mailing routes ----------------
-// GET /api/mails/search/:query
+// GET  /api/mails/search/:query
 router.get('/search/:query', controller.searchMails);
 
-// GET /api/mails
+// GET  /api/mails/label/:labelId
+router.get('/label/:labelId', controller.getMailsByLabel);
+
+// GET  /api/mails
 // POST /api/mails
-router.route('/')
-  .get(controller.getInbox)   // GET /mails
-  .post(controller.sendMail); // POST /mails
+router
+  .route('/')
+  .get(controller.getInbox)
+  .post(controller.sendMail);
 
-// GET /api/mails/spam
-// router.get('/spam', controller.getSpam);
+// GET    /api/mails/:id
+// PATCH  /api/mails/:id
+// DELETE /api/mails/:id
+router
+  .route('/:id')
+  .get(controller.getMailById)
+  .patch(controller.editMailById)
+  .delete(controller.deleteMailById);
 
-// PATCH /api/mails/:id/spam
-// router.patch('/:id/spam', controller.markAsSpam);
+// POST   /api/mails/:mailId/labels/:labelId
+// DELETE /api/mails/:mailId/labels/:labelId
+router
+  .route('/:mailId/labels/:labelId')
+  .post(controller.addLabelToMail)
+  .delete(controller.removeLabelFromMail);
 
-router.route('/:id')
-  .get(controller.getMailById)        // GET /api/mails/:id
-  .patch(controller.editMailById)     // PATCH /api/mails/:id
-  .delete(controller.deleteMailById); // DELETE /api/mails/:id
-
-router.route('/:mailId/labels/:labelId')
-        .post(controller.addLabelToMail)
-        .delete(controller.removeLabelFromMail)
-
-module.exports = router; // exports the router so it can be used in app.js.
+module.exports = router;
