@@ -34,6 +34,7 @@ services:
        - MONGODB_URI=mongodb://mongo:27017/thebestgmail  # Connection string for Mongoose
      volumes:
        - ./src/web_server:/app
+       - /app/node_modules
      stdin_open: true
      tty: true
   
