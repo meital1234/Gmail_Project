@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--colors for login-->
     <color name="black">#FF000000</color>
     <color name="text_but_Color">#FFFFFFFF</color>
     <color name="light_blue">#CDE3FA</color>
@@ -8,4 +9,7 @@
     <color name="back_tint">#DDDDDD</color>
     <color name="but_tint">#F2A4D1</color>
     <color name="reg_link">#512DA8</color>
+
+    <!--colors for register-->
+    <color name="holo_red_dark">#CC0000</color>
 </resources>

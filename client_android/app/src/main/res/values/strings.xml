@@ -1,8 +1,53 @@
 <resources>
+    <!--login titles -->
+    <string name="base_url">http://10.0.2.2:3000/api/</string>
     <string name="app_name">Gmail_android</string>
     <string name="logo_text">MyGmail</string>
     <string name="login_text">Sign in</string>
     <string name="signBut_text">"Don't have an account? Sign up"</string>
     <string name="password_hint">Password</string>
     <string name="Email_hint">Email</string>
+    <string name="loading">Loading…</string>
+
+    <!-- register titles -->
+    <string name="registration">Registration</string>
+    <string name="step1_name">Step 1: Name</string>
+    <string name="step2_personal_info">Step 2: Personal Info</string>
+    <string name="step3_email">Step 3: Email</string>
+    <string name="step4_password">Step 4: Create a Password</string>
+    <string name="step5_profile_picture">Step 5: Profile Picture</string>
+    <!-- register hints -->
+    <string name="hint_first_name">First name</string>
+    <string name="hint_last_name">Last name (optional)</string>
+    <string name="hint_birth_date">Birth date (YYYY-MM-DD)</string>
+    <string name="hint_phone_number">Phone number</string>
+    <string name="hint_email">Email (must end with @bloomly.com)</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_confirm_password">Confirm password</string>
+    <!-- register buttons -->
+    <string name="choose_image">Choose image</string>
+    <string name="back">Back</string>
+    <string name="next">Next</string>
+
+    <!--Cannot resolve symbol -->
+    <string name="invalid_email">Invalid email</string>
+    <string name="password_min_8">Password at least 8 characters</string>
+
+    <!--err/validation -->
+    <string name="err_fill_personal">Please fill in all personal info fields</string>
+    <string name="err_birth_format">Birth date must be YYYY-MM-DD</string>
+    <string name="err_phone_digits">Phone number must contain only digits</string>
+    <string name="err_age_min">You must be at least 10 years old to sign up!</string>
+    <string name="err_email_required">Please enter your chosen email address</string>
+    <string name="err_email_domain">Email must end with @bloomly.com</string>
+    <string name="err_password_both">Please fill in both password fields</string>
+    <string name="err_password_match">Passwords do not match</string>
+    <string name="err_password_rules">Password must be at least 8 characters long and include uppercase, lowercase, and a number</string>
+    <string name="err_image_too_large">Image size must be less than 1MB</string>
+    <string name="err_read_image">Failed to read image: %1$s</string>
+    <string name="err_read_image_null">Unable to open image stream</string>
+
+    <!-- UI text -->
+    <string name="image_selected">Image selected</string>
+    <string name="no_file_chosen">No file chosen</string>
 </resources>
