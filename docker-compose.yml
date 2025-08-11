@@ -46,18 +46,18 @@ services:
     volumes:
       - mongo_data:/data/db 
 
-  # React frontend
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    container_name: frontend
-    ports:
-      - "3001:3001"
-    depends_on:
-      - web
-    stdin_open: true
-    tty: true
+  # # React frontend
+  #   frontend:
+  #    build:
+  #      context: .
+  #      dockerfile: Dockerfile.frontend
+  #    container_name: frontend
+  #    ports:
+  #      - "3001:3001"
+  #    depends_on:
+  #      - web
+  #    stdin_open: true
+  #    tty: true
 
 # Named volumes
 volumes:
