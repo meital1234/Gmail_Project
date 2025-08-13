@@ -41,7 +41,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    // Retrofit + Gson
+    // Retrofit + Gson + OkHttp
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -54,4 +54,10 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.7.2")
     annotationProcessor("androidx.room:room-compiler:2.7.2")
+
+    // --- UI שהפעילות שלנו משתמשת בו ---
+    implementation ("androidx.recyclerview:recyclerview:1.4.0")
+    implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation ("androidx.cardview:cardview:1.0.0")
+    implementation ("androidx.coordinatorlayout:coordinatorlayout:1.3.0")
 }
