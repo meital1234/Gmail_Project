@@ -1,5 +1,6 @@
 package com.example.gmail_android.network;
 
+import android.util.Log;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import com.example.gmail_android.auth.TokenStore;
@@ -20,25 +21,31 @@ public class AuthInterceptor implements Interceptor {
 
     //  intercepts all outgoing requests.
     @NonNull
-    @Override public Response intercept(Chain chain) throws IOException {
-        // original request.
-        Request original = chain.request();
-
-        // retrieve stored token.
+    public Response intercept(Chain chain) throws IOException {
         String token = TokenStore.get(appContext);
-        // Create a new request builder
-        Request.Builder builder = original.newBuilder();
+
+        // the original request.
+        Request req = chain.request();
+
         if (token != null && !token.isEmpty()) {
-            builder.addHeader("Authorization", "Bearer " + token);
+            Log.d("AuthInt", "Adding Authorization header. url=" + req.url());
+            req = req.newBuilder()
+                    .addHeader("Authorization", "Bearer " + token)
+                    .build();
+        } else {
+            Log.w("AuthInt", "No token – sending without Authorization. url=" + req.url());
         }
 
-        // proceed with the request.
-        Response resp = chain.proceed(builder.build());
+        // sending the request.
+        Response resp = chain.proceed(req);
 
-        // If the server returns 401, clear token.
+        Log.d("AuthInt",
+                "Response " + resp.code() + " for " + req.method() + " " + req.url());
         if (resp.code() == 401) {
+            Log.w("AuthInt", "401 -> clearing token");
             TokenStore.clear(appContext);
         }
+
         return resp;
     }
 }

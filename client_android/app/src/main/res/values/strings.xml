@@ -1,5 +1,5 @@
 <resources>
-    <!--login titles -->
+    <!--login text -->
     <string name="base_url">http://10.0.2.2:3000/api/</string>
     <string name="app_name">Gmail_android</string>
     <string name="logo_text">MyGmail</string>
@@ -29,6 +29,16 @@
     <string name="back">Back</string>
     <string name="next">Next</string>
 
+    <!--compose text -->
+    <string name="new_message">New Message</string>
+    <string name="to_hint">To</string>
+    <string name="subject_hint">Subject</string>
+    <string name="message_hint">Message</string>
+    <string name="labels_title">Labels:</string>
+    <string name="add_label_cd">Add label</string>
+    <string name="discard">Discard</string>
+    <string name="send">Send</string>
+
     <!--Cannot resolve symbol -->
     <string name="invalid_email">Invalid email</string>
     <string name="password_min_8">Password at least 8 characters</string>
@@ -46,8 +56,19 @@
     <string name="err_image_too_large">Image size must be less than 1MB</string>
     <string name="err_read_image">Failed to read image: %1$s</string>
     <string name="err_read_image_null">Unable to open image stream</string>
+    <string name="recipient_required">Recipient required</string>
+    <string name="send_failed">Send failed: %1$d</string>
+    <string name="network_error">Network error: %1$s</string>
 
     <!-- UI text -->
     <string name="image_selected">Image selected</string>
     <string name="no_file_chosen">No file chosen</string>
+    <string name="from_fmt">From: %1$s</string>
+    <string name="to_fmt">To: %1$s</string>
+
+
+    <string name="app_name_B">Bloomly</string>
+    <string name="compose">Compose</string>
+    <string name="logout">Logout</string>
+
 </resources>
