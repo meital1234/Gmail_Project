@@ -15,20 +15,25 @@ import java.util.Date;
 
 public class MailAdapter extends ListAdapter<MailWithLabels, MailAdapter.VH> {
 
+    // interface for handling mail item clicks.
     public interface OnMailClick { void onMail(MailWithLabels item); }
     private final OnMailClick listener;
 
+    // constructor receiving a click listener.
     public MailAdapter(OnMailClick l) {
         super(DIFF);
         this.listener = l;
     }
 
+    // determine if items have changed for efficient list updates.
     private static final DiffUtil.ItemCallback<MailWithLabels> DIFF =
             new DiffUtil.ItemCallback<MailWithLabels>() {
                 @Override public boolean areItemsTheSame(@NonNull MailWithLabels a, @NonNull MailWithLabels b) {
+                    // check if two items are the same by comparing their unique mail IDs.
                     return a.mail.id.equals(b.mail.id);
                 }
                 @Override public boolean areContentsTheSame(@NonNull MailWithLabels a, @NonNull MailWithLabels b) {
+                    // check if content has changed.
                     return a.mail.subject.equals(b.mail.subject)
                             && a.mail.fromEmail.equals(b.mail.fromEmail)
                             && a.mail.dateSentMillis == b.mail.dateSentMillis;
@@ -37,29 +42,35 @@ public class MailAdapter extends ListAdapter<MailWithLabels, MailAdapter.VH> {
 
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        // inflate a single mail row layout.
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_mail_row, parent, false);
         return new VH(v);
     }
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
+        // get the mail item for the current position.
         MailWithLabels item = getItem(pos);
+        // set the subject text.
         h.subject.setText(item.mail.subject);
+        // set the sender email text.
         h.from.setText(item.mail.fromEmail);
 
-        // במסך הראשי לא מציגים תקציר
+        // hide the preview text in the main screen.
         h.preview.setVisibility(View.GONE);
 
-        // אם השארת את rowDate נראה תאריך; אם הפכת אותו ל-gone ב-XML לא יופיע
+        // set the sent date/time if the date TextView is visible.
         h.date.setText(DateFormat.getDateTimeInstance(
                 DateFormat.SHORT, DateFormat.SHORT
         ).format(new Date(item.mail.dateSentMillis)));
 
+        // handle item click events.
         h.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onMail(item);
         });
     }
 
+    // holding references to the UI elements for each mail row.
     public static class VH extends RecyclerView.ViewHolder {
         TextView subject, from, preview, date;
         public VH(@NonNull View v) {

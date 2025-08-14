@@ -35,7 +35,8 @@ public class AuthRepository {
 
         api.login(req).enqueue(new Callback<AuthResponse>() {
             @Override
-            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> res) {
+            public void onResponse(@NonNull Call<AuthResponse> call,
+                                   @NonNull Response<AuthResponse> res) {
                 if (res.isSuccessful() && res.body() != null && res.body().token != null) {
                     // save JWT token to SharedPreferences.
                     prefs.edit().putString("jwt", res.body().token).apply();

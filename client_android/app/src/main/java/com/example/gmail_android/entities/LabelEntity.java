@@ -4,17 +4,22 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+// represents a label in the database.
 @Entity(tableName = "labels")
 public class LabelEntity {
 
+    // primary key for the label, cannot be null.
     @PrimaryKey @NonNull
-    public String id = "";   // non-null כברירת מחדל
+    public String id = "";
 
+    // name of the label, cannot be null.
     @NonNull
-    public String name = ""; // non-null כברירת מחדל
+    public String name = "";
 
-    public LabelEntity() { } // נדרש ל-Room
+    // no argument constructor required by Room.
+    public LabelEntity() { }
 
+    // constructor to initialize both fields.
     public LabelEntity(@NonNull String id, @NonNull String name) {
         this.id = id;
         this.name = name;

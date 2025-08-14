@@ -34,20 +34,14 @@ public class UserRepository {
         live.setValue(Result.loading());
 
         api.createUser(req).enqueue(new Callback<ResponseBody>() {
-            @Override public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
+            @Override public void onResponse(@NonNull Call<ResponseBody> call,
+                                             @NonNull Response<ResponseBody> response) {
                 if (response.code() == 201) {
                     // user created successfully.
                     live.setValue(Result.success("created"));
                 } else {
                     // default error message.
                     String msg = "Registration failed";
-//                    try {
-//                        if (response.errorBody() != null) {
-//                            String s = response.errorBody().string();
-//                            JSONObject o = new JSONObject(s);
-//                            if (o.has("error")) msg = o.getString("error");
-//                        }
-//                    } catch (Exception ignored) {}
                     try (ResponseBody errBody = response.errorBody()) {
                         if (errBody != null) {
                             String s = errBody.string();
@@ -60,7 +54,8 @@ public class UserRepository {
                     live.setValue(Result.error(msg));
                 }
             }
-            @Override public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
+            @Override public void onFailure(@NonNull Call<ResponseBody> call,
+                                            @NonNull Throwable t) {
                 live.setValue(Result.error("Network error: " + t.getMessage()));
             }
         });

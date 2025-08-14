@@ -39,6 +39,10 @@
     <string name="discard">Discard</string>
     <string name="send">Send</string>
 
+    <!--ActivityMail text -->
+    <string name="mail">Mail</string>
+    <string name="back_inbox">Back to Inbox</string>
+
     <!--Cannot resolve symbol -->
     <string name="invalid_email">Invalid email</string>
     <string name="password_min_8">Password at least 8 characters</string>

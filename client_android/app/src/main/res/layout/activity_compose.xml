@@ -67,12 +67,12 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginStart="8dp"
-                app:tint="@android:color/white"
-                app:srcCompat="@android:drawable/ic_input_add"
+                app:tint="@color/text_but_Color"
+                app:srcCompat="@drawable/ic_launcher_foreground"
                 android:contentDescription="@string/add_label_cd"/>
         </LinearLayout>
 
-        <!-- צ’יפים בחירה -->
+        <!-- Choice chips -->
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroup"
             android:layout_width="match_parent"
@@ -83,7 +83,7 @@
 
         <TextView
             android:id="@+id/tvError"
-            android:textColor="#d32f2f"
+            android:textColor="@color/bright_red"
             android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -101,8 +101,8 @@
                 android:text="@string/discard"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:backgroundTint="#E0E0E0"
-                android:textColor="#202124"
+                android:backgroundTint="@color/btn_gray"
+                android:textColor="@color/text_Color"
                 tools:ignore="ButtonStyle"/>
 
             <Button
@@ -111,8 +111,8 @@
                 android:layout_marginStart="12dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:backgroundTint="#E0E0E0"
-                android:textColor="#202124"
+                android:backgroundTint="@color/btn_gray"
+                android:textColor="@color/text_Color"
                 tools:ignore="ButtonStyle"/>
         </LinearLayout>
     </LinearLayout>
