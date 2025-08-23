@@ -112,7 +112,8 @@ public class RegisterActivity extends ComponentActivity {
                         imageDataUrl
                 ).observe(this, result -> {
                     if (result.status == Result.Status.SUCCESS) {
-                        Toast.makeText(this, "Registered! Please login.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Registered! Please login.",
+                                Toast.LENGTH_SHORT).show();
                         finish(); // return to login.
                     } else if (result.status == Result.Status.ERROR) {
                         nextBtn.setEnabled(true);
@@ -184,13 +185,15 @@ public class RegisterActivity extends ComponentActivity {
             case 2:
                 String em = email.getText().toString().trim();
                 if (em.isEmpty()) { err.setText(R.string.err_email_required); return false; }
-                if (!em.endsWith("@bloomly.com")) { err.setText(R.string.err_email_domain); return false; }
+                if (!em.endsWith("@bloomly.com"))
+                { err.setText(R.string.err_email_domain);return false; }
                 return true;
 
             case 3:
                 String p1 = password.getText().toString();
                 String p2 = confirmPassword.getText().toString();
-                if (p1.isEmpty() || p2.isEmpty()) { err.setText(R.string.err_password_both); return false; }
+                if (p1.isEmpty() || p2.isEmpty()) { err.setText(R.string.err_password_both);
+                    return false; }
                 if (!p1.equals(p2)) { err.setText(R.string.err_password_match); return false; }
                 if (!p1.matches("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$")) {
                     err.setText(R.string.err_password_rules);
@@ -221,7 +224,8 @@ public class RegisterActivity extends ComponentActivity {
         DatePickerDialog dp = new DatePickerDialog(
                 this,
                 (view, y, m, d) -> {
-                    String formatted = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d);
+                    String formatted = String.format(Locale.US,
+                            "%04d-%02d-%02d", y, m + 1, d);
                     target.setText(formatted);
                 },
                 year, month, day

@@ -6,50 +6,65 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
+// interface for making API calls related to mails, labels, and user information.
 public interface MailApi {
+    // get all mails in the inbox.
     @GET("mails")
     Call<List<MailDto>> getInbox();
 
+    // get a specific mail by its id.
     @GET("mails/{id}")
     Call<MailDto> getMail(@Path("id") String id);
 
+    // search for mails by query string.
     @GET("mails/search/{q}")
     Call<List<MailDto>> search(@Path("q") String q);
 
+    // send a new mail.
     @POST("mails")
     Call<MailDto> send(@Body ComposeRequest req);
 
+    // edit an existing mail. (for spam)
     @PATCH("mails/{id}")
     Call<MailDto> edit(@Path("id") String id, @Body EditRequest req);
 
+    // delete a mail by id. (for spam)
     @DELETE("mails/{id}")
     Call<ResponseBody> delete(@Path("id") String id);
 
-    // תוויות למייל (כמו ב-React: POST/DELETE)
+    // add a label to a specific mail.
     @POST("mails/{id}/labels/{labelId}")
     Call<ResponseBody> addLabel(@Path("id") String mailId, @Path("labelId") String labelId);
 
+    // remove a label from a specific mail.
     @DELETE("mails/{id}/labels/{labelId}")
     Call<ResponseBody> removeLabel(@Path("id") String mailId, @Path("labelId") String labelId);
 
-    // -------- Labels --------
-    // לפעמים חוזר [] ולפעמים { labels: [...] } — נטפל בזה בריפו
+    // get all labels.
     @GET("labels")
     Call<Object> getLabels();
 
+    // create a new label.
     @POST("labels")
     Call<LabelDto> createLabel(@Body CreateLabelRequest req);
+
+    // get authenticated user's details.
     @GET("users/me")
     Call<UserDto> me();
 
-    // ===== DTOs =====
+    // label data transfer object.
     public static class LabelDto {
         public String id;
         public String name;
     }
 
-    class CreateLabelRequest { public String name; public CreateLabelRequest(String n){ name=n; } }
+    // request body for creating a label.
+    class CreateLabelRequest {
+        public String name;
+        public CreateLabelRequest(String n){ name=n; }
+    }
 
+    // mail data transfer object.
     public static class MailDto {
         public String id;
         public String from;
@@ -57,30 +72,32 @@ public interface MailApi {
         public String subject;
         public String content;
 
-        // כדי לא להיתקע עם API26, נקבל כמחרוזת ונפרסר ללונג בריפו
+        // store date as String.
         @SerializedName("dateSent")
         public String dateSent;
 
         public List<LabelDto> labels;
-        public boolean spam; // אם יש שדה כזה בשרת
+        // if a spam field exist.
+        public boolean spam;
     }
 
+    // request body for composing a mail.
     public static class ComposeRequest {
-        // ב-React שלחת toEmail; נשמור על אותו שם
         @SerializedName("toEmail") public String toEmail;
         public String subject;
         public String content;
-        public List<String> labels; // אופציונלי
+        public List<String> labels; // optional.
     }
 
+    // request body for editing a mail.
     public static class EditRequest {
-        // ב-React ב-PATCH שלחת toEmail/subject/content/labels (שמות תוויות)
         @SerializedName("toEmail") public String toEmail;
         public String subject;
         public String content;
         public List<String> labels;
     }
 
+    // user data transfer object.
     public static class UserDto {
         public String id;
         @SerializedName("first_name") public String first_name;

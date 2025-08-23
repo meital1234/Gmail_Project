@@ -72,7 +72,8 @@ public class LoginActivity extends ComponentActivity {
                     // re-enables login button so user can try again.
                     loginButton.setEnabled(true);
                     // consider showing user-friendly error.
-                    Toast.makeText(this, "Error: " + result.message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error: " + result.message,
+                            Toast.LENGTH_SHORT).show();
                 }
             });
         });

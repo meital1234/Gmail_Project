@@ -24,7 +24,7 @@
         <TextView
             android:id="@+id/rowFrom"
             android:textSize="13sp"
-            android:textColor="#666"
+            android:textColor="@color/dark_gray"
             android:ellipsize="end"
             android:maxLines="1"
             android:layout_width="match_parent"
@@ -41,7 +41,7 @@
         <TextView
             android:id="@+id/rowDate"
             android:textSize="12sp"
-            android:textColor="#888"
+            android:textColor="@color/bright_gray"
             android:ellipsize="end"
             android:maxLines="1"
             android:layout_width="match_parent"

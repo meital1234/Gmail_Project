@@ -15,4 +15,12 @@
 
     <!--colors for compose-->
     <color name="btn_gray">#E0E0E0</color>
+    <color name="bright_red">#d32f2f</color>
+
+    <!--colors for ActivityMail -->
+    <color name="gray">#777</color>
+
+    <!--colors for MailRow -->
+    <color name="dark_gray">#666</color>
+    <color name="bright_gray">#888</color>
 </resources>
