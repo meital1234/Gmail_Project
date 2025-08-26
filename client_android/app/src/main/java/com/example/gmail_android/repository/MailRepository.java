@@ -23,7 +23,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MailRepository {
-
+    private final Context ctx;
     // API interface for network calls.
     private final MailApi api;
     // data Access Object for Room database.
@@ -36,11 +36,13 @@ public class MailRepository {
         Log.d("API", "Retrofit baseUrl=" + retrofit.baseUrl());
         this.api = retrofit.create(MailApi.class);
         this.dao = AppDatabase.get(ctx).mailDao();
+        this.ctx = ctx;
     }
-
 
     // LiveData for UI.
     public LiveData<List<MailWithLabels>> getInboxLive() {
+        AppDatabase db = AppDatabase.get(ctx);
+        MailDao dao = db.mailDao();
         return dao.getInbox();
     }
 
@@ -172,7 +174,6 @@ public class MailRepository {
         });
     }
 
-
     // send a new mail.
     public void send(String toEmail, String subject, String content, List<String> labels,
                      Callback<MailApi.MailDto> cb) {
@@ -184,7 +185,7 @@ public class MailRepository {
         api.send(req).enqueue(cb);
     }
 
-    // edit an existing mail (for spam).
+    // edit an existing mail (for draft).
     public void edit(String mailId, String toEmail, String subject, String content,
                      List<String> labels,
                      Callback<MailApi.MailDto> cb) {
@@ -196,7 +197,7 @@ public class MailRepository {
         api.edit(mailId, req).enqueue(cb);
     }
 
-    // delete a mail (for spam).
+    // delete a mail
     public void delete(String mailId, Callback<ResponseBody> cb) {
         api.delete(mailId).enqueue(cb);
     }
@@ -209,6 +210,21 @@ public class MailRepository {
     // remove a label from a mail.
     public void removeLabel(String mailId, String labelId, Callback<ResponseBody> cb) {
         api.removeLabel(mailId, labelId).enqueue(cb);
+    }
+
+    public LiveData<List<MailWithLabels>> getByLabelLive(String labelId) {
+        AppDatabase db = AppDatabase.get(ctx);
+        MailDao dao = db.mailDao();
+        return dao.getByLabel(labelId);
+    }
+
+    public LiveData<List<LabelEntity>> getLabelsLive() {
+        AppDatabase db = AppDatabase.get(ctx);
+        MailDao dao = db.mailDao();
+        // if not present, add this query in MailDao:
+        // @Query("SELECT * FROM labels ORDER BY name COLLATE NOCASE")
+        // LiveData<List<LabelEntity>> getLabels();
+        return dao.getLabels();
     }
 
     // parse a date string.

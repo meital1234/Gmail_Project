@@ -74,5 +74,7 @@
     <string name="app_name_B">Bloomly</string>
     <string name="compose">Compose</string>
     <string name="logout">Logout</string>
+    <string name="labels">Labels</string>
+    <string name="all_mail">All mail</string>
 
 </resources>

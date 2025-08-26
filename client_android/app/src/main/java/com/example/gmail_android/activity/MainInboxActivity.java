@@ -6,81 +6,83 @@ import android.view.Menu;
 import android.view.MenuItem;
 import androidx.activity.ComponentActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.example.gmail_android.R;
 import com.example.gmail_android.auth.TokenStore;
+import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.viewmodel.InboxViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 
 public class MainInboxActivity extends ComponentActivity {
 
-    // ViewModel to manage inbox data.
     private InboxViewModel vm;
-    // adapter to display mail items.
-    private MailAdapter adapter;
+    private LabelAdapter labelAdapter;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_inbox);
 
-        // toolbar with logout option.
-        MaterialToolbar top = findViewById(R.id.topAppBar);
-        top.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_logout) {
-                // clear stored token and navigate to login screen.
-                TokenStore.clear(getApplicationContext());
-                Intent i = new Intent(this, LoginActivity.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(i);
-                finish();
-                return true;
-            }
-            return false;
+        DrawerLayout drawer = findViewById(R.id.drawerLayout);
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        RecyclerView recycler = findViewById(R.id.recycler);
+        RecyclerView recyclerLabels = findViewById(R.id.recyclerLabels);
+        SwipeRefreshLayout swipe = findViewById(R.id.swipe);
+
+        topAppBar.setNavigationIcon(R.drawable.ic_menu);
+        topAppBar.setNavigationOnClickListener(v -> drawer.open());
+
+        // Inbox list
+        recycler.setLayoutManager(new LinearLayoutManager(this));
+        MailAdapter mailAdapter = new MailAdapter((mail) -> {
+            Intent i = new Intent(this, MailDetailsActivity.class);
+            i.putExtra("mail_id", mail.mail.id);
+            startActivity(i);
+        });
+        recycler.setAdapter(mailAdapter);
+
+        // Labels drawer list
+        recyclerLabels.setLayoutManager(new LinearLayoutManager(this));
+        labelAdapter = new LabelAdapter((LabelEntity label) -> {
+            vm.selectLabel(label.id);
+            drawer.close();
+        });
+        recyclerLabels.setAdapter(labelAdapter);
+
+        // “All mail” row
+        findViewById(R.id.rowAll).setOnClickListener(v -> {
+            vm.selectAll();
+            drawer.close();
         });
 
-        // RecyclerView to display emails.
-        RecyclerView rv = findViewById(R.id.recycler);
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new MailAdapter(item -> {
-            // when a mail item is clicked, open the details screen.
-            Intent it = new Intent(this, MailDetailsActivity.class);
-            it.putExtra("mail_id", item.mail.id);
-            startActivity(it);
-        });
-        rv.setAdapter(adapter);
-
-        // initialize ViewModel and observe the inbox data.
+        // VM
         vm = new ViewModelProvider(this).get(InboxViewModel.class);
-        vm.inbox.observe(this, adapter::submitList);
 
-        // set up swipe refresh functionality.
-        SwipeRefreshLayout srl = findViewById(R.id.swipe);
-        srl.setOnRefreshListener(() -> {
-            // refresh inbox data.
+        // Observe filtered mails
+        vm.getMails().observe(this, mailAdapter::submitList);
+
+        // Observe labels for the drawer
+        vm.getLabels().observe(this, labels -> labelAdapter.submitList(labels));
+
+        // Pull to refresh
+        swipe.setOnRefreshListener(() -> {
             vm.refresh();
-            // stop the loading.
-            srl.setRefreshing(false);
+            swipe.setRefreshing(false);
         });
 
-        // button to compose a new email.
-        findViewById(R.id.fabCompose).setOnClickListener(v -> {
-            startActivity(new android.content.Intent(this, ComposeActivity.class));
-        });
-
-        // initial data load.
+        // Initial load
         vm.refresh();
     }
 
     @Override public boolean onCreateOptionsMenu(Menu menu) {
-        // inflate the inbox menu.
         getMenuInflater().inflate(R.menu.menu_inbox, menu);
         return true;
     }
 
     @Override public boolean onOptionsItemSelected(MenuItem item) {
-        // handle logout option in the menu.
         if (item.getItemId() == R.id.action_logout) {
             TokenStore.clear(getApplicationContext());
             Intent i = new Intent(this, LoginActivity.class);

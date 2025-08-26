@@ -26,6 +26,9 @@ public interface MailDao {
             "WHERE mail_label.labelId = :labelId ORDER BY dateSentMillis DESC")
     LiveData<List<MailWithLabels>> getByLabel(String labelId);
 
+    @Query("SELECT * FROM labels ORDER BY name COLLATE NOCASE")
+    LiveData<List<LabelEntity>> getLabels();
+
     // inserts or updates a list of mail entities.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertMails(List<MailEntity> mails);
