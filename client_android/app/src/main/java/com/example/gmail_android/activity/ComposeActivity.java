@@ -15,9 +15,6 @@ import com.example.gmail_android.interfaces.MailApi;
 import com.example.gmail_android.repository.MailRepository;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -92,9 +89,10 @@ public class ComposeActivity extends ComponentActivity {
         // if saving draft, guarantee the "Drafts" label is included.
         if (asDraft && !labels.contains("Drafts")) labels.add("Drafts");
 
-        repo.send(to, sub, msg, labels.isEmpty() ? null : labels, new Callback<MailApi.MailDto>() {
-            @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
-                                             @NonNull Response<MailApi.MailDto> res) {
+        repo.send(to, sub, msg, labels.isEmpty() ? null : labels, new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<MailApi.MailDto> call,
+                                   @NonNull Response<MailApi.MailDto> res) {
                 if (res.isSuccessful()) {
                     // refresh the inbox cache so the new mail/draft appears back in the list.
                     repo.refreshInbox();
@@ -106,8 +104,10 @@ public class ComposeActivity extends ComponentActivity {
                     tvError.setVisibility(TextView.VISIBLE);
                 }
             }
-            @Override public void onFailure(@NonNull Call<MailApi.MailDto> call,
-                                            @NonNull Throwable t) {
+
+            @Override
+            public void onFailure(@NonNull Call<MailApi.MailDto> call,
+                                  @NonNull Throwable t) {
                 tvError.setText(getString(R.string.network_error, msg));
                 tvError.setVisibility(TextView.VISIBLE);
             }
@@ -116,10 +116,10 @@ public class ComposeActivity extends ComponentActivity {
 
     // loading labels.
     private void loadLabels() {
-        api.getLabels().enqueue(new Callback<List<MailApi.LabelDto>>() {
+        api.getLabels().enqueue(new Callback<>() {
             @Override
-            public void onResponse(Call<List<MailApi.LabelDto>> call,
-                                   Response<List<MailApi.LabelDto>> response) {
+            public void onResponse(@NonNull Call<List<MailApi.LabelDto>> call,
+                                   @NonNull Response<List<MailApi.LabelDto>> response) {
                 if (!response.isSuccessful() || response.body() == null) {
                     // handle error (optional: show a toast)
                     return;
@@ -129,7 +129,7 @@ public class ComposeActivity extends ComponentActivity {
             }
 
             @Override
-            public void onFailure(Call<List<MailApi.LabelDto>> call, Throwable t) {
+            public void onFailure(@NonNull Call<List<MailApi.LabelDto>> call, @NonNull Throwable t) {
                 // handle failure (optional: show a toast / set error)
             }
         });
@@ -169,8 +169,9 @@ public class ComposeActivity extends ComponentActivity {
 
                     // POST /labels to create a new label.
                     api.createLabel(new MailApi.CreateLabelRequest(name))
-                            .enqueue(new Callback<MailApi.LabelDto>() {
-                                @Override public void onResponse(
+                            .enqueue(new Callback<>() {
+                                @Override
+                                public void onResponse(
                                         @NonNull Call<MailApi.LabelDto> call,
                                         @NonNull Response<MailApi.LabelDto> res) {
                                     if (res.isSuccessful() && res.body() != null) {
@@ -182,8 +183,10 @@ public class ComposeActivity extends ComponentActivity {
                                                 Toast.LENGTH_SHORT).show();
                                     }
                                 }
-                                @Override public void onFailure(@NonNull Call<MailApi.LabelDto> call,
-                                                                @NonNull Throwable t) {
+
+                                @Override
+                                public void onFailure(@NonNull Call<MailApi.LabelDto> call,
+                                                      @NonNull Throwable t) {
                                     Toast.makeText(ComposeActivity.this,
                                             "Network error", Toast.LENGTH_SHORT).show();
                                 }

@@ -82,7 +82,7 @@ public interface MailApi {
     }
 
     // request body for composing a mail.
-    public static class ComposeRequest {
+    class ComposeRequest {
         @SerializedName("toEmail") public String toEmail;
         public String subject;
         public String content;
@@ -90,7 +90,7 @@ public interface MailApi {
     }
 
     // request body for editing a mail.
-    public static class EditRequest {
+    class EditRequest {
         @SerializedName("toEmail") public String toEmail;
         public String subject;
         public String content;
@@ -98,7 +98,7 @@ public interface MailApi {
     }
 
     // user data transfer object.
-    public static class UserDto {
+    class UserDto {
         public String id;
         @SerializedName("first_name") public String first_name;
         @SerializedName("last_name")  public String last_name;
