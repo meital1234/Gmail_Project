@@ -1,23 +1,25 @@
 package com.example.gmail_android.activity;
-
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import androidx.activity.ComponentActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.core.view.GravityCompat;
 import com.example.gmail_android.R;
 import com.example.gmail_android.auth.TokenStore;
 import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.viewmodel.InboxViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
-public class MainInboxActivity extends ComponentActivity {
+public class MainInboxActivity extends AppCompatActivity {
 
     private InboxViewModel vm;
     private LabelAdapter labelAdapter;
@@ -32,8 +34,13 @@ public class MainInboxActivity extends ComponentActivity {
         RecyclerView recyclerLabels = findViewById(R.id.recyclerLabels);
         SwipeRefreshLayout swipe = findViewById(R.id.swipe);
 
-        topAppBar.setNavigationIcon(R.drawable.ic_menu);
-        topAppBar.setNavigationOnClickListener(v -> drawer.open());
+        setSupportActionBar(topAppBar);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, topAppBar,
+                R.string.nav_open, R.string.nav_close
+        );
+        drawer.addDrawerListener(toggle);
+        toggle.syncState(); // hooks the hamburger + accessibility strings
 
         // Inbox list
         recycler.setLayoutManager(new LinearLayoutManager(this));
@@ -48,30 +55,33 @@ public class MainInboxActivity extends ComponentActivity {
         recyclerLabels.setLayoutManager(new LinearLayoutManager(this));
         labelAdapter = new LabelAdapter((LabelEntity label) -> {
             vm.selectLabel(label.id);
-            drawer.close();
+            drawer.closeDrawer(GravityCompat.START);
         });
         recyclerLabels.setAdapter(labelAdapter);
-
+        FloatingActionButton fab = findViewById(R.id.fabCompose);
+        fab.setOnClickListener(v ->
+                startActivity(new Intent(this, ComposeActivity.class))
+        );
         // “All mail” row
         findViewById(R.id.rowAll).setOnClickListener(v -> {
             vm.selectAll();
-            drawer.close();
+            drawer.closeDrawer(GravityCompat.START);
         });
 
         // VM
         vm = new ViewModelProvider(this).get(InboxViewModel.class);
 
         // Observe filtered mails
-        vm.getMails().observe(this, mailAdapter::submitList);
+        vm.getMails().observe(this, mails -> {
+            mailAdapter.submitList(mails);
+            swipe.setRefreshing(false); // stop spinner when data arrives
+        });
 
         // Observe labels for the drawer
         vm.getLabels().observe(this, labels -> labelAdapter.submitList(labels));
 
         // Pull to refresh
-        swipe.setOnRefreshListener(() -> {
-            vm.refresh();
-            swipe.setRefreshing(false);
-        });
+        swipe.setOnRefreshListener(() -> vm.refresh());
 
         // Initial load
         vm.refresh();

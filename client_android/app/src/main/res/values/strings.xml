@@ -76,5 +76,7 @@
     <string name="logout">Logout</string>
     <string name="labels">Labels</string>
     <string name="all_mail">All mail</string>
+    <string name="nav_open">Open navigation drawer</string>
+    <string name="nav_close">Close navigation drawer</string>
 
 </resources>

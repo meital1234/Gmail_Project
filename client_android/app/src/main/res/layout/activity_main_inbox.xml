@@ -16,8 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="24dp"
-            android:title="@string/app_name_B"
-            app:menu="@menu/menu_inbox" />
+            android:title="@string/app_name_B" />
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe"
@@ -42,40 +41,48 @@
             android:layout_margin="16dp" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <!-- LEFT DRAWER: Labels -->
+    <!-- LEFT DRAWER -->
     <LinearLayout
-        android:id="@+id/drawerContent"
-        android:layout_width="280dp"
+        android:id="@+id/drawerPane"
+        android:layout_width="300dp"
         android:layout_height="match_parent"
+        android:layout_gravity="start"
         android:orientation="vertical"
-        android:paddingTop="32dp"
-        android:layout_gravity="start">
+        android:background="?attr/colorSurface"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp">
 
         <TextView
-            android:id="@+id/tvLabelsHeader"
+            android:id="@+id/labelsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:text="@string/labels"
-            android:textStyle="bold"/>
+            android:paddingBottom="8dp" />
 
-        <!-- “All” special row -->
         <TextView
             android:id="@+id/rowAll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:text="@string/all_mail"
-            android:textStyle="bold" />
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:foreground="?attr/selectableItemBackground"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textStyle="bold"
+            android:text="@string/all_mail" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="?attr/colorOutline"/>
+            android:background="?attr/colorOutline"
+            android:layout_marginBottom="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerLabels"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="0dp"
+            android:layout_weight="1" />
     </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>
