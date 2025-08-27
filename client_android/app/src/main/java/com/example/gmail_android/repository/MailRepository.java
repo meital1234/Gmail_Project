@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData;
 import android.util.Log;
 import com.example.gmail_android.dao.AppDatabase;
 import com.example.gmail_android.dao.MailDao;
+import com.example.gmail_android.dao.LabelDao;
 import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.entities.MailEntity;
 import com.example.gmail_android.entities.MailLabelCrossRef;
@@ -28,6 +29,7 @@ public class MailRepository {
     private final MailApi api;
     // data Access Object for Room database.
     private final MailDao dao;
+    private final LabelDao labelDao;
     // background executor for IO tasks.
     private final Executor io = Executors.newSingleThreadExecutor();
 
@@ -36,6 +38,7 @@ public class MailRepository {
         Log.d("API", "Retrofit baseUrl=" + retrofit.baseUrl());
         this.api = retrofit.create(MailApi.class);
         this.dao = AppDatabase.get(ctx).mailDao();
+        this.labelDao = AppDatabase.get(ctx).labelDao();
         this.ctx = ctx;
     }
 
@@ -107,9 +110,14 @@ public class MailRepository {
                 // update database, clear old data and insert new.
                 dao.clearJoins();
                 dao.clearMails();
-                dao.upsertLabels(new ArrayList<>(labelMap.values()));
+                // Upsert only the labels referenced by these mails (for FK integrity)
+                labelDao.insertAll(new ArrayList<>(labelMap.values()));
                 dao.upsertMails(mails);
                 dao.upsertMailLabel(joins);
+
+                // Fetch the FULL label catalog so the sidebar shows everything
+                // (no table clearing here to avoid cascading deletes)
+                syncAllLabels();
 
                 Log.d("MailRepo", "saved to Room: mails=" + mails.size()
                         + ", labels=" + labelMap.size()
@@ -164,9 +172,6 @@ public class MailRepository {
                 }
 
                 // update only the specific mail and its label relationships.
-                dao.upsertMails(java.util.Collections.singletonList(m));
-                dao.upsertLabels(new ArrayList<>(labelMap.values()));
-                // remove old relationships for this mail.
                 dao.clearJoinsForMail(id);
                 dao.upsertMailLabel(joins);
 
@@ -219,12 +224,7 @@ public class MailRepository {
     }
 
     public LiveData<List<LabelEntity>> getLabelsLive() {
-        AppDatabase db = AppDatabase.get(ctx);
-        MailDao dao = db.mailDao();
-        // if not present, add this query in MailDao:
-        // @Query("SELECT * FROM labels ORDER BY name COLLATE NOCASE")
-        // LiveData<List<LabelEntity>> getLabels();
-        return dao.getLabels();
+        return labelDao.observeAll();
     }
 
     // parse a date string.
@@ -235,6 +235,31 @@ public class MailRepository {
             try { return Long.parseLong(s); } catch (NumberFormatException ignore) {}
         }
         return System.currentTimeMillis();
+    }
+
+    // Pull the full label catalog and upsert (no table clearing) so nothing disappears from the sidebar
+    public void syncAllLabels() {
+        io.execute(() -> {
+            try {
+                Response<List<MailApi.LabelDto>> res = api.getLabels().execute();
+                if (!res.isSuccessful() || res.body() == null) {
+                    Log.e("MailRepo", "getLabels failed: code=" + (res != null ? res.code() : -1));
+                    return;
+                }
+                List<LabelEntity> items = new ArrayList<>();
+                for (MailApi.LabelDto L : res.body()) {
+                    if (L == null || L.id == null) continue;
+                    LabelEntity e = new LabelEntity();
+                    e.id = L.id;
+                    e.name = (L.name != null) ? L.name : L.id;
+                    items.add(e);
+                }
+                labelDao.insertAll(items); // upsert; do NOT clear to avoid FK cascade on mail_label
+                Log.d("MailRepo", "syncAllLabels OK, items=" + items.size());
+            } catch (Exception e) {
+                Log.e("MailRepo", "syncAllLabels error", e);
+            }
+        });
     }
 }
 

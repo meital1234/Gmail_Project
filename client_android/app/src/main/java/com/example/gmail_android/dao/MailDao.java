@@ -26,16 +26,9 @@ public interface MailDao {
             "WHERE mail_label.labelId = :labelId ORDER BY dateSentMillis DESC")
     LiveData<List<MailWithLabels>> getByLabel(String labelId);
 
-    @Query("SELECT * FROM labels ORDER BY name COLLATE NOCASE")
-    LiveData<List<LabelEntity>> getLabels();
-
     // inserts or updates a list of mail entities.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertMails(List<MailEntity> mails);
-
-    // inserts or updates a list of label entities.
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void upsertLabels(List<LabelEntity> labels);
 
     // inserts or updates the join table entries between mails and labels.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -44,10 +37,6 @@ public interface MailDao {
     // deletes all mails from the database.
     @Query("DELETE FROM mails")
     void clearMails();
-
-    // deletes all labels from the database.
-    @Query("DELETE FROM labels")
-    void clearLabels();
 
     // deletes all relationships between mails and labels.
     @Query("DELETE FROM mail_label")

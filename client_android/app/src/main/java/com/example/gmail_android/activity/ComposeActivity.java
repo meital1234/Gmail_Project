@@ -116,28 +116,22 @@ public class ComposeActivity extends ComponentActivity {
 
     // loading labels.
     private void loadLabels() {
-        api.getLabels().enqueue(new Callback<Object>() {
-            @Override public void onResponse(@NonNull Call<Object> call,
-                                             @NonNull Response<Object> res) {
-                if (!res.isSuccessful() || res.body() == null) return;
-                try {
-                    Gson gson = new Gson();
-                    String json = gson.toJson(res.body());
-                    Type listType = new TypeToken<ArrayList<MailApi.LabelDto>>(){}.getType();
-
-                    if (json.trim().startsWith("[")) {
-                        available = gson.fromJson(json, listType);
-                    } else {
-                        // response is an object: { "labels": [ ... ] }
-                        class LabelsHolder { List<MailApi.LabelDto> labels; }
-                        LabelsHolder h = gson.fromJson(json, LabelsHolder.class);
-                        available = h != null && h.labels != null ? h.labels : new ArrayList<>();
-                    }
-                    renderChips();
-                } catch (Exception ignore) {}
+        api.getLabels().enqueue(new Callback<List<MailApi.LabelDto>>() {
+            @Override
+            public void onResponse(Call<List<MailApi.LabelDto>> call,
+                                   Response<List<MailApi.LabelDto>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    // handle error (optional: show a toast)
+                    return;
+                }
+                available = new ArrayList<>(response.body()); // copy into our list
+                renderChips();
             }
-            @Override public void onFailure(@NonNull Call<Object> call,
-                                            @NonNull Throwable t) { /* noop */ }
+
+            @Override
+            public void onFailure(Call<List<MailApi.LabelDto>> call, Throwable t) {
+                // handle failure (optional: show a toast / set error)
+            }
         });
     }
 

@@ -17,7 +17,6 @@ import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.viewmodel.InboxViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 public class MainInboxActivity extends AppCompatActivity {
 

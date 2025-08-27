@@ -59,5 +59,8 @@ public class InboxViewModel extends AndroidViewModel {
     public void selectAll() { selectedLabelId.setValue(null); }
     public void selectLabel(String labelId) { selectedLabelId.setValue(labelId); }
 
-    public void refresh() { repo.refreshInbox(); }
+    public void refresh() {
+        repo.refreshInbox();   // mails + joins + referenced labels
+        repo.syncAllLabels();
+    }
 }

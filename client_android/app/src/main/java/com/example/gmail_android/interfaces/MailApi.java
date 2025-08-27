@@ -42,7 +42,7 @@ public interface MailApi {
 
     // get all labels.
     @GET("labels")
-    Call<Object> getLabels();
+    Call<List<MailApi.LabelDto>> getLabels();
 
     // create a new label.
     @POST("labels")
@@ -53,7 +53,7 @@ public interface MailApi {
     Call<UserDto> me();
 
     // label data transfer object.
-    public static class LabelDto {
+    class LabelDto {
         public String id;
         public String name;
     }
@@ -65,7 +65,7 @@ public interface MailApi {
     }
 
     // mail data transfer object.
-    public static class MailDto {
+    class MailDto {
         public String id;
         public String from;
         public String to;

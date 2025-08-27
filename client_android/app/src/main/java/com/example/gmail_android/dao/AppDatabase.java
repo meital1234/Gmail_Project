@@ -4,6 +4,7 @@ import android.content.Context;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+
 import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.entities.MailEntity;
 import com.example.gmail_android.entities.MailLabelCrossRef;
@@ -19,6 +20,7 @@ public abstract class AppDatabase extends RoomDatabase {
 
     // abstract DAO accessor.
     public abstract MailDao mailDao();
+    public abstract LabelDao labelDao();
 
     // returns the singleton instance of the database.
     public static AppDatabase get(Context ctx) {
