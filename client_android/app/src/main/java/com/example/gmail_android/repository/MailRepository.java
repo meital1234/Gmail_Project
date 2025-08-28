@@ -1,6 +1,8 @@
 package com.example.gmail_android.repository;
 
 import android.content.Context;
+
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import android.util.Log;
 import com.example.gmail_android.dao.AppDatabase;
@@ -215,6 +217,69 @@ public class MailRepository {
     // remove a label from a mail.
     public void removeLabel(String mailId, String labelId, Callback<ResponseBody> cb) {
         api.removeLabel(mailId, labelId).enqueue(cb);
+    }
+
+    // Create label
+    public void createLabel(String name, retrofit2.Callback<MailApi.LabelDto> cb) {
+        api.createLabel(new MailApi.CreateLabelRequest(name)).enqueue(new retrofit2.Callback<>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<MailApi.LabelDto> call,
+                                   @NonNull retrofit2.Response<MailApi.LabelDto> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    io.execute(() -> {
+                        LabelEntity e = new LabelEntity();
+                        e.id = res.body().id;
+                        e.name = res.body().name != null ? res.body().name : res.body().id;
+                        labelDao.insertAll(java.util.Collections.singletonList(e));
+                    });
+                }
+                if (cb != null) cb.onResponse(call, res);
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<MailApi.LabelDto> call, @NonNull Throwable t) {
+                if (cb != null) cb.onFailure(call, t);
+            }
+        });
+    }
+
+    // Rename label
+    public void renameLabel(String id, String newName, retrofit2.Callback<MailApi.LabelDto> cb) {
+        api.renameLabel(id, new MailApi.RenameLabelRequest(newName))
+                .enqueue(new retrofit2.Callback<>() {
+                    @Override
+                    public void onResponse(@NonNull retrofit2.Call<MailApi.LabelDto> call,
+                                           @NonNull retrofit2.Response<MailApi.LabelDto> res) {
+                        if (res.isSuccessful() && res.body() != null) {
+                            io.execute(() -> labelDao.rename(id, newName));
+                        }
+                        if (cb != null) cb.onResponse(call, res);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<MailApi.LabelDto> call, @NonNull Throwable t) {
+                        if (cb != null) cb.onFailure(call, t);
+                    }
+                });
+    }
+
+    // Delete label
+    public void deleteLabel(String id, retrofit2.Callback<okhttp3.ResponseBody> cb) {
+        api.deleteLabel(id).enqueue(new retrofit2.Callback<>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                   @NonNull retrofit2.Response<okhttp3.ResponseBody> res) {
+                if (res.isSuccessful()) {
+                    io.execute(() -> labelDao.delete(id));  // ON DELETE CASCADE will clean joins
+                }
+                if (cb != null) cb.onResponse(call, res);
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<okhttp3.ResponseBody> call, @NonNull Throwable t) {
+                if (cb != null) cb.onFailure(call, t);
+            }
+        });
     }
 
     public LiveData<List<MailWithLabels>> getByLabelLive(String labelId) {

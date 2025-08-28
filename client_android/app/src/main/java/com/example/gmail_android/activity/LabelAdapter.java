@@ -1,10 +1,12 @@
 package com.example.gmail_android.activity;
 
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
@@ -12,16 +14,16 @@ import com.example.gmail_android.R;
 import com.example.gmail_android.entities.LabelEntity;
 
 public class LabelAdapter extends ListAdapter<LabelEntity, LabelAdapter.VH> {
-
-    public interface OnClick { void onLabel(LabelEntity label); }
-
-    private final OnClick onClick;
-
-    public LabelAdapter(OnClick onClick) {
-        super(DIFF);
-        this.onClick = onClick;
+    public interface Actions {
+        void onSelect(LabelEntity label);
+        void onRename(LabelEntity label);
+        void onDelete(LabelEntity label);
     }
-
+    private final Actions actions;
+    public LabelAdapter(Actions actions) {
+        super(DIFF);
+        this.actions = actions;
+    }
     private static final DiffUtil.ItemCallback<LabelEntity> DIFF =
             new DiffUtil.ItemCallback<>() {
                 @Override
@@ -39,7 +41,7 @@ public class LabelAdapter extends ListAdapter<LabelEntity, LabelAdapter.VH> {
         TextView name;
         VH(@NonNull View v) {
             super(v);
-            name = v.findViewById(R.id.txtName);
+            name = v.findViewById(R.id.tvLabelName);
         }
     }
 
@@ -54,6 +56,29 @@ public class LabelAdapter extends ListAdapter<LabelEntity, LabelAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int position) {
         LabelEntity item = getItem(position);
         h.name.setText(item.name);
-        h.itemView.setOnClickListener(v -> onClick.onLabel(item));
+
+        // Tap = select label
+        h.itemView.setOnClickListener(v -> actions.onSelect(item));
+
+        // Long-press = show overflow menu (Rename/Delete)
+        h.itemView.setOnLongClickListener(v -> {
+            showMenu(v, item);
+            return true;
+        });
+    }
+
+    private void showMenu(View anchor, LabelEntity label) {
+        PopupMenu pm = new PopupMenu(anchor.getContext(), anchor);
+        // Use string resources if you have them; otherwise these fallbacks are fine
+        pm.getMenu().add(0, 1, 0, R.string.rename);
+        pm.getMenu().add(0, 2, 1, R.string.delete);
+
+        pm.setOnMenuItemClickListener((MenuItem it) -> {
+            if (it.getItemId() == 1) { actions.onRename(label); return true; }
+            if (it.getItemId() == 2) { actions.onDelete(label); return true; }
+            return false;
+        });
+        pm.show();
     }
 }
+

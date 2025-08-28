@@ -1,9 +1,13 @@
 package com.example.gmail_android.activity;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
+
 import androidx.lifecycle.ViewModelProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -17,16 +21,18 @@ import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.viewmodel.InboxViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.gmail_android.repository.MailRepository;
 
 public class MainInboxActivity extends AppCompatActivity {
 
     private InboxViewModel vm;
     private LabelAdapter labelAdapter;
+    private MailRepository repo;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_inbox);
-
+        repo = new MailRepository(getApplicationContext());
         DrawerLayout drawer = findViewById(R.id.drawerLayout);
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
         RecyclerView recycler = findViewById(R.id.recycler);
@@ -52,9 +58,38 @@ public class MainInboxActivity extends AppCompatActivity {
 
         // Labels drawer list
         recyclerLabels.setLayoutManager(new LinearLayoutManager(this));
-        labelAdapter = new LabelAdapter((LabelEntity label) -> {
-            vm.selectLabel(label.id);
-            drawer.closeDrawer(GravityCompat.START);
+        labelAdapter = new LabelAdapter(new LabelAdapter.Actions() {
+            @Override public void onSelect(LabelEntity label) {
+                vm.selectLabel(label.id);
+                drawer.closeDrawer(GravityCompat.START);
+            }
+            @Override public void onRename(LabelEntity label) {
+                final EditText input = new EditText(MainInboxActivity.this);
+                input.setText(label.name);
+                new AlertDialog.Builder(MainInboxActivity.this)
+                        .setTitle(R.string.rename)
+                        .setView(input)
+                        .setPositiveButton(android.R.string.ok, (d, w) -> {
+                            String newName = input.getText().toString().trim();
+                            if (!newName.isEmpty() && !newName.equals(label.name)) {
+                                repo.renameLabel(label.id, newName, /*cb*/ null);
+                            }
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            }
+            @Override public void onDelete(LabelEntity label) {
+                new AlertDialog.Builder(MainInboxActivity.this)
+                        .setTitle(R.string.delete)
+                        .setMessage(getString(R.string.delete) + " \"" + label.name + "\"?")
+                        .setPositiveButton(android.R.string.ok, (d, w) -> {
+                            repo.deleteLabel(label.id, /*cb*/ null);
+                            // Optional: if currently filtered by this label → show “All”
+                            // vm.selectAll();
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            }
         });
         recyclerLabels.setAdapter(labelAdapter);
         FloatingActionButton fab = findViewById(R.id.fabCompose);

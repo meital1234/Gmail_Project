@@ -73,6 +73,15 @@
             android:textStyle="bold"
             android:text="@string/all_mail" />
 
+        <TextView
+            android:id="@+id/rowAddLabel"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:foreground="?attr/selectableItemBackground"
+            android:text="@string/add_label"/>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

@@ -52,6 +52,15 @@ public interface MailApi {
     @GET("users/me")
     Call<UserDto> me();
 
+    // rename an existing label
+    @PUT("labels/{id}")
+    Call<LabelDto> renameLabel(@Path("id") String id,
+                               @Body RenameLabelRequest req);
+
+    // delete a label
+    @DELETE("labels/{id}")
+    Call<ResponseBody> deleteLabel(@Path("id") String id);
+
     // label data transfer object.
     class LabelDto {
         public String id;
@@ -62,6 +71,11 @@ public interface MailApi {
     class CreateLabelRequest {
         public String name;
         public CreateLabelRequest(String n){ name=n; }
+    }
+
+    class RenameLabelRequest {
+        public String name;
+        public RenameLabelRequest(String name) { this.name = name; }
     }
 
     // mail data transfer object.

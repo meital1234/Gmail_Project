@@ -78,5 +78,9 @@
     <string name="all_mail">All mail</string>
     <string name="nav_open">Open navigation drawer</string>
     <string name="nav_close">Close navigation drawer</string>
+    <string name="more_options">More options</string>
+    <string name="add_label">Add label</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
 
 </resources>

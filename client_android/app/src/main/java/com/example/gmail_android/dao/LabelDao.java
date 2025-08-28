@@ -26,6 +26,12 @@ public interface LabelDao {
     @Query("DELETE FROM labels")
     void clear();
 
+    @androidx.room.Query("UPDATE labels SET name = :newName WHERE id = :id")
+    void rename(String id, String newName);
+
+    @androidx.room.Query("DELETE FROM labels WHERE id = :id")
+    void delete(String id);
+
     // Atomic full replace
     @Transaction
     default void replaceAll(List<LabelEntity> items) {
