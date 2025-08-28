@@ -243,15 +243,20 @@ public class MailRepository {
         });
     }
 
-    // Rename label
+    // Rename label (handles 200 with body OR 204 without)
     public void renameLabel(String id, String newName, retrofit2.Callback<MailApi.LabelDto> cb) {
         api.renameLabel(id, new MailApi.RenameLabelRequest(newName))
-                .enqueue(new retrofit2.Callback<>() {
+                .enqueue(new retrofit2.Callback<MailApi.LabelDto>() {
                     @Override
-                    public void onResponse(@NonNull retrofit2.Call<MailApi.LabelDto> call,
-                                           @NonNull retrofit2.Response<MailApi.LabelDto> res) {
-                        if (res.isSuccessful() && res.body() != null) {
-                            io.execute(() -> labelDao.rename(id, newName));
+                    public void onResponse(retrofit2.Call<MailApi.LabelDto> call,
+                                           retrofit2.Response<MailApi.LabelDto> res) {
+                        if (res.isSuccessful()) {
+                            final String nameToPersist =
+                                    (res.body() != null && res.body().name != null && !res.body().name.isEmpty())
+                                            ? res.body().name
+                                            : newName; // 204 or empty body → use the input
+
+                            io.execute(() -> labelDao.rename(id, nameToPersist));
                         }
                         if (cb != null) cb.onResponse(call, res);
                     }

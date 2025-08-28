@@ -82,5 +82,6 @@
     <string name="add_label">Add label</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
+    <string name="new_label">New label</string>
 
 </resources>

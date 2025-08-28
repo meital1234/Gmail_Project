@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
-
+import java.util.Locale;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -28,6 +28,18 @@ public class MainInboxActivity extends AppCompatActivity {
     private InboxViewModel vm;
     private LabelAdapter labelAdapter;
     private MailRepository repo;
+
+    // Protected/system labels – case-insensitive match by id or name
+    private static final java.util.Set<String> PROTECTED =
+            new java.util.HashSet<>(java.util.Arrays.asList(
+                    "inbox","sent","drafts","spam","starred","important","trash","bin","archive","all"
+            ));
+
+    private boolean isProtected(LabelEntity l) {
+        final String n  = l.name.toLowerCase(Locale.ROOT);
+        final String id = l.id.toLowerCase(Locale.ROOT);
+        return PROTECTED.contains(n) || PROTECTED.contains(id);
+    }
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,6 +76,7 @@ public class MainInboxActivity extends AppCompatActivity {
                 drawer.closeDrawer(GravityCompat.START);
             }
             @Override public void onRename(LabelEntity label) {
+                if (isProtected(label)) return; // ← block system labels
                 final EditText input = new EditText(MainInboxActivity.this);
                 input.setText(label.name);
                 new AlertDialog.Builder(MainInboxActivity.this)
@@ -79,19 +92,35 @@ public class MainInboxActivity extends AppCompatActivity {
                         .show();
             }
             @Override public void onDelete(LabelEntity label) {
+                if (isProtected(label)) return; // ← block system labels
                 new AlertDialog.Builder(MainInboxActivity.this)
                         .setTitle(R.string.delete)
                         .setMessage(getString(R.string.delete) + " \"" + label.name + "\"?")
                         .setPositiveButton(android.R.string.ok, (d, w) -> {
                             repo.deleteLabel(label.id, /*cb*/ null);
-                            // Optional: if currently filtered by this label → show “All”
-                            // vm.selectAll();
+                            // vm.selectAll(); // optional if currently filtering by this label
                         })
                         .setNegativeButton(android.R.string.cancel, null)
                         .show();
             }
         });
         recyclerLabels.setAdapter(labelAdapter);
+
+        // “Add label” row
+        findViewById(R.id.rowAddLabel).setOnClickListener(v -> {
+            final EditText input = new EditText(MainInboxActivity.this);
+            input.setHint(getString(R.string.new_label));
+            new AlertDialog.Builder(MainInboxActivity.this)
+                    .setTitle(R.string.add_label)
+                    .setView(input)
+                    .setPositiveButton(android.R.string.ok, (d, w) -> {
+                        String name = input.getText().toString().trim();
+                        if (!name.isEmpty()) repo.createLabel(name, null);
+                    })
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show();
+        });
+
         FloatingActionButton fab = findViewById(R.id.fabCompose);
         fab.setOnClickListener(v ->
                 startActivity(new Intent(this, ComposeActivity.class))
