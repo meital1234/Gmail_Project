@@ -83,5 +83,8 @@
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
     <string name="new_label">New label</string>
+    <string name="search_mail">Search mail</string>
+    <string name="profile">Profile</string>
+    <string name="toggle_theme">Change theme</string>
 
 </resources>

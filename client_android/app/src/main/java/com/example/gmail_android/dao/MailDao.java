@@ -22,13 +22,18 @@ public interface MailDao {
 
     // retrieves mails with their labels filtered by a specific label ID.
     @Transaction
-    @Query("SELECT * FROM mails INNER JOIN mail_label ON mails.id = mail_label.mailId " +
-            "WHERE mail_label.labelId = :labelId ORDER BY dateSentMillis DESC")
+    @Query("SELECT mails.* FROM mails " +
+            "INNER JOIN mail_label ON mails.id = mail_label.mailId " +
+            "WHERE mail_label.labelId = :labelId " +
+            "ORDER BY dateSentMillis DESC")
     LiveData<List<MailWithLabels>> getByLabel(String labelId);
 
     // inserts or updates a list of mail entities.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertMails(List<MailEntity> mails);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void upsertLabels(List<LabelEntity> labels);
 
     // inserts or updates the join table entries between mails and labels.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -50,4 +55,16 @@ public interface MailDao {
     @Transaction
     @Query("SELECT * FROM mails WHERE id = :id LIMIT 1")
     LiveData<MailWithLabels> getById(String id);
+
+    @Transaction
+    @Query(
+            "SELECT * FROM mails " +
+                    "WHERE (" +
+                    "  subject   LIKE '%' || :q || '%' COLLATE NOCASE OR " +
+                    "  content   LIKE '%' || :q || '%' COLLATE NOCASE OR " +
+                    "  fromEmail LIKE '%' || :q || '%' COLLATE NOCASE OR " +
+                    "  toEmail   LIKE '%' || :q || '%' COLLATE NOCASE" +
+                    ") ORDER BY dateSentMillis DESC"
+    )
+    LiveData<java.util.List<com.example.gmail_android.entities.MailWithLabels>> search(String q);
 }

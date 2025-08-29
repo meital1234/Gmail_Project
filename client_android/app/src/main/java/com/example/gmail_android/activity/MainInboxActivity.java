@@ -1,4 +1,5 @@
 package com.example.gmail_android.activity;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
@@ -52,6 +53,41 @@ public class MainInboxActivity extends AppCompatActivity {
         SwipeRefreshLayout swipe = findViewById(R.id.swipe);
 
         setSupportActionBar(topAppBar);
+        vm = new ViewModelProvider(this).get(InboxViewModel.class);
+        // Hide default title (we render our own)
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
+        // Open drawer on nav icon tap
+        topAppBar.setNavigationOnClickListener(v -> drawer.openDrawer(GravityCompat.START));
+
+        // Search action
+        EditText etSearch = findViewById(R.id.etSearch);
+        etSearch.setOnEditorActionListener((tv, actionId, event) -> {
+            String q = tv.getText().toString().trim();
+            if (q.isEmpty()) vm.selectAll(); else vm.search(q);
+            tv.clearFocus();
+            return true;
+        });
+
+        // Theme toggle (light <-> dark)
+        findViewById(R.id.btnTheme).setOnClickListener(v -> {
+            int mode = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode();
+            if (mode == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES) {
+                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO);
+            } else {
+                androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                        androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
+            }
+        });
+
+        // Avatar click
+        findViewById(R.id.imgAvatar).setOnClickListener(v -> {
+            // TODO: open profile/settings; for now show a toast
+            android.widget.Toast.makeText(this, "Profile", android.widget.Toast.LENGTH_SHORT).show();
+        });
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, topAppBar,
                 R.string.nav_open, R.string.nav_close
@@ -85,7 +121,27 @@ public class MainInboxActivity extends AppCompatActivity {
                         .setPositiveButton(android.R.string.ok, (d, w) -> {
                             String newName = input.getText().toString().trim();
                             if (!newName.isEmpty() && !newName.equals(label.name)) {
-                                repo.renameLabel(label.id, newName, /*cb*/ null);
+                                repo.renameLabel(label.id, newName, new retrofit2.Callback<>() {
+                                    @Override
+                                    public void onResponse(
+                                            @NonNull retrofit2.Call<com.example.gmail_android.interfaces.MailApi.LabelDto> call,
+                                            @NonNull retrofit2.Response<com.example.gmail_android.interfaces.MailApi.LabelDto> res) {
+                                        if (!res.isSuccessful()) {
+                                            android.widget.Toast.makeText(MainInboxActivity.this,
+                                                    "Rename failed (" + res.code() + ")", android.widget.Toast.LENGTH_SHORT).show();
+                                            // Optional: force-refresh labels if your backend doesn’t echo the change
+                                            // repo.syncAllLabels();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(
+                                            @NonNull retrofit2.Call<com.example.gmail_android.interfaces.MailApi.LabelDto> call, @NonNull Throwable t) {
+                                        android.widget.Toast.makeText(MainInboxActivity.this,
+                                                "Network error", android.widget.Toast.LENGTH_SHORT).show();
+                                        // Optional: repo.syncAllLabels();
+                                    }
+                                });
                             }
                         })
                         .setNegativeButton(android.R.string.cancel, null)
@@ -130,9 +186,6 @@ public class MainInboxActivity extends AppCompatActivity {
             vm.selectAll();
             drawer.closeDrawer(GravityCompat.START);
         });
-
-        // VM
-        vm = new ViewModelProvider(this).get(InboxViewModel.class);
 
         // Observe filtered mails
         vm.getMails().observe(this, mails -> {

@@ -51,6 +51,56 @@ public class MailRepository {
         return dao.getInbox();
     }
 
+    // LiveData bound to Room search results
+    public LiveData<java.util.List<com.example.gmail_android.entities.MailWithLabels>> searchLive(String q) {
+        return dao.search(q);
+    }
+
+    // Call backend /mails/search/{q}, upsert into Room, so searchLive() updates
+    public void refreshSearch(String q) {
+        io.execute(() -> {
+            try {
+                retrofit2.Response<java.util.List<com.example.gmail_android.interfaces.MailApi.MailDto>> res =
+                        api.search(q).execute();
+                if (!res.isSuccessful() || res.body() == null) return;
+
+                java.util.List<com.example.gmail_android.entities.MailEntity> mails = new java.util.ArrayList<>();
+                java.util.Map<String, com.example.gmail_android.entities.LabelEntity> labelMap = new java.util.LinkedHashMap<>();
+                java.util.List<com.example.gmail_android.entities.MailLabelCrossRef> joins = new java.util.ArrayList<>();
+
+                for (com.example.gmail_android.interfaces.MailApi.MailDto d : res.body()) {
+                    com.example.gmail_android.entities.MailEntity m = new com.example.gmail_android.entities.MailEntity();
+                    m.id = d.id; m.fromEmail = d.from; m.toEmail = d.to;
+                    m.subject = d.subject; m.content = d.content;
+                    m.isSpam = d.spam; m.dateSentMillis = parseMillis(d.dateSent);
+                    mails.add(m);
+
+                    if (d.labels != null) {
+                        for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
+                            if (L == null || L.id == null) continue;
+                            com.example.gmail_android.entities.LabelEntity e = labelMap.get(L.id);
+                            if (e == null) {
+                                e = new com.example.gmail_android.entities.LabelEntity();
+                                e.id = L.id; e.name = (L.name != null) ? L.name : L.id;
+                                labelMap.put(e.id, e);
+                            }
+                            com.example.gmail_android.entities.MailLabelCrossRef ref =
+                                    new com.example.gmail_android.entities.MailLabelCrossRef();
+                            ref.mailId = m.id; ref.labelId = L.id;
+                            joins.add(ref);
+                        }
+                    }
+                }
+
+                // upsert (no full clear)
+                dao.upsertLabels(new java.util.ArrayList<>(labelMap.values()));
+                dao.upsertMails(mails);
+                for (com.example.gmail_android.entities.MailEntity m : mails) dao.clearJoinsForMail(m.id);
+                dao.upsertMailLabel(joins);
+            } catch (Exception ignore) {}
+        });
+    }
+
     // refresh inbox data from the server and update Room database.
     public void refreshInbox() {
         io.execute(() -> {
