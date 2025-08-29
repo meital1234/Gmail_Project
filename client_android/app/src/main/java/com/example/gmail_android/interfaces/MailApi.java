@@ -6,104 +6,79 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
-// interface for making API calls related to mails, labels, and user information.
 public interface MailApi {
-    // get all mails in the inbox.
+
+    // Inbox + single mail
     @GET("mails")
     Call<List<MailDto>> getInbox();
 
-    // get a specific mail by its id.
     @GET("mails/{id}")
     Call<MailDto> getMail(@Path("id") String id);
 
-    // search for mails by query string.
+    // Search (we pass things like "label:{id}" or free text)
     @GET("mails/search/{q}")
     Call<List<MailDto>> search(@Path("q") String q);
 
-    // send a new mail.
+    // Compose / edit / delete message
     @POST("mails")
     Call<MailDto> send(@Body ComposeRequest req);
 
-    // edit an existing mail. (for spam)
     @PATCH("mails/{id}")
     Call<MailDto> edit(@Path("id") String id, @Body EditRequest req);
 
-    // delete a mail by id. (for spam)
     @DELETE("mails/{id}")
     Call<ResponseBody> delete(@Path("id") String id);
 
-    // add a label to a specific mail.
+    // Label on a specific mail
     @POST("mails/{id}/labels/{labelId}")
     Call<ResponseBody> addLabel(@Path("id") String mailId, @Path("labelId") String labelId);
 
-    // remove a label from a specific mail.
     @DELETE("mails/{id}/labels/{labelId}")
     Call<ResponseBody> removeLabel(@Path("id") String mailId, @Path("labelId") String labelId);
 
-    // get all labels.
+    // Label catalog
     @GET("labels")
-    Call<List<MailApi.LabelDto>> getLabels();
+    Call<List<LabelDto>> getLabels();
 
-    // create a new label.
+    // Create / rename / delete label
     @POST("labels")
     Call<LabelDto> createLabel(@Body CreateLabelRequest req);
 
-    // get authenticated user's details.
-    @GET("users/me")
-    Call<UserDto> me();
+    @PATCH("labels/{id}")
+    Call<LabelDto> renameLabel(@Path("id") String id, @Body RenameLabelRequest req);
 
-    // rename an existing label
-    @PUT("labels/{id}")
-    Call<LabelDto> renameLabel(@Path("id") String id,
-                               @Body RenameLabelRequest req);
-
-    // delete a label
     @DELETE("labels/{id}")
     Call<ResponseBody> deleteLabel(@Path("id") String id);
 
-    // label data transfer object.
-    class LabelDto {
-        public String id;
-        public String name;
-    }
+    // Me
+    @GET("users/me")
+    Call<UserDto> me();
 
-    // request body for creating a label.
-    class CreateLabelRequest {
-        public String name;
-        public CreateLabelRequest(String n){ name=n; }
-    }
+    // ===== DTOs =====
+    class LabelDto { public String id; public String name; }
 
-    class RenameLabelRequest {
-        public String name;
-        public RenameLabelRequest(String name) { this.name = name; }
-    }
+    class CreateLabelRequest { public String name; public CreateLabelRequest(String n){ name = n; } }
 
-    // mail data transfer object.
+    class RenameLabelRequest { public String name; public RenameLabelRequest(String n){ name = n; } }
+
     class MailDto {
         public String id;
         public String from;
         public String to;
         public String subject;
         public String content;
-
-        // store date as String.
-        @SerializedName("dateSent")
-        public String dateSent;
-
+        @SerializedName("dateSent") public String dateSent;
         public List<LabelDto> labels;
-        // if a spam field exist.
         public boolean spam;
     }
 
-    // request body for composing a mail.
     class ComposeRequest {
         @SerializedName("toEmail") public String toEmail;
         public String subject;
         public String content;
-        public List<String> labels; // optional.
+        public List<String> labels;
     }
 
-    // request body for editing a mail.
     class EditRequest {
         @SerializedName("toEmail") public String toEmail;
         public String subject;
@@ -111,7 +86,6 @@ public interface MailApi {
         public List<String> labels;
     }
 
-    // user data transfer object.
     class UserDto {
         public String id;
         @SerializedName("first_name") public String first_name;
@@ -119,4 +93,3 @@ public interface MailApi {
         public String email;
     }
 }
-

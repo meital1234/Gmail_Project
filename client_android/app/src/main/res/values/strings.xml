@@ -86,5 +86,6 @@
     <string name="search_mail">Search mail</string>
     <string name="profile">Profile</string>
     <string name="toggle_theme">Change theme</string>
+    <string name="edit_label">Edit label</string>
 
 </resources>

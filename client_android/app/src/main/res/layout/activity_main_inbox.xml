@@ -126,14 +126,6 @@
         android:paddingBottom="16dp">
 
         <TextView
-            android:id="@+id/labelsTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:text="@string/labels"
-            android:paddingBottom="8dp" />
-
-        <TextView
             android:id="@+id/rowAll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import okhttp3.ResponseBody;
@@ -424,12 +425,25 @@ public class MailRepository {
 
     // parse a date string.
     private static long parseMillis(String dateSent) {
-        if (dateSent == null) return System.currentTimeMillis();
+        if (dateSent == null || dateSent.isEmpty()) return 0L;
         String s = dateSent.trim();
-        if (s.matches("^-?\\d+$")) { // numeric string.
-            try { return Long.parseLong(s); } catch (NumberFormatException ignore) {}
+
+        // epoch millis or seconds
+        if (s.matches("^-?\\d+$")) {
+            try {
+                long v = Long.parseLong(s);
+                return (v > 9_999_999_999L) ? v : v * 1000L; // handle seconds too
+            } catch (NumberFormatException ignore) {}
         }
-        return System.currentTimeMillis();
+        // last-resort fixed pattern (UTC)
+        try {
+            java.text.SimpleDateFormat f =
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
+            f.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            return Objects.requireNonNull(f.parse(s)).getTime();
+        } catch (Exception ignore) {}
+
+        return 0L; // deterministic fallback (avoids “now” jumping)
     }
 
     // Pull the full label catalog and upsert (no table clearing) so nothing disappears from the sidebar
