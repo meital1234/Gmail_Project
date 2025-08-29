@@ -14,9 +14,27 @@ import java.util.List;
 @Dao
 public interface LabelDao {
 
-    // Observe ALL labels, not just “visible” ones
-    @Query("SELECT * FROM labels ORDER BY name COLLATE NOCASE")
-    LiveData<List<LabelEntity>> observeAll();
+    // System labels first (fixed order), then user labels alphabetically
+    @Query(
+            "SELECT * FROM labels " +
+                    "ORDER BY " +
+                    "CASE lower(name) " +
+                    "  WHEN 'inbox'     THEN 0 " +
+                    "  WHEN 'starred'   THEN 1 " +
+                    "  WHEN 'important' THEN 2 " +
+                    "  WHEN 'sent'      THEN 3 " +
+                    "  WHEN 'drafts'    THEN 4 " +
+                    "  WHEN 'spam'      THEN 5 " +
+                    "  WHEN 'trash'     THEN 6 " +
+                    "  WHEN 'bin'       THEN 6 " +
+                    "  WHEN 'archive'   THEN 7 " +
+                    "  WHEN 'all'       THEN 8 " +
+                    "  WHEN 'all mail'  THEN 8 " +
+                    "  ELSE 100 " +
+                    "END, " +
+                    "name COLLATE NOCASE"
+    )
+    androidx.lifecycle.LiveData<java.util.List<com.example.gmail_android.entities.LabelEntity>> observeAll();
 
     // Bulk upsert
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -26,10 +44,10 @@ public interface LabelDao {
     @Query("DELETE FROM labels")
     void clear();
 
-    @androidx.room.Query("UPDATE labels SET name = :newName WHERE id = :id")
+    @Query("UPDATE labels SET name = :newName WHERE id = :id")
     void rename(String id, String newName);
 
-    @androidx.room.Query("DELETE FROM labels WHERE id = :id")
+    @Query("DELETE FROM labels WHERE id = :id")
     void delete(String id);
 
     // Atomic full replace
