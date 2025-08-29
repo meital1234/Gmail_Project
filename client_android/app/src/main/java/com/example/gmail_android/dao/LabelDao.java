@@ -37,8 +37,8 @@ public interface LabelDao {
     androidx.lifecycle.LiveData<java.util.List<com.example.gmail_android.entities.LabelEntity>> observeAll();
 
     // Bulk upsert
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertAll(List<LabelEntity> items);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    void insertAllIgnore(List<LabelEntity> items);
 
     // Clear table (used for full refresh)
     @Query("DELETE FROM labels")
@@ -49,11 +49,4 @@ public interface LabelDao {
 
     @Query("DELETE FROM labels WHERE id = :id")
     void delete(String id);
-
-    // Atomic full replace
-    @Transaction
-    default void replaceAll(List<LabelEntity> items) {
-        clear();
-        insertAll(items);
-    }
 }

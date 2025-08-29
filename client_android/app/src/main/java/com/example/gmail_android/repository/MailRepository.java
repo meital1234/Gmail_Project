@@ -94,9 +94,11 @@ public class MailRepository {
                 }
 
                 // upsert (no full clear)
-                dao.upsertLabels(new java.util.ArrayList<>(labelMap.values()));
+                labelDao.insertAllIgnore(new java.util.ArrayList<>(labelMap.values()));
+                for (LabelEntity e : labelMap.values()) {
+                    labelDao.rename(e.id, e.name);
+                }
                 dao.upsertMails(mails);
-                for (com.example.gmail_android.entities.MailEntity m : mails) dao.clearJoinsForMail(m.id);
                 dao.upsertMailLabel(joins);
             } catch (Exception ignore) {}
         });
@@ -164,7 +166,10 @@ public class MailRepository {
                 dao.clearJoins();
                 dao.clearMails();
                 // Upsert only the labels referenced by these mails (for FK integrity)
-                labelDao.insertAll(new ArrayList<>(labelMap.values()));
+                labelDao.insertAllIgnore(new ArrayList<>(labelMap.values()));
+                for (LabelEntity e : labelMap.values()) {
+                    labelDao.rename(e.id, e.name); // safe no-op if unchanged
+                }
                 dao.upsertMails(mails);
                 dao.upsertMailLabel(joins);
 
@@ -271,12 +276,29 @@ public class MailRepository {
                             joins.add(ref);
                         }
                     }
+                    else {
+                        // Backend didn’t include labels in the search response.
+                        // We KNOW we searched for lidQuery, so at least attach that one.
+                        // already normalized earlier
+                        if (!labelMap.containsKey(lidQuery)) {
+                            LabelEntity e = new LabelEntity();
+                            e.id = lidQuery;
+                            // name will be corrected by syncAllLabels(); use id fallback for now
+                            e.name = lidQuery;
+                            labelMap.put(lidQuery, e);
+                        }
+                        MailLabelCrossRef ref = new MailLabelCrossRef();
+                        ref.mailId = m.id;
+                        ref.labelId = lidQuery;
+                        joins.add(ref);
+                    }
                 }
 
                 // Upsert ONLY; do not clear whole tables
-                labelDao.insertAll(new ArrayList<>(labelMap.values()));
+                labelDao.insertAllIgnore(new ArrayList<>(labelMap.values()));
+                for (LabelEntity e : labelMap.values()) labelDao.rename(e.id, e.name);
+
                 dao.upsertMails(mails);
-                for (MailEntity m : mails) dao.clearJoinsForMail(m.id);
                 dao.upsertMailLabel(joins);
 
             } catch (Exception ignore) {}
@@ -332,7 +354,8 @@ public class MailRepository {
                         LabelEntity e = new LabelEntity();
                         e.id = res.body().id;
                         e.name = res.body().name != null ? res.body().name : res.body().id;
-                        labelDao.insertAll(java.util.Collections.singletonList(e));
+                        labelDao.insertAllIgnore(java.util.Collections.singletonList(e));
+                        labelDao.rename(e.id, e.name);
                     });
                 }
                 if (cb != null) cb.onResponse(call, res);
@@ -427,7 +450,10 @@ public class MailRepository {
                     e.name = (L.name != null) ? L.name : lid;
                     items.add(e);
                 }
-                labelDao.insertAll(items); // upsert; do NOT clear to avoid FK cascade on mail_label
+                labelDao.insertAllIgnore(items); // never REPLACE (prevents FK cascade)
+                for (LabelEntity e : items) {
+                    labelDao.rename(e.id, e.name); // update display name without delete/insert
+                }
                 Log.d("MailRepo", "syncAllLabels OK, items=" + items.size());
             } catch (Exception e) {
                 Log.e("MailRepo", "syncAllLabels error", e);
