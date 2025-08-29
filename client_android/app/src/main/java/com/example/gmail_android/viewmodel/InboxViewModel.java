@@ -56,11 +56,13 @@ public class InboxViewModel extends AndroidViewModel {
     }
     public void refresh() {
         Filter f = filter.getValue();
-        if (f == null || f.mode == Mode.ALL || f.mode == Mode.LABEL) {
-            repo.refreshInbox();      // keeps inbox/label cache fresh
+        if (f == null || f.mode == Mode.ALL) {
+            repo.refreshInbox();
+        } else if (f.mode == Mode.LABEL) {
+            repo.refreshByLabel(f.arg);   // fetch that label’s mails
         } else if (f.mode == Mode.SEARCH) {
             repo.refreshSearch(f.arg);
         }
-        repo.syncAllLabels();         // keeps sidebar labels up to date
+        repo.syncAllLabels();
     }
 }

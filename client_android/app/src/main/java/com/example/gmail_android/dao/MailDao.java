@@ -22,10 +22,11 @@ public interface MailDao {
 
     // retrieves mails with their labels filtered by a specific label ID.
     @Transaction
-    @Query("SELECT mails.* FROM mails " +
-            "INNER JOIN mail_label ON mails.id = mail_label.mailId " +
-            "WHERE mail_label.labelId = :labelId " +
-            "ORDER BY dateSentMillis DESC")
+    @Query("SELECT * FROM mails " +
+            " WHERE EXISTS ( " +
+            "SELECT 1 FROM mail_label ml " +
+            "WHERE ml.mailId = mails.id " +
+            "AND lower(ml.labelId) = lower(:labelId)) ORDER BY dateSentMillis DESC")
     LiveData<List<MailWithLabels>> getByLabel(String labelId);
 
     // inserts or updates a list of mail entities.

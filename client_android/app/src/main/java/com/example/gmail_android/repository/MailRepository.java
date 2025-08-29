@@ -78,10 +78,11 @@ public class MailRepository {
                     if (d.labels != null) {
                         for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
                             if (L == null || L.id == null) continue;
-                            com.example.gmail_android.entities.LabelEntity e = labelMap.get(L.id);
+                            String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);
+                            LabelEntity e = labelMap.get(lid);
                             if (e == null) {
                                 e = new com.example.gmail_android.entities.LabelEntity();
-                                e.id = L.id; e.name = (L.name != null) ? L.name : L.id;
+                                e.id = lid; e.name = (L.name != null) ? L.name : lid;
                                 labelMap.put(e.id, e);
                             }
                             com.example.gmail_android.entities.MailLabelCrossRef ref =
@@ -210,21 +211,72 @@ public class MailRepository {
                 if (d.labels != null) {
                     for (MailApi.LabelDto L : d.labels) {
                         if (L == null || L.id == null) continue;
-                        if (!labelMap.containsKey(L.id)) {
+                        String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);
+                        if (!labelMap.containsKey(lid)) {
                             LabelEntity e = new LabelEntity();
-                            e.id = L.id;
+                            e.id = lid;
                             e.name = (L.name != null) ? L.name : L.id;
                             labelMap.put(e.id, e);
                         }
                         MailLabelCrossRef ref = new MailLabelCrossRef();
                         ref.mailId = m.id;
-                        ref.labelId = L.id;
+                        ref.labelId = lid;
                         joins.add(ref);
                     }
                 }
 
                 // update only the specific mail and its label relationships.
                 dao.clearJoinsForMail(id);
+                dao.upsertMailLabel(joins);
+
+            } catch (Exception ignore) {}
+        });
+    }
+
+    // Fetch mails for a specific label and upsert into Room
+    // Fetch mails for a specific label via search("label:{id}") and upsert into Room
+    public void refreshByLabel(String labelId) {
+        io.execute(() -> {
+            try {
+                // Normalize id defensively (helps if server treats ids case-insensitively)
+                String lidQuery = (labelId == null ? "" : labelId.trim().toLowerCase(java.util.Locale.ROOT));
+                Response<List<MailApi.MailDto>> res = api.search("label:" + lidQuery).execute();
+                if (!res.isSuccessful() || res.body() == null) return;
+
+                List<MailEntity> mails = new ArrayList<>();
+                Map<String, LabelEntity> labelMap = new LinkedHashMap<>();
+                List<MailLabelCrossRef> joins = new ArrayList<>();
+
+                for (MailApi.MailDto d : res.body()) {
+                    MailEntity m = new MailEntity();
+                    m.id = d.id; m.fromEmail = d.from; m.toEmail = d.to;
+                    m.subject = d.subject; m.content = d.content;
+                    m.isSpam = d.spam; m.dateSentMillis = parseMillis(d.dateSent);
+                    mails.add(m);
+
+                    if (d.labels != null) {
+                        for (MailApi.LabelDto L : d.labels) {
+                            if (L == null || L.id == null) continue;
+                            String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);  // normalize
+                            LabelEntity e = labelMap.get(lid);
+                            if (e == null) {
+                                e = new LabelEntity();
+                                e.id = lid;
+                                e.name = (L.name != null) ? L.name : lid;
+                                labelMap.put(e.id, e);
+                            }
+                            MailLabelCrossRef ref = new MailLabelCrossRef();
+                            ref.mailId = m.id;
+                            ref.labelId = lid;
+                            joins.add(ref);
+                        }
+                    }
+                }
+
+                // Upsert ONLY; do not clear whole tables
+                labelDao.insertAll(new ArrayList<>(labelMap.values()));
+                dao.upsertMails(mails);
+                for (MailEntity m : mails) dao.clearJoinsForMail(m.id);
                 dao.upsertMailLabel(joins);
 
             } catch (Exception ignore) {}
@@ -369,9 +421,10 @@ public class MailRepository {
                 List<LabelEntity> items = new ArrayList<>();
                 for (MailApi.LabelDto L : res.body()) {
                     if (L == null || L.id == null) continue;
+                    String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);
                     LabelEntity e = new LabelEntity();
-                    e.id = L.id;
-                    e.name = (L.name != null) ? L.name : L.id;
+                    e.id = lid;
+                    e.name = (L.name != null) ? L.name : lid;
                     items.add(e);
                 }
                 labelDao.insertAll(items); // upsert; do NOT clear to avoid FK cascade on mail_label

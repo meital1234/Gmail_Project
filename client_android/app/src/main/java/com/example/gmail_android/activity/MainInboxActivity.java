@@ -33,16 +33,17 @@ public class MainInboxActivity extends AppCompatActivity {
     // Protected/system labels – case-insensitive match by id or name
     private static final java.util.Set<String> PROTECTED =
             new java.util.HashSet<>(java.util.Arrays.asList(
-                    "inbox","sent","drafts","spam","starred","important","trash","bin","archive","all"
+                    "inbox", "sent", "drafts", "spam", "starred", "important", "trash", "bin", "archive", "all"
             ));
 
     private boolean isProtected(LabelEntity l) {
-        final String n  = l.name.toLowerCase(Locale.ROOT);
+        final String n = l.name.toLowerCase(Locale.ROOT);
         final String id = l.id.toLowerCase(Locale.ROOT);
         return PROTECTED.contains(n) || PROTECTED.contains(id);
     }
 
-    @Override protected void onCreate(Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_inbox);
         repo = new MailRepository(getApplicationContext());
@@ -66,7 +67,8 @@ public class MainInboxActivity extends AppCompatActivity {
         EditText etSearch = findViewById(R.id.etSearch);
         etSearch.setOnEditorActionListener((tv, actionId, event) -> {
             String q = tv.getText().toString().trim();
-            if (q.isEmpty()) vm.selectAll(); else vm.search(q);
+            if (q.isEmpty()) vm.selectAll();
+            else vm.search(q);
             tv.clearFocus();
             return true;
         });
@@ -85,9 +87,16 @@ public class MainInboxActivity extends AppCompatActivity {
 
         // Avatar click
         findViewById(R.id.imgAvatar).setOnClickListener(v -> {
-            // TODO: open profile/settings; for now show a toast
-            android.widget.Toast.makeText(this, "Profile", android.widget.Toast.LENGTH_SHORT).show();
+            androidx.appcompat.widget.PopupMenu pm =
+                    new androidx.appcompat.widget.PopupMenu(MainInboxActivity.this, v);
+            pm.getMenuInflater().inflate(R.menu.menu_profile, pm.getMenu());
+            pm.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == R.id.action_logout) { doLogout(); return true; }
+                return false;
+            });
+            pm.show();
         });
+
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, topAppBar,
                 R.string.nav_open, R.string.nav_close
@@ -107,11 +116,14 @@ public class MainInboxActivity extends AppCompatActivity {
         // Labels drawer list
         recyclerLabels.setLayoutManager(new LinearLayoutManager(this));
         labelAdapter = new LabelAdapter(new LabelAdapter.Actions() {
-            @Override public void onSelect(LabelEntity label) {
+            @Override
+            public void onSelect(LabelEntity label) {
                 vm.selectLabel(label.id);
                 drawer.closeDrawer(GravityCompat.START);
             }
-            @Override public void onRename(LabelEntity label) {
+
+            @Override
+            public void onRename(LabelEntity label) {
                 if (isProtected(label)) return; // ← block system labels
                 final EditText input = new EditText(MainInboxActivity.this);
                 input.setText(label.name);
@@ -147,7 +159,9 @@ public class MainInboxActivity extends AppCompatActivity {
                         .setNegativeButton(android.R.string.cancel, null)
                         .show();
             }
-            @Override public void onDelete(LabelEntity label) {
+
+            @Override
+            public void onDelete(LabelEntity label) {
                 if (isProtected(label)) return; // ← block system labels
                 new AlertDialog.Builder(MainInboxActivity.this)
                         .setTitle(R.string.delete)
@@ -203,19 +217,15 @@ public class MainInboxActivity extends AppCompatActivity {
         vm.refresh();
     }
 
-    @Override public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_inbox, menu);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
         return true;
     }
 
-    @Override public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_logout) {
-            TokenStore.clear(getApplicationContext());
-            Intent i = new Intent(this, LoginActivity.class);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(i);
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+    private void doLogout() {
+        TokenStore.clear(getApplicationContext());
+        Intent i = new Intent(this, LoginActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
     }
 }

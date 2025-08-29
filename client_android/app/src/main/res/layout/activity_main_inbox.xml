@@ -15,7 +15,7 @@
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="60dp"
             android:background="?attr/colorSurface"
             app:navigationIcon="@drawable/round_menu_24"
             app:contentInsetStartWithNavigation="0dp"
@@ -24,49 +24,47 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp">
-
-                <TextView
-                    android:id="@+id/tvBrand"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/app_name_B"
-                    android:textStyle="bold"
-                    android:textSize="20sp"/>
 
                 <!-- Search (fills available space) -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilSearch"
-                    app:boxBackgroundColor="?attr/colorSurfaceVariant"
-                    app:startIconTint="?attr/colorOnSurfaceVariant"
                     style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="48dp"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="12dp"
                     android:layout_weight="1"
+                    app:boxBackgroundColor="?attr/colorSurfaceVariant"
                     app:boxBackgroundMode="filled"
-                    app:boxCornerRadiusTopStart="20dp"
-                    app:boxCornerRadiusTopEnd="20dp"
-                    app:boxCornerRadiusBottomStart="20dp"
-                    app:boxCornerRadiusBottomEnd="20dp"
+                    app:boxCornerRadiusTopEnd="24dp"
+                    app:boxCornerRadiusTopStart="24dp"
+                    app:boxCornerRadiusBottomStart="24dp"
+                    app:boxCornerRadiusBottomEnd="24dp"
+                    app:endIconMode="clear_text"
+                    app:endIconTint="?attr/colorOnSurfaceVariant"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    android:hint="@string/search_mail"
+                    app:hintEnabled="true"
                     app:startIconDrawable="@drawable/search_icon"
-
-                    app:hintEnabled="false">
+                    app:startIconTint="?attr/colorOnSurfaceVariant">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etSearch"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textColorHint="?attr/colorOnSurfaceVariant"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:hint="@string/search_mail"
-                        android:singleLine="true"
+                        android:layout_height="match_parent"
                         android:imeOptions="actionSearch"
-                        android:textSize="12sp"/>
+                        android:singleLine="true"
+                        android:textSize="12sp"
+                        android:background="@null"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?attr/colorOnSurfaceVariant"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Theme toggle -->
@@ -77,7 +75,7 @@
                     android:layout_marginEnd="8dp"
                     android:background="@drawable/bg_icon_chip"
                     android:contentDescription="@string/toggle_theme"
-                    app:srcCompat="@drawable/round_light_mode_24"/>
+                    app:srcCompat="@drawable/round_light_mode_24" />
 
                 <!-- Avatar -->
                 <ImageView
@@ -85,9 +83,9 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/bg_avatar_ring"
+                    android:contentDescription="@string/profile"
                     android:padding="4dp"
-                    android:src="@drawable/round_account_circle_24"
-                    android:contentDescription="@string/profile"/>
+                    android:src="@drawable/round_account_circle_24" />
             </LinearLayout>
         </com.google.android.material.appbar.MaterialToolbar>
 
