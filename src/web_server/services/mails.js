@@ -286,19 +286,61 @@ async function getMailsByLabel(labelId, userId) {
 /**
  * Adds a label to a mail, only if the label is not already present.
  */
+// async function addLabelToMail(mailId, labelId, userId) {
+//   if (!mailId || !labelId || !userId) throw new Error('mailId, labelId, userId are required');
+//   const u = new mongoose.Types.ObjectId(userId);
+//   const mail = await Mail.findOne({
+//     mailId: Number(mailId),
+//     $or: [{ senderId: u }, { receiverId: u }],
+//     hiddenFrom: { $ne: u }
+//   });
+//   if (!mail) throw new Error('Mail not found or not authorized');
+//   if (!mail.labelIds.some(id => id.equals(labelId))) {
+//     mail.labelIds.push(labelId);
+//     await mail.save();
+//   }
+//   return mail.toObject();
+// }
 async function addLabelToMail(mailId, labelId, userId) {
   if (!mailId || !labelId || !userId) throw new Error('mailId, labelId, userId are required');
   const u = new mongoose.Types.ObjectId(userId);
+
   const mail = await Mail.findOne({
     mailId: Number(mailId),
     $or: [{ senderId: u }, { receiverId: u }],
     hiddenFrom: { $ne: u }
   });
   if (!mail) throw new Error('Mail not found or not authorized');
+
+  // הוסף את התווית אם לא קיימת
   if (!mail.labelIds.some(id => id.equals(labelId))) {
     mail.labelIds.push(labelId);
     await mail.save();
   }
+
+  // אם התווית היא Spam – הוסף את קישורי המייל ל-blacklist וסמן isSpam
+  const label = await labelService.getLabelById({ id: labelId, userId });
+  if (label && label.name && label.name.toLowerCase() === 'spam') {
+    const text  = [mail.subject, mail.content].filter(Boolean).join(' ');
+    const links = extractLinks(text);
+
+    // (לא חובה) לוג לדיבוג:
+    // console.log('[Spam mark] links to blacklist:', links);
+
+    for (const url of links) {
+      try {
+        await blacklistService.addUrl(url);   // מכניס ל-blacklist
+      } catch (e) {
+        console.warn('[addLabelToMail] failed adding URL:', url, e.message);
+      }
+    }
+
+    if (!mail.isSpam) {
+      mail.isSpam = true;
+      await mail.save();
+    }
+  }
+
   return mail.toObject();
 }
 
