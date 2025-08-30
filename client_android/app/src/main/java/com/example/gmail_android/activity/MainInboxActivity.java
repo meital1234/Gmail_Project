@@ -262,6 +262,11 @@ public class MainInboxActivity extends AppCompatActivity {
         return true;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (vm != null) vm.refresh(); // so the Drafts list/Sent list updates immediately
+    }
     private void doLogout() {
         TokenStore.clear(getApplicationContext());
         Intent i = new Intent(this, LoginActivity.class);
