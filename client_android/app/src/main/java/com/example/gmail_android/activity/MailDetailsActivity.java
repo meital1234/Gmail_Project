@@ -14,7 +14,7 @@ import com.google.android.material.chip.ChipGroup;
 import java.text.DateFormat;
 import java.util.Date;
 
-public class MailDetailsActivity extends ComponentActivity {
+public class MailDetailsActivity extends androidx.appcompat.app.AppCompatActivity {
     private ChipGroup chips;
     private MailRepository repo;
 

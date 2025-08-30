@@ -25,7 +25,7 @@ import retrofit2.Response;
 
 
 // screen used to compose a new mail (or save it as a draft).
-public class ComposeActivity extends ComponentActivity {
+public class ComposeActivity extends androidx.appcompat.app.AppCompatActivity {
 
     // default labels we don't show as selectable chips.
     private static final HashSet<String> DEFAULT_LABELS = new HashSet<>(
