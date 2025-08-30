@@ -1,5 +1,4 @@
 package com.example.gmail_android.activity;
-
 import android.os.Bundle;
 import android.widget.TextView;
 import androidx.activity.ComponentActivity;
