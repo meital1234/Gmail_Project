@@ -106,10 +106,50 @@ public class MainInboxActivity extends AppCompatActivity {
 
         // Inbox list
         recycler.setLayoutManager(new LinearLayoutManager(this));
-        MailAdapter mailAdapter = new MailAdapter((mail) -> {
-            Intent i = new Intent(this, MailDetailsActivity.class);
-            i.putExtra("mail_id", mail.mail.id);
-            startActivity(i);
+        MailAdapter mailAdapter = new MailAdapter(new MailAdapter.Actions() {
+            @Override public void onOpen(com.example.gmail_android.entities.MailWithLabels mail) {
+                Intent i = new Intent(MainInboxActivity.this, MailDetailsActivity.class);
+                i.putExtra("mail_id", mail.mail.id);
+                startActivity(i);
+            }
+
+            @Override public void onDelete(com.example.gmail_android.entities.MailWithLabels mail) {
+                new AlertDialog.Builder(MainInboxActivity.this)
+                        .setTitle(R.string.delete)
+                        .setMessage(getString(R.string.delete) + " \"" +
+                                (mail.mail.subject == null ? "" : mail.mail.subject) + "\"?")
+                        .setPositiveButton(android.R.string.ok, (d, w) -> {
+                            repo.delete(mail.mail.id, new retrofit2.Callback<>() {
+                                @Override
+                                public void onResponse(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                                       @NonNull retrofit2.Response<okhttp3.ResponseBody> res) {
+                                    if (!res.isSuccessful()) {
+                                        android.widget.Toast.makeText(MainInboxActivity.this,
+                                                "Delete failed (" + res.code() + ")", android.widget.Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+                                    // local Room is already cleaned by repo.deleteLocal()
+                                    vm.refresh(); // sync with backend anyway
+                                }
+
+                                @Override
+                                public void onFailure(
+                                        @NonNull retrofit2.Call<okhttp3.ResponseBody> call, @NonNull Throwable t) {
+                                    android.widget.Toast.makeText(MainInboxActivity.this,
+                                            "Delete failed", android.widget.Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            }
+
+            @Override public void onEdit(com.example.gmail_android.entities.MailWithLabels mail) {
+                // Open composer in “edit draft” mode
+                Intent i = new Intent(MainInboxActivity.this, ComposeActivity.class);
+                i.putExtra("edit_mail_id", mail.mail.id);
+                startActivity(i);
+            }
         });
         recycler.setAdapter(mailAdapter);
 

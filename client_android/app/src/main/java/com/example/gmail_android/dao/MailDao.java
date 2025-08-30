@@ -56,7 +56,8 @@ public interface MailDao {
     @Transaction
     @Query("SELECT * FROM mails WHERE id = :id LIMIT 1")
     LiveData<MailWithLabels> getById(String id);
-
+    @androidx.room.Query("DELETE FROM mails WHERE id = :id")
+    void deleteMail(String id);
     @Transaction
     @Query(
             "SELECT * FROM mails " +

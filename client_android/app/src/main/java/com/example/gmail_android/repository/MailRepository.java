@@ -329,9 +329,30 @@ public class MailRepository {
         api.edit(mailId, req).enqueue(cb);
     }
 
+    public void deleteLocal(String mailId) {
+        io.execute(() -> {
+            dao.clearJoinsForMail(mailId);
+            dao.deleteMail(mailId);
+        });
+    }
+
     // delete a mail
-    public void delete(String mailId, Callback<ResponseBody> cb) {
-        api.delete(mailId).enqueue(cb);
+    public void delete(String mailId, retrofit2.Callback<okhttp3.ResponseBody> cb) {
+        api.delete(mailId).enqueue(new retrofit2.Callback<okhttp3.ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                   @NonNull retrofit2.Response<okhttp3.ResponseBody> res) {
+                if (res.isSuccessful()) {
+                    deleteLocal(mailId);   // <-- hide immediately in Room
+                }
+                if (cb != null) cb.onResponse(call, res);
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<okhttp3.ResponseBody> call, @NonNull Throwable t) {
+                if (cb != null) cb.onFailure(call, t);
+            }
+        });
     }
 
     // add a label to a mail.

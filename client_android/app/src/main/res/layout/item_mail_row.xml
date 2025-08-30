@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_margin="8dp"
     android:foreground="?attr/selectableItemBackground">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="12dp">
 
         <TextView
@@ -18,8 +17,11 @@
             android:textSize="16sp"
             android:ellipsize="end"
             android:maxLines="1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnMore"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <TextView
             android:id="@+id/rowFrom"
@@ -27,16 +29,22 @@
             android:textColor="@color/dark_gray"
             android:ellipsize="end"
             android:maxLines="1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnMore"
+            app:layout_constraintTop_toBottomOf="@id/rowSubject"/>
 
         <TextView
             android:id="@+id/rowPreview"
             android:textSize="13sp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnMore"
+            app:layout_constraintTop_toBottomOf="@id/rowSubject"/>
 
         <TextView
             android:id="@+id/rowDate"
@@ -44,9 +52,26 @@
             android:textColor="@color/bright_gray"
             android:ellipsize="end"
             android:maxLines="1"
-            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:visibility="gone"/>
-    </LinearLayout>
+            android:visibility="gone"
+            android:layout_width="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnMore"
+            app:layout_constraintTop_toBottomOf="@id/rowSubject"/>
+
+        <ImageButton
+            android:id="@+id/btnMore"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/more_actions"
+            app:srcCompat="@drawable/outline_more_vert_24"
+            app:tint="?attr/colorOnSurfaceVariant"
+
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:padding="8dp"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

@@ -42,6 +42,7 @@ public class ComposeActivity extends ComponentActivity {
     private final HashSet<String> selectedNames = new HashSet<>();
     // all labels returned from the server.
     private List<MailApi.LabelDto> available = new ArrayList<>();
+    private String editMailId = null;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,6 +58,18 @@ public class ComposeActivity extends ComponentActivity {
         etContent = findViewById(R.id.etContent);
         tvError   = findViewById(R.id.tvError);
         chipGroup = findViewById(R.id.chipGroup);
+
+        // Read draft id if we came from “Edit” action
+        editMailId = getIntent().getStringExtra("edit_mail_id");
+        if (editMailId != null) {
+            // Prefill UI from Room
+            repo.getMailLive(editMailId).observe(this, m -> {
+                if (m == null || m.mail == null) return;
+                etTo.setText(m.mail.toEmail == null ? "" : m.mail.toEmail);
+                etSubject.setText(m.mail.subject == null ? "" : m.mail.subject);
+                etContent.setText(m.mail.content == null ? "" : m.mail.content);
+            });
+        }
 
         Button btnSend    = findViewById(R.id.btnSend);
         Button btnDiscard = findViewById(R.id.btnDiscard);
@@ -89,29 +102,36 @@ public class ComposeActivity extends ComponentActivity {
         // if saving draft, guarantee the "Drafts" label is included.
         if (asDraft && !labels.contains("Drafts")) labels.add("Drafts");
 
-        repo.send(to, sub, msg, labels.isEmpty() ? null : labels, new Callback<>() {
+        Callback<MailApi.MailDto> cb = new Callback<>() {
             @Override
             public void onResponse(@NonNull Call<MailApi.MailDto> call,
                                    @NonNull Response<MailApi.MailDto> res) {
                 if (res.isSuccessful()) {
-                    // refresh the inbox cache so the new mail/draft appears back in the list.
                     repo.refreshInbox();
                     Toast.makeText(ComposeActivity.this,
-                            asDraft ? "Draft saved" : "Sent", Toast.LENGTH_SHORT).show();
+                            asDraft ? "Draft saved" : (editMailId == null ? "Sent" : "Updated"),
+                            Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     tvError.setText(getString(R.string.send_failed, res.code()));
                     tvError.setVisibility(TextView.VISIBLE);
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<MailApi.MailDto> call,
                                   @NonNull Throwable t) {
                 tvError.setText(getString(R.string.network_error, msg));
                 tvError.setVisibility(TextView.VISIBLE);
             }
-        });
+        };
+
+        if (editMailId == null) {
+            // composing a new message/draft
+            repo.send(to, sub, msg, labels.isEmpty() ? null : labels, cb);
+        } else {
+            // editing an existing draft
+            repo.edit(editMailId, to, sub, msg, labels.isEmpty() ? null : labels, cb);
+        }
     }
 
     // loading labels.
