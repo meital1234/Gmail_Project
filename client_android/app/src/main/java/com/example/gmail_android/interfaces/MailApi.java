@@ -51,8 +51,8 @@ public interface MailApi {
     Call<ResponseBody> deleteLabel(@Path("id") String id);
 
     // Me
-    @GET("users/me")
-    Call<UserDto> me();
+    @GET("users/{id}")
+    retrofit2.Call<com.example.gmail_android.entities.User> getUser(@Path("id") int id);
 
     // ===== DTOs =====
     class LabelDto { public String id; public String name; }

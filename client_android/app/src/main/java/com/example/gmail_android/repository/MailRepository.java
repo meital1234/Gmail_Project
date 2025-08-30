@@ -455,6 +455,24 @@ public class MailRepository {
         return labelDao.observeAll();
     }
 
+    // Fetch a user by id so we can display the profile image
+    public androidx.lifecycle.LiveData<com.example.gmail_android.entities.User> getUser(int id) {
+        final androidx.lifecycle.MutableLiveData<com.example.gmail_android.entities.User> live =
+                new androidx.lifecycle.MutableLiveData<>();
+        api.getUser(id).enqueue(new retrofit2.Callback<com.example.gmail_android.entities.User>() {
+            @Override public void onResponse(retrofit2.Call<com.example.gmail_android.entities.User> call,
+                                             retrofit2.Response<com.example.gmail_android.entities.User> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    live.postValue(res.body());
+                }
+            }
+            @Override public void onFailure(retrofit2.Call<com.example.gmail_android.entities.User> call,
+                                            Throwable t) {
+                // no-op; keep default avatar
+            }
+        });
+        return live;
+    }
     // parse a date string.
     private static long parseMillis(String dateSent) {
         if (dateSent == null || dateSent.isEmpty()) return 0L;

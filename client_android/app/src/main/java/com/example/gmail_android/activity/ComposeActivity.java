@@ -95,35 +95,59 @@ public class ComposeActivity extends ComponentActivity {
     }
 
     // end email/save draft.
+    // end email/save draft.
     private void handleSend(boolean asDraft) {
-        tvError.setText(""); tvError.setVisibility(TextView.GONE);
+        tvError.setText("");
+        tvError.setVisibility(TextView.GONE);
 
         String to  = etTo.getText().toString().trim();
         String sub = etSubject.getText().toString().trim();
         String msg = etContent.getText().toString().trim();
 
-        // for non-draft we require a recipient.
+        // Require a recipient only when sending (not for saving draft)
         if (!asDraft && to.isEmpty()) {
             tvError.setText(getString(R.string.recipient_required));
             tvError.setVisibility(TextView.VISIBLE);
             return;
         }
 
+        // Build labels to send to backend by NAME (matches your web)
         // Build labels to send to backend (by NAME, to match your web)
         List<String> labels = new ArrayList<>(selectedNames);
+
+        // Always keep system labels consistent:
         if (asDraft) {
-            // Guarantee the "Drafts" label
+            // Ensure "Drafts", remove "Sent"
             boolean hasDrafts = false;
-            for (String s : labels) if ("drafts".equalsIgnoreCase(s)) { hasDrafts = true; break; }
+            for (String s : labels) {
+                if ("drafts".equalsIgnoreCase(s)) { hasDrafts = true; break; }
+            }
             if (!hasDrafts) labels.add("Drafts");
+
+            // just in case user somehow had "Sent"
+            labels.removeIf("sent"::equalsIgnoreCase);
+        } else {
+            // Ensure "Sent", remove "Drafts"
+            boolean hasSent = false;
+            for (String s : labels) {
+                if ("sent".equalsIgnoreCase(s)) { hasSent = true; break; }
+            }
+            if (!hasSent) labels.add("Sent");
+
+            labels.removeIf("drafts"::equalsIgnoreCase);
         }
+
+        // Backend expects null when there are no labels
         List<String> maybeNull = labels.isEmpty() ? null : labels;
+        // Never pass null here. If labels is empty, the backend should treat it as "clear labels".
+        // may be empty list, but not null
 
         Callback<MailApi.MailDto> cb = new Callback<>() {
             @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
                                              @NonNull Response<MailApi.MailDto> res) {
                 if (res.isSuccessful()) {
-                    repo.refreshInbox(); // update list
+                    // Refresh inbox so the item moves from Drafts to Sent immediately
+                    repo.refreshInbox();
                     Toast.makeText(ComposeActivity.this,
                             asDraft ? R.string.draft_saved : R.string.sent_ok,
                             Toast.LENGTH_SHORT).show();
@@ -140,11 +164,11 @@ public class ComposeActivity extends ComponentActivity {
         };
 
         if (editMailId == null) {
-            // New mail/draft
-            repo.send(to, sub, msg, maybeNull, cb);
+            // New mail or new draft
+            repo.send(to, sub, msg, labels, cb);
         } else {
-            // Update existing draft
-            repo.edit(editMailId, to, sub, msg, maybeNull, cb);
+            // Update existing draft (now as either draft or sent mail)
+            repo.edit(editMailId, to, sub, msg, labels, cb);
         }
     }
 

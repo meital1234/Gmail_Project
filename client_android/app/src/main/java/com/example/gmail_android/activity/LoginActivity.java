@@ -62,18 +62,16 @@ public class LoginActivity extends ComponentActivity {
             // observe login result from ViewModel.
             vm.login(email, pass).observe(this, result -> {
                 if (result.status == Result.Status.SUCCESS) {
-                    // saves token on successful login.
+                    // IMPORTANT: web-style login returns a plain token string
+                    // result.data is the token string (e.g., "token-123")
                     TokenStore.save(getApplicationContext(), result.data);
+
                     Toast.makeText(this, "Logged in!", Toast.LENGTH_SHORT).show();
-                    // navigates to inbox and finishes this activity.
                     startActivity(new Intent(this, MainInboxActivity.class));
                     finish();
                 } else if (result.status == Result.Status.ERROR) {
-                    // re-enables login button so user can try again.
                     loginButton.setEnabled(true);
-                    // consider showing user-friendly error.
-                    Toast.makeText(this, "Error: " + result.message,
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error: " + result.message, Toast.LENGTH_SHORT).show();
                 }
             });
         });

@@ -40,6 +40,10 @@ public class InboxViewModel extends AndroidViewModel {
     // Expose labels list for the drawer
     public LiveData<List<LabelEntity>> getLabels() { return repo.getLabelsLive(); }
 
+    public androidx.lifecycle.LiveData<com.example.gmail_android.entities.User> getUser(int id) {
+        return repo.getUser(id);
+    }
+
     public void selectAll() {
         filter.setValue(Filter.all());
         refresh();
