@@ -12,6 +12,7 @@ import com.example.gmail_android.utils.Result;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import com.example.gmail_android.auth.TokenStore;
 
 // responsible for handling authentication operations.
 public class AuthRepository {
@@ -19,11 +20,13 @@ public class AuthRepository {
     private final AuthApi api;
     // local storage for saving JWT token.
     private final SharedPreferences prefs;
+    private final Context appContext;
 
     // initializes the repository with API client and SharedPreferences.
     public AuthRepository(Context ctx) {
         api = ApiClient.get(ctx).create(AuthApi.class);
         prefs = ctx.getSharedPreferences("auth", Context.MODE_PRIVATE);
+        this.appContext = ctx.getApplicationContext();
     }
 
     // attempts to log in with the given credentials.
@@ -39,7 +42,7 @@ public class AuthRepository {
                                    @NonNull Response<AuthResponse> res) {
                 if (res.isSuccessful() && res.body() != null && res.body().token != null) {
                     // save JWT token to SharedPreferences.
-                    prefs.edit().putString("jwt", res.body().token).apply();
+                    TokenStore.save(appContext, res.body().token);
                     data.setValue(Result.success(res.body().token));
                 } else {
                     data.setValue(Result.error("Invalid credentials"));
