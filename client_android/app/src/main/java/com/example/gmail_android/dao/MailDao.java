@@ -22,15 +22,17 @@ public interface MailDao {
 
     // retrieves mails with their labels filtered by a specific label ID.
     @Transaction
-    @Query("SELECT * FROM mails INNER JOIN mail_label ON mails.id = mail_label.mailId " +
-            "WHERE mail_label.labelId = :labelId ORDER BY dateSentMillis DESC")
+    @Query("SELECT * FROM mails " +
+            " WHERE EXISTS ( " +
+            "SELECT 1 FROM mail_label ml " +
+            "WHERE ml.mailId = mails.id " +
+            "AND lower(ml.labelId) = lower(:labelId)) ORDER BY dateSentMillis DESC")
     LiveData<List<MailWithLabels>> getByLabel(String labelId);
 
     // inserts or updates a list of mail entities.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertMails(List<MailEntity> mails);
 
-    // inserts or updates a list of label entities.
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertLabels(List<LabelEntity> labels);
 
@@ -41,10 +43,6 @@ public interface MailDao {
     // deletes all mails from the database.
     @Query("DELETE FROM mails")
     void clearMails();
-
-    // deletes all labels from the database.
-    @Query("DELETE FROM labels")
-    void clearLabels();
 
     // deletes all relationships between mails and labels.
     @Query("DELETE FROM mail_label")
@@ -58,4 +56,17 @@ public interface MailDao {
     @Transaction
     @Query("SELECT * FROM mails WHERE id = :id LIMIT 1")
     LiveData<MailWithLabels> getById(String id);
+    @androidx.room.Query("DELETE FROM mails WHERE id = :id")
+    void deleteMail(String id);
+    @Transaction
+    @Query(
+            "SELECT * FROM mails " +
+                    "WHERE (" +
+                    "  subject   LIKE '%' || :q || '%' COLLATE NOCASE OR " +
+                    "  content   LIKE '%' || :q || '%' COLLATE NOCASE OR " +
+                    "  fromEmail LIKE '%' || :q || '%' COLLATE NOCASE OR " +
+                    "  toEmail   LIKE '%' || :q || '%' COLLATE NOCASE" +
+                    ") ORDER BY dateSentMillis DESC"
+    )
+    LiveData<java.util.List<com.example.gmail_android.entities.MailWithLabels>> search(String q);
 }

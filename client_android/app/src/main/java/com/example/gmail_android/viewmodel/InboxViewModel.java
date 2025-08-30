@@ -4,27 +4,64 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import com.example.gmail_android.entities.MailWithLabels;
+import androidx.lifecycle.MutableLiveData;
+
+import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.repository.MailRepository;
+
 import java.util.List;
 
-// ViewModel for managing and providing inbox data to the UI.
 public class InboxViewModel extends AndroidViewModel {
 
-    // repository for accessing mail data.
-    private final MailRepository repo;
-    // LiveData containing the inbox mails.
-    public final LiveData<List<MailWithLabels>> inbox;
-
+    private final com.example.gmail_android.repository.MailRepository repo;
+    public final androidx.lifecycle.LiveData<java.util.List<com.example.gmail_android.entities.MailWithLabels>> mails;
+    private enum Mode { ALL, LABEL, SEARCH }
+    private static final class Filter {
+        final Mode mode;
+        final String arg; // labelId for LABEL, query for SEARCH
+        private Filter(Mode m, String a) { mode = m; arg = a; }
+        static Filter all()             { return new Filter(Mode.ALL,   null); }
+        static Filter label(String id)  { return new Filter(Mode.LABEL, id); }
+        static Filter search(String q)  { return new Filter(Mode.SEARCH,q); }
+    }
+    private final MutableLiveData<Filter> filter = new MutableLiveData<>(Filter.all());
     public InboxViewModel(@NonNull Application app) {
         super(app);
-        // initialize repository.
         repo = new MailRepository(app.getApplicationContext());
-        // retrieve LiveData of inbox mails from repository.
-        inbox = repo.getInboxLive();
+        mails = androidx.lifecycle.Transformations.switchMap(filter, f -> {
+            if (f.mode == Mode.LABEL)  return repo.getByLabelLive(f.arg);
+            if (f.mode == Mode.SEARCH) return repo.searchLive(f.arg);
+            return repo.getInboxLive(); // ALL
+        });
     }
 
-    // refresh of inbox data from the repository.
-    public void refresh() { repo.refreshInbox(); }
-}
+    public androidx.lifecycle.LiveData<java.util.List<com.example.gmail_android.entities.MailWithLabels>> getMails() { return mails; }
 
+    // Expose labels list for the drawer
+    public LiveData<List<LabelEntity>> getLabels() { return repo.getLabelsLive(); }
+
+    public void selectAll() {
+        filter.setValue(Filter.all());
+        refresh();
+    }
+    public void selectLabel(String labelId) {
+        filter.setValue(Filter.label(labelId));
+        refresh();
+    }
+    public void search(String q) {
+        String qq = q == null ? "" : q.trim();
+        if (qq.isEmpty()) { selectAll(); return; }
+        repo.refreshSearch(qq);       // backend -> Room
+        filter.setValue(Filter.search(qq));
+    }
+    public void refresh() {
+        Filter f = filter.getValue();
+        if (f == null || f.mode == Mode.ALL) {
+            repo.refreshInbox();
+        } else if (f.mode == Mode.LABEL) {
+            repo.refreshByLabel(f.arg);   // fetch that label’s mails
+        } else if (f.mode == Mode.SEARCH) {
+            repo.refreshSearch(f.arg);
+        }
+    }
+}

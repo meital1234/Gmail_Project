@@ -1,10 +1,13 @@
 package com.example.gmail_android.repository;
 
 import android.content.Context;
+
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import android.util.Log;
 import com.example.gmail_android.dao.AppDatabase;
 import com.example.gmail_android.dao.MailDao;
+import com.example.gmail_android.dao.LabelDao;
 import com.example.gmail_android.entities.LabelEntity;
 import com.example.gmail_android.entities.MailEntity;
 import com.example.gmail_android.entities.MailLabelCrossRef;
@@ -16,6 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import okhttp3.ResponseBody;
@@ -23,11 +27,12 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MailRepository {
-
+    private final Context ctx;
     // API interface for network calls.
     private final MailApi api;
     // data Access Object for Room database.
     private final MailDao dao;
+    private final LabelDao labelDao;
     // background executor for IO tasks.
     private final Executor io = Executors.newSingleThreadExecutor();
 
@@ -36,12 +41,67 @@ public class MailRepository {
         Log.d("API", "Retrofit baseUrl=" + retrofit.baseUrl());
         this.api = retrofit.create(MailApi.class);
         this.dao = AppDatabase.get(ctx).mailDao();
+        this.labelDao = AppDatabase.get(ctx).labelDao();
+        this.ctx = ctx;
     }
-
 
     // LiveData for UI.
     public LiveData<List<MailWithLabels>> getInboxLive() {
+        AppDatabase db = AppDatabase.get(ctx);
+        MailDao dao = db.mailDao();
         return dao.getInbox();
+    }
+
+    // LiveData bound to Room search results
+    public LiveData<java.util.List<com.example.gmail_android.entities.MailWithLabels>> searchLive(String q) {
+        return dao.search(q);
+    }
+
+    // Call backend /mails/search/{q}, upsert into Room, so searchLive() updates
+    public void refreshSearch(String q) {
+        io.execute(() -> {
+            try {
+                retrofit2.Response<java.util.List<com.example.gmail_android.interfaces.MailApi.MailDto>> res =
+                        api.search(q).execute();
+                if (!res.isSuccessful() || res.body() == null) return;
+
+                java.util.List<com.example.gmail_android.entities.MailEntity> mails = new java.util.ArrayList<>();
+                java.util.Map<String, com.example.gmail_android.entities.LabelEntity> labelMap = new java.util.LinkedHashMap<>();
+                java.util.List<com.example.gmail_android.entities.MailLabelCrossRef> joins = new java.util.ArrayList<>();
+
+                for (com.example.gmail_android.interfaces.MailApi.MailDto d : res.body()) {
+                    com.example.gmail_android.entities.MailEntity m = new com.example.gmail_android.entities.MailEntity();
+                    m.id = d.id; m.fromEmail = d.from; m.toEmail = d.to;
+                    m.subject = d.subject; m.content = d.content;
+                    m.isSpam = d.spam; m.dateSentMillis = parseMillis(d.dateSent);
+                    mails.add(m);
+
+                    if (d.labels != null) {
+                        for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
+                            if (L == null || L.id == null) continue;
+                            String lid = L.id.trim();
+                            LabelEntity e = labelMap.get(lid);
+                            if (e == null) {
+                                e = new LabelEntity();
+                                e.id = lid; e.name = (L.name != null) ? L.name : lid;
+                                labelMap.put(e.id, e);
+                            }
+                            MailLabelCrossRef ref = new MailLabelCrossRef();
+                            ref.mailId = m.id; ref.labelId = lid;
+                            joins.add(ref);
+                        }
+                    }
+                }
+
+                // upsert (no full clear)
+                labelDao.insertAllIgnore(new java.util.ArrayList<>(labelMap.values()));
+                for (LabelEntity e : labelMap.values()) {
+                    labelDao.rename(e.id, e.name);
+                }
+                dao.upsertMails(mails);
+                dao.upsertMailLabel(joins);
+            } catch (Exception ignore) {}
+        });
     }
 
     // refresh inbox data from the server and update Room database.
@@ -105,9 +165,17 @@ public class MailRepository {
                 // update database, clear old data and insert new.
                 dao.clearJoins();
                 dao.clearMails();
-                dao.upsertLabels(new ArrayList<>(labelMap.values()));
+                // Upsert only the labels referenced by these mails (for FK integrity)
+                labelDao.insertAllIgnore(new ArrayList<>(labelMap.values()));
+                for (LabelEntity e : labelMap.values()) {
+                    labelDao.rename(e.id, e.name); // safe no-op if unchanged
+                }
                 dao.upsertMails(mails);
                 dao.upsertMailLabel(joins);
+
+                // Fetch the FULL label catalog so the sidebar shows everything
+                // (no table clearing here to avoid cascading deletes)
+                syncAllLabels();
 
                 Log.d("MailRepo", "saved to Room: mails=" + mails.size()
                         + ", labels=" + labelMap.size()
@@ -148,23 +216,21 @@ public class MailRepository {
                 if (d.labels != null) {
                     for (MailApi.LabelDto L : d.labels) {
                         if (L == null || L.id == null) continue;
-                        if (!labelMap.containsKey(L.id)) {
+                        String lid = L.id.trim();
+                        if (!labelMap.containsKey(lid)) {
                             LabelEntity e = new LabelEntity();
-                            e.id = L.id;
+                            e.id = lid;
                             e.name = (L.name != null) ? L.name : L.id;
                             labelMap.put(e.id, e);
                         }
                         MailLabelCrossRef ref = new MailLabelCrossRef();
                         ref.mailId = m.id;
-                        ref.labelId = L.id;
+                        ref.labelId = lid;
                         joins.add(ref);
                     }
                 }
 
                 // update only the specific mail and its label relationships.
-                dao.upsertMails(java.util.Collections.singletonList(m));
-                dao.upsertLabels(new ArrayList<>(labelMap.values()));
-                // remove old relationships for this mail.
                 dao.clearJoinsForMail(id);
                 dao.upsertMailLabel(joins);
 
@@ -172,6 +238,71 @@ public class MailRepository {
         });
     }
 
+    // Fetch mails for a specific label and upsert into Room
+    // Fetch mails for a specific label via search("label:{id}") and upsert into Room
+    public void refreshByLabel(String labelId) {
+        io.execute(() -> {
+            try {
+                // Normalize id defensively (helps if server treats ids case-insensitively)
+                String lidQuery = (labelId == null ? "" : labelId.trim());
+                Response<List<MailApi.MailDto>> res = api.search("label:" + lidQuery).execute();
+                if (!res.isSuccessful() || res.body() == null) return;
+
+                List<MailEntity> mails = new ArrayList<>();
+                Map<String, LabelEntity> labelMap = new LinkedHashMap<>();
+                List<MailLabelCrossRef> joins = new ArrayList<>();
+
+                for (MailApi.MailDto d : res.body()) {
+                    MailEntity m = new MailEntity();
+                    m.id = d.id; m.fromEmail = d.from; m.toEmail = d.to;
+                    m.subject = d.subject; m.content = d.content;
+                    m.isSpam = d.spam; m.dateSentMillis = parseMillis(d.dateSent);
+                    mails.add(m);
+
+                    if (d.labels != null) {
+                        for (MailApi.LabelDto L : d.labels) {
+                            if (L == null || L.id == null) continue;
+                            String lid = L.id.trim(); // normalize
+                            LabelEntity e = labelMap.get(lid);
+                            if (e == null) {
+                                e = new LabelEntity();
+                                e.id = lid;
+                                e.name = (L.name != null) ? L.name : lid;
+                                labelMap.put(e.id, e);
+                            }
+                            MailLabelCrossRef ref = new MailLabelCrossRef();
+                            ref.mailId = m.id;
+                            ref.labelId = lid;
+                            joins.add(ref);
+                        }
+                    }
+                    else {
+                        // Backend didn’t include labels in the search response.
+                        // We KNOW we searched for lidQuery, so at least attach that one.
+                        // already normalized earlier
+                        if (!labelMap.containsKey(lidQuery)) {
+                            LabelEntity e = new LabelEntity();
+                            e.id = lidQuery;
+                            e.name = lidQuery; // will be corrected by syncAllLabels
+                            labelMap.put(lidQuery, e);
+                        }
+                        MailLabelCrossRef ref = new MailLabelCrossRef();
+                        ref.mailId = m.id;
+                        ref.labelId = lidQuery;
+                        joins.add(ref);
+                    }
+                }
+
+                // Upsert ONLY; do not clear whole tables
+                labelDao.insertAllIgnore(new ArrayList<>(labelMap.values()));
+                for (LabelEntity e : labelMap.values()) labelDao.rename(e.id, e.name);
+
+                dao.upsertMails(mails);
+                dao.upsertMailLabel(joins);
+
+            } catch (Exception ignore) {}
+        });
+    }
 
     // send a new mail.
     public void send(String toEmail, String subject, String content, List<String> labels,
@@ -184,7 +315,7 @@ public class MailRepository {
         api.send(req).enqueue(cb);
     }
 
-    // edit an existing mail (for spam).
+    // edit an existing mail (for draft).
     public void edit(String mailId, String toEmail, String subject, String content,
                      List<String> labels,
                      Callback<MailApi.MailDto> cb) {
@@ -196,9 +327,30 @@ public class MailRepository {
         api.edit(mailId, req).enqueue(cb);
     }
 
-    // delete a mail (for spam).
-    public void delete(String mailId, Callback<ResponseBody> cb) {
-        api.delete(mailId).enqueue(cb);
+    public void deleteLocal(String mailId) {
+        io.execute(() -> {
+            dao.clearJoinsForMail(mailId);
+            dao.deleteMail(mailId);
+        });
+    }
+
+    // delete a mail
+    public void delete(String mailId, retrofit2.Callback<okhttp3.ResponseBody> cb) {
+        api.delete(mailId).enqueue(new retrofit2.Callback<okhttp3.ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                   @NonNull retrofit2.Response<okhttp3.ResponseBody> res) {
+                if (res.isSuccessful()) {
+                    deleteLocal(mailId);   // <-- hide immediately in Room
+                }
+                if (cb != null) cb.onResponse(call, res);
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<okhttp3.ResponseBody> call, @NonNull Throwable t) {
+                if (cb != null) cb.onFailure(call, t);
+            }
+        });
     }
 
     // add a label to a mail.
@@ -211,14 +363,135 @@ public class MailRepository {
         api.removeLabel(mailId, labelId).enqueue(cb);
     }
 
+    // Create label
+    public void createLabel(String name, retrofit2.Callback<MailApi.LabelDto> cb) {
+        api.createLabel(new MailApi.CreateLabelRequest(name)).enqueue(new retrofit2.Callback<>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<MailApi.LabelDto> call,
+                                   @NonNull retrofit2.Response<MailApi.LabelDto> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    io.execute(() -> {
+                        LabelEntity e = new LabelEntity();
+                        e.id = res.body().id;
+                        e.name = res.body().name != null ? res.body().name : res.body().id;
+                        labelDao.insertAllIgnore(java.util.Collections.singletonList(e));
+                        labelDao.rename(e.id, e.name);
+                    });
+                }
+                if (cb != null) cb.onResponse(call, res);
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<MailApi.LabelDto> call, @NonNull Throwable t) {
+                if (cb != null) cb.onFailure(call, t);
+            }
+        });
+    }
+
+    // Rename label (handles 200 with body OR 204 without)
+    public void renameLabel(String id, String newName, retrofit2.Callback<MailApi.LabelDto> cb) {
+        api.renameLabel(id, new MailApi.RenameLabelRequest(newName))
+                .enqueue(new retrofit2.Callback<MailApi.LabelDto>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<MailApi.LabelDto> call,
+                                           retrofit2.Response<MailApi.LabelDto> res) {
+                        if (res.isSuccessful()) {
+                            final String nameToPersist =
+                                    (res.body() != null && res.body().name != null && !res.body().name.isEmpty())
+                                            ? res.body().name
+                                            : newName; // 204 or empty body → use the input
+
+                            io.execute(() -> labelDao.rename(id, nameToPersist));
+                        }
+                        if (cb != null) cb.onResponse(call, res);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<MailApi.LabelDto> call, @NonNull Throwable t) {
+                        if (cb != null) cb.onFailure(call, t);
+                    }
+                });
+    }
+
+    // Delete label
+    public void deleteLabel(String id, retrofit2.Callback<okhttp3.ResponseBody> cb) {
+        api.deleteLabel(id).enqueue(new retrofit2.Callback<>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                   @NonNull retrofit2.Response<okhttp3.ResponseBody> res) {
+                if (res.isSuccessful()) {
+                    io.execute(() -> labelDao.delete(id));  // ON DELETE CASCADE will clean joins
+                }
+                if (cb != null) cb.onResponse(call, res);
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<okhttp3.ResponseBody> call, @NonNull Throwable t) {
+                if (cb != null) cb.onFailure(call, t);
+            }
+        });
+    }
+
+    public LiveData<List<MailWithLabels>> getByLabelLive(String labelId) {
+        AppDatabase db = AppDatabase.get(ctx);
+        MailDao dao = db.mailDao();
+        return dao.getByLabel(labelId);
+    }
+
+    public LiveData<List<LabelEntity>> getLabelsLive() {
+        return labelDao.observeAll();
+    }
+
     // parse a date string.
     private static long parseMillis(String dateSent) {
-        if (dateSent == null) return System.currentTimeMillis();
+        if (dateSent == null || dateSent.isEmpty()) return 0L;
         String s = dateSent.trim();
-        if (s.matches("^-?\\d+$")) { // numeric string.
-            try { return Long.parseLong(s); } catch (NumberFormatException ignore) {}
+
+        // epoch millis or seconds
+        if (s.matches("^-?\\d+$")) {
+            try {
+                long v = Long.parseLong(s);
+                return (v > 9_999_999_999L) ? v : v * 1000L; // handle seconds too
+            } catch (NumberFormatException ignore) {}
         }
-        return System.currentTimeMillis();
+        // last-resort fixed pattern (UTC)
+        try {
+            java.text.SimpleDateFormat f =
+                    new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US);
+            f.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            return Objects.requireNonNull(f.parse(s)).getTime();
+        } catch (Exception ignore) {}
+
+        return 0L; // deterministic fallback (avoids “now” jumping)
+    }
+
+    // Pull the full label catalog and upsert (no table clearing) so nothing disappears from the sidebar
+    public void syncAllLabels() {
+        io.execute(() -> {
+            try {
+                Response<List<MailApi.LabelDto>> res = api.getLabels().execute();
+                if (!res.isSuccessful() || res.body() == null) {
+                    Log.e("MailRepo", "getLabels failed: code=" + res.code());
+                    return;
+                }
+                List<LabelEntity> items = new ArrayList<>();
+                for (MailApi.LabelDto L : res.body()) {
+                    if (L == null || L.id == null) continue;
+                    String lid = L.id.trim();
+                    LabelEntity e = new LabelEntity();
+                    e.id = lid;
+                    e.name = (L.name != null) ? L.name : lid;
+                    items.add(e);
+                }
+                labelDao.insertAllIgnore(items); // never REPLACE (prevents FK cascade)
+                for (LabelEntity e : items) {
+                    labelDao.rename(e.id, e.name); // update display name without delete/insert
+                }
+                Log.d("MailRepo", "syncAllLabels OK, items=" + items.size());
+            } catch (Exception e) {
+                Log.e("MailRepo", "syncAllLabels error", e);
+            }
+        });
     }
 }
 

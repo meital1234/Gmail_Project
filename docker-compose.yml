@@ -1,5 +1,4 @@
 services:
-
   # TCP server (Bloom Filter)
   server:
     build:

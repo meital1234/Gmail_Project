@@ -15,9 +15,6 @@ import com.example.gmail_android.interfaces.MailApi;
 import com.example.gmail_android.repository.MailRepository;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,6 +42,7 @@ public class ComposeActivity extends ComponentActivity {
     private final HashSet<String> selectedNames = new HashSet<>();
     // all labels returned from the server.
     private List<MailApi.LabelDto> available = new ArrayList<>();
+    private String editMailId = null;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,14 +59,37 @@ public class ComposeActivity extends ComponentActivity {
         tvError   = findViewById(R.id.tvError);
         chipGroup = findViewById(R.id.chipGroup);
 
+        // Read draft id if we came from “Edit” action
+        editMailId = getIntent().getStringExtra("edit_mail_id");
+        if (editMailId != null) {
+            // Prefill UI from Room
+            repo.getMailLive(editMailId).observe(this, m -> {
+                if (m == null || m.mail == null) return;
+                etTo.setText(m.mail.toEmail == null ? "" : m.mail.toEmail);
+                etSubject.setText(m.mail.subject == null ? "" : m.mail.subject);
+                etContent.setText(m.mail.content == null ? "" : m.mail.content);
+                // Pre-check non-system labels
+                if (m.labels != null) {
+                    for (var l : m.labels) {
+                        if (l == null) continue;
+                        String nm = l.name;
+                        if (!DEFAULT_LABELS.contains(nm.toLowerCase())) {
+                            selectedNames.add(nm);
+                        }
+                    }
+                }
+                renderChips(); // reflect preselected labels
+            });
+        }
+
         Button btnSend    = findViewById(R.id.btnSend);
         Button btnDiscard = findViewById(R.id.btnDiscard);
-        // “+” button to create a new custom label on the server.
-        findViewById(R.id.btnAddLabel).setOnClickListener(v -> showAddLabelDialog());
 
-        // send immediately, or save as draft and close.
-        btnSend.setOnClickListener(v -> handleSend(false));
-        btnDiscard.setOnClickListener(v -> handleSend(true));
+        btnSend.setOnClickListener(v -> handleSend(false));   // send
+        btnDiscard.setOnClickListener(v -> handleSend(true)); // save draft
+
+        // Optional: “+” to create a new custom label
+        findViewById(R.id.btnAddLabel).setOnClickListener(v -> showAddLabelDialog());
 
         loadLabels();
     }
@@ -88,71 +109,68 @@ public class ComposeActivity extends ComponentActivity {
             return;
         }
 
+        // Build labels to send to backend (by NAME, to match your web)
         List<String> labels = new ArrayList<>(selectedNames);
-        // if saving draft, guarantee the "Drafts" label is included.
-        if (asDraft && !labels.contains("Drafts")) labels.add("Drafts");
+        if (asDraft) {
+            // Guarantee the "Drafts" label
+            boolean hasDrafts = false;
+            for (String s : labels) if ("drafts".equalsIgnoreCase(s)) { hasDrafts = true; break; }
+            if (!hasDrafts) labels.add("Drafts");
+        }
+        List<String> maybeNull = labels.isEmpty() ? null : labels;
 
-        repo.send(to, sub, msg, labels.isEmpty() ? null : labels, new Callback<MailApi.MailDto>() {
+        Callback<MailApi.MailDto> cb = new Callback<>() {
             @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
                                              @NonNull Response<MailApi.MailDto> res) {
                 if (res.isSuccessful()) {
-                    // refresh the inbox cache so the new mail/draft appears back in the list.
-                    repo.refreshInbox();
+                    repo.refreshInbox(); // update list
                     Toast.makeText(ComposeActivity.this,
-                            asDraft ? "Draft saved" : "Sent", Toast.LENGTH_SHORT).show();
+                            asDraft ? R.string.draft_saved : R.string.sent_ok,
+                            Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
                     tvError.setText(getString(R.string.send_failed, res.code()));
                     tvError.setVisibility(TextView.VISIBLE);
                 }
             }
-            @Override public void onFailure(@NonNull Call<MailApi.MailDto> call,
-                                            @NonNull Throwable t) {
-                tvError.setText(getString(R.string.network_error, msg));
+            @Override public void onFailure(@NonNull Call<MailApi.MailDto> call, @NonNull Throwable t) {
+                tvError.setText(getString(R.string.network_error_generic));
                 tvError.setVisibility(TextView.VISIBLE);
             }
-        });
+        };
+
+        if (editMailId == null) {
+            // New mail/draft
+            repo.send(to, sub, msg, maybeNull, cb);
+        } else {
+            // Update existing draft
+            repo.edit(editMailId, to, sub, msg, maybeNull, cb);
+        }
     }
 
-    // loading labels.
     private void loadLabels() {
-        api.getLabels().enqueue(new Callback<Object>() {
-            @Override public void onResponse(@NonNull Call<Object> call,
-                                             @NonNull Response<Object> res) {
-                if (!res.isSuccessful() || res.body() == null) return;
-                try {
-                    Gson gson = new Gson();
-                    String json = gson.toJson(res.body());
-                    Type listType = new TypeToken<ArrayList<MailApi.LabelDto>>(){}.getType();
-
-                    if (json.trim().startsWith("[")) {
-                        available = gson.fromJson(json, listType);
-                    } else {
-                        // response is an object: { "labels": [ ... ] }
-                        class LabelsHolder { List<MailApi.LabelDto> labels; }
-                        LabelsHolder h = gson.fromJson(json, LabelsHolder.class);
-                        available = h != null && h.labels != null ? h.labels : new ArrayList<>();
-                    }
+        api.getLabels().enqueue(new Callback<>() {
+            @Override public void onResponse(@NonNull Call<List<MailApi.LabelDto>> call,
+                                             @NonNull Response<List<MailApi.LabelDto>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    available = new ArrayList<>(response.body());
                     renderChips();
-                } catch (Exception ignore) {}
+                }
             }
-            @Override public void onFailure(@NonNull Call<Object> call,
-                                            @NonNull Throwable t) { /* noop */ }
+            @Override public void onFailure(@NonNull Call<List<MailApi.LabelDto>> call, @NonNull Throwable t) {}
         });
     }
 
-    // chip display for label selection.
     private void renderChips() {
         chipGroup.removeAllViews();
         for (MailApi.LabelDto l : available) {
             if (l == null || l.name == null) continue;
             String name = l.name;
-            // Hide system labels (same behavior as the React app).
-            if (DEFAULT_LABELS.contains(name.toLowerCase())) continue;
-
+            if (DEFAULT_LABELS.contains(name.toLowerCase())) continue; // hide system ones
             Chip chip = new Chip(this);
             chip.setText(name);
             chip.setCheckable(true);
+            chip.setChecked(selectedNames.contains(name));
             chip.setOnCheckedChangeListener((c, checked) -> {
                 if (checked) selectedNames.add(name); else selectedNames.remove(name);
             });
@@ -160,43 +178,36 @@ public class ComposeActivity extends ComponentActivity {
         }
     }
 
-    // create a new label.
     private void showAddLabelDialog() {
         final EditText input = new EditText(this);
-        input.setHint("Label name");
+        input.setHint(R.string.label_name);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
 
         new AlertDialog.Builder(this)
-                .setTitle("Add label")
+                .setTitle(R.string.add_label)
                 .setView(input)
-                .setPositiveButton("Create", (d, w) -> {
+                .setPositiveButton(R.string.create, (d, w) -> {
                     String name = input.getText().toString().trim();
                     if (name.isEmpty()) return;
-
-                    // POST /labels to create a new label.
                     api.createLabel(new MailApi.CreateLabelRequest(name))
-                            .enqueue(new Callback<MailApi.LabelDto>() {
-                                @Override public void onResponse(
-                                        @NonNull Call<MailApi.LabelDto> call,
-                                        @NonNull Response<MailApi.LabelDto> res) {
+                            .enqueue(new Callback<>() {
+                                @Override public void onResponse(@NonNull Call<MailApi.LabelDto> call,
+                                                                 @NonNull Response<MailApi.LabelDto> res) {
                                     if (res.isSuccessful() && res.body() != null) {
                                         available.add(res.body());
                                         renderChips();
                                     } else {
                                         Toast.makeText(ComposeActivity.this,
-                                                "Failed to create label",
-                                                Toast.LENGTH_SHORT).show();
+                                                R.string.create_label_failed, Toast.LENGTH_SHORT).show();
                                     }
                                 }
-                                @Override public void onFailure(@NonNull Call<MailApi.LabelDto> call,
-                                                                @NonNull Throwable t) {
+                                @Override public void onFailure(@NonNull Call<MailApi.LabelDto> call, @NonNull Throwable t) {
                                     Toast.makeText(ComposeActivity.this,
-                                            "Network error", Toast.LENGTH_SHORT).show();
+                                            R.string.network_error_generic, Toast.LENGTH_SHORT).show();
                                 }
                             });
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 }
-

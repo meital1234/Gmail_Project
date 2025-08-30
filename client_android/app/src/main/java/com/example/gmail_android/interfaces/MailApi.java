@@ -6,103 +6,89 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.*;
 
-// interface for making API calls related to mails, labels, and user information.
 public interface MailApi {
-    // get all mails in the inbox.
+
+    // Inbox + single mail
     @GET("mails")
     Call<List<MailDto>> getInbox();
 
-    // get a specific mail by its id.
     @GET("mails/{id}")
     Call<MailDto> getMail(@Path("id") String id);
 
-    // search for mails by query string.
+    // Search (we pass things like "label:{id}" or free text)
     @GET("mails/search/{q}")
     Call<List<MailDto>> search(@Path("q") String q);
 
-    // send a new mail.
+    // Compose / edit / delete message
     @POST("mails")
     Call<MailDto> send(@Body ComposeRequest req);
 
-    // edit an existing mail. (for spam)
     @PATCH("mails/{id}")
     Call<MailDto> edit(@Path("id") String id, @Body EditRequest req);
 
-    // delete a mail by id. (for spam)
     @DELETE("mails/{id}")
     Call<ResponseBody> delete(@Path("id") String id);
 
-    // add a label to a specific mail.
+    // Label on a specific mail
     @POST("mails/{id}/labels/{labelId}")
     Call<ResponseBody> addLabel(@Path("id") String mailId, @Path("labelId") String labelId);
 
-    // remove a label from a specific mail.
     @DELETE("mails/{id}/labels/{labelId}")
     Call<ResponseBody> removeLabel(@Path("id") String mailId, @Path("labelId") String labelId);
 
-    // get all labels.
+    // Label catalog
     @GET("labels")
-    Call<Object> getLabels();
+    Call<List<LabelDto>> getLabels();
 
-    // create a new label.
+    // Create / rename / delete label
     @POST("labels")
     Call<LabelDto> createLabel(@Body CreateLabelRequest req);
 
-    // get authenticated user's details.
+    @PATCH("labels/{id}")
+    Call<LabelDto> renameLabel(@Path("id") String id, @Body RenameLabelRequest req);
+
+    @DELETE("labels/{id}")
+    Call<ResponseBody> deleteLabel(@Path("id") String id);
+
+    // Me
     @GET("users/me")
     Call<UserDto> me();
 
-    // label data transfer object.
-    public static class LabelDto {
-        public String id;
-        public String name;
-    }
+    // ===== DTOs =====
+    class LabelDto { public String id; public String name; }
 
-    // request body for creating a label.
-    class CreateLabelRequest {
-        public String name;
-        public CreateLabelRequest(String n){ name=n; }
-    }
+    class CreateLabelRequest { public String name; public CreateLabelRequest(String n){ name = n; } }
 
-    // mail data transfer object.
-    public static class MailDto {
+    class RenameLabelRequest { public String name; public RenameLabelRequest(String n){ name = n; } }
+
+    class MailDto {
         public String id;
         public String from;
         public String to;
         public String subject;
         public String content;
-
-        // store date as String.
-        @SerializedName("dateSent")
-        public String dateSent;
-
+        @SerializedName("dateSent") public String dateSent;
         public List<LabelDto> labels;
-        // if a spam field exist.
         public boolean spam;
     }
 
-    // request body for composing a mail.
-    public static class ComposeRequest {
-        @SerializedName("toEmail") public String toEmail;
-        public String subject;
-        public String content;
-        public List<String> labels; // optional.
-    }
-
-    // request body for editing a mail.
-    public static class EditRequest {
+    class ComposeRequest {
         @SerializedName("toEmail") public String toEmail;
         public String subject;
         public String content;
         public List<String> labels;
     }
 
-    // user data transfer object.
-    public static class UserDto {
+    class EditRequest {
+        @SerializedName("toEmail") public String toEmail;
+        public String subject;
+        public String content;
+        public List<String> labels;
+    }
+
+    class UserDto {
         public String id;
-        @SerializedName("first_name") public String first_name;
-        @SerializedName("last_name")  public String last_name;
+        @SerializedName(value = "image") public String avatarUrl;
         public String email;
     }
 }
-

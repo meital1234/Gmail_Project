@@ -1,38 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:paddingTop="24dp"
-        android:id="@+id/topAppBar"
+    <!-- CONTENT -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:title="@string/app_name_B"
-        app:menu="@menu/menu_inbox" />
+        android:layout_height="match_parent">
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler"
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="60dp"
+            android:background="?attr/colorSurface"
+            app:navigationIcon="@drawable/round_menu_24"
+            app:contentInsetStartWithNavigation="0dp"
+            app:title="">
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabCompose"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:contentDescription="@string/compose"
-        app:layout_anchorGravity="bottom|end"
-        app:srcCompat="@android:drawable/ic_input_add"
-        android:layout_margin="16dp"
-        app:layout_anchor="@id/swipe" />
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
+
+                <!-- Search (fills available space) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilSearch"
+                    style="@style/Widget.Material3.TextInputLayout.FilledBox.Dense"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_weight="1"
+                    app:boxBackgroundColor="?attr/colorSurfaceVariant"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopEnd="24dp"
+                    app:boxCornerRadiusTopStart="24dp"
+                    app:boxCornerRadiusBottomStart="24dp"
+                    app:boxCornerRadiusBottomEnd="24dp"
+                    app:endIconMode="clear_text"
+                    app:endIconTint="?attr/colorOnSurfaceVariant"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    android:hint="@string/search_mail"
+                    app:hintEnabled="true"
+                    app:startIconDrawable="@drawable/search_icon"
+                    app:startIconTint="?attr/colorOnSurfaceVariant">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSearch"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:imeOptions="actionSearch"
+                        android:singleLine="true"
+                        android:textSize="12sp"
+                        android:background="@null"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textColorHint="?attr/colorOnSurfaceVariant"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Theme toggle -->
+                <ImageButton
+                    android:id="@+id/btnTheme"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_icon_chip"
+                    android:contentDescription="@string/toggle_theme"
+                    app:srcCompat="@drawable/round_light_mode_24" />
+
+                <!-- Avatar -->
+                <ImageView
+                    android:id="@+id/imgAvatar"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_avatar_ring"
+                    android:contentDescription="@string/profile"
+                    android:padding="4dp"
+                    android:src="@drawable/round_account_circle_24" />
+            </LinearLayout>
+        </com.google.android.material.appbar.MaterialToolbar>
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="?attr/actionBarSize">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabCompose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/compose"
+            app:srcCompat="@android:drawable/ic_input_add"
+            app:layout_anchor="@id/swipe"
+            app:layout_anchorGravity="bottom|end"
+            android:layout_margin="16dp" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <!-- LEFT DRAWER -->
+    <LinearLayout
+        android:id="@+id/drawerPane"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:orientation="vertical"
+        android:background="?attr/colorSurface"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:id="@+id/rowAll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:foreground="?attr/selectableItemBackground"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textStyle="bold"
+            android:text="@string/all_mail" />
+
+        <TextView
+            android:id="@+id/rowAddLabel"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:foreground="?attr/selectableItemBackground"
+            android:text="@string/add_label"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorOutline"
+            android:layout_marginBottom="8dp" />
+
+        <!-- The list fills remaining space and scrolls by itself -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerLabels"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp"
+            android:overScrollMode="always"/>
+    </LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

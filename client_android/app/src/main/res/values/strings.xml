@@ -74,5 +74,26 @@
     <string name="app_name_B">Bloomly</string>
     <string name="compose">Compose</string>
     <string name="logout">Logout</string>
+    <string name="labels">Labels</string>
+    <string name="all_mail">All mail</string>
+    <string name="nav_open">Open navigation drawer</string>
+    <string name="nav_close">Close navigation drawer</string>
+    <string name="more_options">More options</string>
+    <string name="add_label">Add label</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="new_label">New label</string>
+    <string name="search_mail">Search mail</string>
+    <string name="profile">Profile</string>
+    <string name="toggle_theme">Change theme</string>
+    <string name="edit_label">Edit label</string>
+    <string name="more_actions">More actions</string>
+    <string name="edit">Edit</string>
+    <string name="draft_saved">Draft saved</string>
+    <string name="sent_ok">Sent</string>
+    <string name="network_error_generic">Network error</string>
+    <string name="label_name">Label name</string>
+    <string name="create">Create</string>
+    <string name="create_label_failed">Falied to create label</string>
 
 </resources>
