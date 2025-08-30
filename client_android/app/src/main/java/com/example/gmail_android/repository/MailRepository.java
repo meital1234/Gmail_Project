@@ -79,16 +79,15 @@ public class MailRepository {
                     if (d.labels != null) {
                         for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
                             if (L == null || L.id == null) continue;
-                            String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);
+                            String lid = L.id.trim();
                             LabelEntity e = labelMap.get(lid);
                             if (e == null) {
-                                e = new com.example.gmail_android.entities.LabelEntity();
+                                e = new LabelEntity();
                                 e.id = lid; e.name = (L.name != null) ? L.name : lid;
                                 labelMap.put(e.id, e);
                             }
-                            com.example.gmail_android.entities.MailLabelCrossRef ref =
-                                    new com.example.gmail_android.entities.MailLabelCrossRef();
-                            ref.mailId = m.id; ref.labelId = L.id;
+                            MailLabelCrossRef ref = new MailLabelCrossRef();
+                            ref.mailId = m.id; ref.labelId = lid;
                             joins.add(ref);
                         }
                     }
@@ -217,7 +216,7 @@ public class MailRepository {
                 if (d.labels != null) {
                     for (MailApi.LabelDto L : d.labels) {
                         if (L == null || L.id == null) continue;
-                        String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);
+                        String lid = L.id.trim();
                         if (!labelMap.containsKey(lid)) {
                             LabelEntity e = new LabelEntity();
                             e.id = lid;
@@ -245,7 +244,7 @@ public class MailRepository {
         io.execute(() -> {
             try {
                 // Normalize id defensively (helps if server treats ids case-insensitively)
-                String lidQuery = (labelId == null ? "" : labelId.trim().toLowerCase(java.util.Locale.ROOT));
+                String lidQuery = (labelId == null ? "" : labelId.trim());
                 Response<List<MailApi.MailDto>> res = api.search("label:" + lidQuery).execute();
                 if (!res.isSuccessful() || res.body() == null) return;
 
@@ -263,7 +262,7 @@ public class MailRepository {
                     if (d.labels != null) {
                         for (MailApi.LabelDto L : d.labels) {
                             if (L == null || L.id == null) continue;
-                            String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);  // normalize
+                            String lid = L.id.trim(); // normalize
                             LabelEntity e = labelMap.get(lid);
                             if (e == null) {
                                 e = new LabelEntity();
@@ -284,8 +283,7 @@ public class MailRepository {
                         if (!labelMap.containsKey(lidQuery)) {
                             LabelEntity e = new LabelEntity();
                             e.id = lidQuery;
-                            // name will be corrected by syncAllLabels(); use id fallback for now
-                            e.name = lidQuery;
+                            e.name = lidQuery; // will be corrected by syncAllLabels
                             labelMap.put(lidQuery, e);
                         }
                         MailLabelCrossRef ref = new MailLabelCrossRef();
@@ -473,13 +471,13 @@ public class MailRepository {
             try {
                 Response<List<MailApi.LabelDto>> res = api.getLabels().execute();
                 if (!res.isSuccessful() || res.body() == null) {
-                    Log.e("MailRepo", "getLabels failed: code=" + (res != null ? res.code() : -1));
+                    Log.e("MailRepo", "getLabels failed: code=" + res.code());
                     return;
                 }
                 List<LabelEntity> items = new ArrayList<>();
                 for (MailApi.LabelDto L : res.body()) {
                     if (L == null || L.id == null) continue;
-                    String lid = L.id.trim().toLowerCase(java.util.Locale.ROOT);
+                    String lid = L.id.trim();
                     LabelEntity e = new LabelEntity();
                     e.id = lid;
                     e.name = (L.name != null) ? L.name : lid;

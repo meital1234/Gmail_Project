@@ -9,6 +9,7 @@
 
     <!-- CONTENT -->
     <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -152,10 +153,14 @@
             android:background="?attr/colorOutline"
             android:layout_marginBottom="8dp" />
 
+        <!-- The list fills remaining space and scrolls by itself -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerLabels"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp"
+            android:overScrollMode="always"/>
     </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

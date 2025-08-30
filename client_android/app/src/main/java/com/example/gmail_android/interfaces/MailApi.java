@@ -88,8 +88,7 @@ public interface MailApi {
 
     class UserDto {
         public String id;
-        @SerializedName("first_name") public String first_name;
-        @SerializedName("last_name")  public String last_name;
+        @SerializedName(value = "image") public String avatarUrl;
         public String email;
     }
 }

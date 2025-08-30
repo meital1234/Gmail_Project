@@ -63,6 +63,5 @@ public class InboxViewModel extends AndroidViewModel {
         } else if (f.mode == Mode.SEARCH) {
             repo.refreshSearch(f.arg);
         }
-        repo.syncAllLabels();
     }
 }
