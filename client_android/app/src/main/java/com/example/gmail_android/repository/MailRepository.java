@@ -36,6 +36,13 @@ public class MailRepository {
     // background executor for IO tasks.
     private final Executor io = Executors.newSingleThreadExecutor();
 
+    private static String normId(String s) {
+        return s == null ? null : s.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+    private static String normName(String s) {
+        return s == null ? null : s.trim();
+    }
+
     public MailRepository(Context ctx) {
         retrofit2.Retrofit retrofit = ApiClient.get(ctx);
         Log.d("API", "Retrofit baseUrl=" + retrofit.baseUrl());
@@ -79,15 +86,18 @@ public class MailRepository {
                     if (d.labels != null) {
                         for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
                             if (L == null || L.id == null) continue;
-                            String lid = L.id.trim();
+                            String lid = normId(L.id);       // <-- normalize
+
                             LabelEntity e = labelMap.get(lid);
                             if (e == null) {
                                 e = new LabelEntity();
-                                e.id = lid; e.name = (L.name != null) ? L.name : lid;
-                                labelMap.put(e.id, e);
+                                e.id = lid;
+                                e.name = (L.name != null) ? normName(L.name) : lid;
+                                labelMap.put(lid, e);
                             }
                             MailLabelCrossRef ref = new MailLabelCrossRef();
-                            ref.mailId = m.id; ref.labelId = lid;
+                            ref.mailId = m.id;
+                            ref.labelId = lid;               // <-- normalized
                             joins.add(ref);
                         }
                     }
@@ -145,18 +155,20 @@ public class MailRepository {
 
                     // process labels for each mail.
                     if (d.labels != null) {
-                        for (MailApi.LabelDto L : d.labels) {
+                        for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
                             if (L == null || L.id == null) continue;
-                            LabelEntity e = labelMap.get(L.id);
+                            String lid = normId(L.id);     // <-- normalize
+
+                            LabelEntity e = labelMap.get(lid);
                             if (e == null) {
                                 e = new LabelEntity();
-                                e.id = L.id;
-                                e.name = (L.name != null) ? L.name : L.id;
-                                labelMap.put(e.id, e);
+                                e.id = lid;
+                                e.name = (L.name != null) ? normName(L.name) : lid; // tidy name
+                                labelMap.put(lid, e);
                             }
                             MailLabelCrossRef ref = new MailLabelCrossRef();
                             ref.mailId = m.id;
-                            ref.labelId = L.id;
+                            ref.labelId = lid;             // <-- normalized id in joins
                             joins.add(ref);
                         }
                     }
@@ -165,6 +177,8 @@ public class MailRepository {
                 // update database, clear old data and insert new.
                 dao.clearJoins();
                 dao.clearMails();
+                labelDao.clear(); // no FK joins exist right now, so it's safe
+
                 // Upsert only the labels referenced by these mails (for FK integrity)
                 labelDao.insertAllIgnore(new ArrayList<>(labelMap.values()));
                 for (LabelEntity e : labelMap.values()) {
@@ -214,18 +228,18 @@ public class MailRepository {
 
                 // process labels.
                 if (d.labels != null) {
-                    for (MailApi.LabelDto L : d.labels) {
+                    for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
                         if (L == null || L.id == null) continue;
-                        String lid = L.id.trim();
+                        String lid = normId(L.id);     // <-- normalize
                         if (!labelMap.containsKey(lid)) {
                             LabelEntity e = new LabelEntity();
                             e.id = lid;
-                            e.name = (L.name != null) ? L.name : L.id;
-                            labelMap.put(e.id, e);
+                            e.name = (L.name != null) ? normName(L.name) : lid;
+                            labelMap.put(lid, e);
                         }
                         MailLabelCrossRef ref = new MailLabelCrossRef();
                         ref.mailId = m.id;
-                        ref.labelId = lid;
+                        ref.labelId = lid;             // <-- normalized
                         joins.add(ref);
                     }
                 }
@@ -245,6 +259,7 @@ public class MailRepository {
             try {
                 // Normalize id defensively (helps if server treats ids case-insensitively)
                 String lidQuery = (labelId == null ? "" : labelId.trim());
+                String lidLocal = normId(labelId);
                 Response<List<MailApi.MailDto>> res = api.search("label:" + lidQuery).execute();
                 if (!res.isSuccessful() || res.body() == null) return;
 
@@ -260,35 +275,33 @@ public class MailRepository {
                     mails.add(m);
 
                     if (d.labels != null) {
-                        for (MailApi.LabelDto L : d.labels) {
+                        for (com.example.gmail_android.interfaces.MailApi.LabelDto L : d.labels) {
                             if (L == null || L.id == null) continue;
-                            String lid = L.id.trim(); // normalize
+                            String lid = normId(L.id);   // <-- normalize
                             LabelEntity e = labelMap.get(lid);
                             if (e == null) {
                                 e = new LabelEntity();
                                 e.id = lid;
-                                e.name = (L.name != null) ? L.name : lid;
-                                labelMap.put(e.id, e);
+                                e.name = (L.name != null) ? normName(L.name) : lid;
+                                labelMap.put(lid, e);
                             }
                             MailLabelCrossRef ref = new MailLabelCrossRef();
                             ref.mailId = m.id;
-                            ref.labelId = lid;
+                            ref.labelId = lid;           // <-- normalized
                             joins.add(ref);
                         }
-                    }
-                    else {
-                        // Backend didn’t include labels in the search response.
-                        // We KNOW we searched for lidQuery, so at least attach that one.
-                        // already normalized earlier
-                        if (!labelMap.containsKey(lidQuery)) {
+                    } else {
+                        // Backend didn’t include labels; attach the one we filtered by
+                        if (lidLocal != null && !labelMap.containsKey(lidLocal)) {
                             LabelEntity e = new LabelEntity();
-                            e.id = lidQuery;
-                            e.name = lidQuery; // will be corrected by syncAllLabels
-                            labelMap.put(lidQuery, e);
+                            e.id = lidLocal;
+                            e.name = lidLocal;
+                            labelMap.put(lidLocal, e);
                         }
                         MailLabelCrossRef ref = new MailLabelCrossRef();
                         ref.mailId = m.id;
-                        ref.labelId = lidQuery;
+                        assert lidLocal != null;
+                        ref.labelId = lidLocal;          // <-- normalized
                         joins.add(ref);
                     }
                 }
@@ -442,6 +455,24 @@ public class MailRepository {
         return labelDao.observeAll();
     }
 
+    // Fetch a user by id so we can display the profile image
+    public androidx.lifecycle.LiveData<com.example.gmail_android.entities.User> getUser(int id) {
+        final androidx.lifecycle.MutableLiveData<com.example.gmail_android.entities.User> live =
+                new androidx.lifecycle.MutableLiveData<>();
+        api.getUser(id).enqueue(new retrofit2.Callback<com.example.gmail_android.entities.User>() {
+            @Override public void onResponse(retrofit2.Call<com.example.gmail_android.entities.User> call,
+                                             retrofit2.Response<com.example.gmail_android.entities.User> res) {
+                if (res.isSuccessful() && res.body() != null) {
+                    live.postValue(res.body());
+                }
+            }
+            @Override public void onFailure(retrofit2.Call<com.example.gmail_android.entities.User> call,
+                                            Throwable t) {
+                // no-op; keep default avatar
+            }
+        });
+        return live;
+    }
     // parse a date string.
     private static long parseMillis(String dateSent) {
         if (dateSent == null || dateSent.isEmpty()) return 0L;
@@ -477,15 +508,16 @@ public class MailRepository {
                 List<LabelEntity> items = new ArrayList<>();
                 for (MailApi.LabelDto L : res.body()) {
                     if (L == null || L.id == null) continue;
-                    String lid = L.id.trim();
+                    String lid = normId(L.id);         // <-- normalize
+
                     LabelEntity e = new LabelEntity();
                     e.id = lid;
-                    e.name = (L.name != null) ? L.name : lid;
+                    e.name = (L.name != null) ? normName(L.name) : lid;
                     items.add(e);
                 }
-                labelDao.insertAllIgnore(items); // never REPLACE (prevents FK cascade)
+                labelDao.insertAllIgnore(items);
                 for (LabelEntity e : items) {
-                    labelDao.rename(e.id, e.name); // update display name without delete/insert
+                    labelDao.rename(e.id, e.name);
                 }
                 Log.d("MailRepo", "syncAllLabels OK, items=" + items.size());
             } catch (Exception e) {

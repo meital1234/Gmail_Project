@@ -43,7 +43,6 @@ public class ComposeActivity extends ComponentActivity {
     // all labels returned from the server.
     private List<MailApi.LabelDto> available = new ArrayList<>();
     private String editMailId = null;
-    private boolean isEditingDraft = false;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,7 +95,6 @@ public class ComposeActivity extends ComponentActivity {
     }
 
     // end email/save draft.
-    // send email / save draft
     private void handleSend(boolean asDraft) {
         tvError.setText(""); tvError.setVisibility(TextView.GONE);
 
@@ -104,92 +102,49 @@ public class ComposeActivity extends ComponentActivity {
         String sub = etSubject.getText().toString().trim();
         String msg = etContent.getText().toString().trim();
 
-        // for non-draft we require a recipient
+        // for non-draft we require a recipient.
         if (!asDraft && to.isEmpty()) {
             tvError.setText(getString(R.string.recipient_required));
             tvError.setVisibility(TextView.VISIBLE);
             return;
         }
 
-        // Build labels from user-selected chips (custom labels only)
+        // Build labels to send to backend (by NAME, to match your web)
         List<String> labels = new ArrayList<>(selectedNames);
-
         if (asDraft) {
-            // Guarantee the "Drafts" label when saving a draft
+            // Guarantee the "Drafts" label
             boolean hasDrafts = false;
             for (String s : labels) if ("drafts".equalsIgnoreCase(s)) { hasDrafts = true; break; }
             if (!hasDrafts) labels.add("Drafts");
-        } else {
-            // Make sure no Drafts is sent accidentally
-            labels.removeIf(s -> "drafts".equalsIgnoreCase(s) || "draft".equalsIgnoreCase(s));
-            // (Optional) you can add a Sent label if your server expects it:
-            // labels.add("sent");
         }
+        List<String> maybeNull = labels.isEmpty() ? null : labels;
 
-        List<String> payloadLabels = labels.isEmpty() ? null : labels;
-
-        // Callback when the send/save request completes
-        Callback<MailApi.MailDto> cb;
-        if (!asDraft && editMailId != null) {
-            // We are SENDING an existing DRAFT:
-            // 1) create a NEW "sent" message for the recipient
-            // 2) on success, DELETE the original draft so it won't remain under Drafts
-            cb = new Callback<MailApi.MailDto>() {
-                @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
-                                                 @NonNull Response<MailApi.MailDto> res) {
-                    if (res.isSuccessful()) {
-                        // Remove the old draft
-                        repo.delete(editMailId, /*cb*/ null);
-                        repo.refreshInbox(); // update UI
-                        android.widget.Toast.makeText(ComposeActivity.this, R.string.sent_ok, android.widget.Toast.LENGTH_SHORT).show();
-                        setResult(RESULT_OK);
-                        finish();
-                    } else {
-                        tvError.setText(getString(R.string.send_failed, res.code()));
-                        tvError.setVisibility(TextView.VISIBLE);
-                    }
-                }
-                @Override public void onFailure(@NonNull Call<MailApi.MailDto> call, @NonNull Throwable t) {
-                    tvError.setText(getString(R.string.network_error_generic));
+        Callback<MailApi.MailDto> cb = new Callback<>() {
+            @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
+                                             @NonNull Response<MailApi.MailDto> res) {
+                if (res.isSuccessful()) {
+                    repo.refreshInbox(); // update list
+                    Toast.makeText(ComposeActivity.this,
+                            asDraft ? R.string.draft_saved : R.string.sent_ok,
+                            Toast.LENGTH_SHORT).show();
+                    finish();
+                } else {
+                    tvError.setText(getString(R.string.send_failed, res.code()));
                     tvError.setVisibility(TextView.VISIBLE);
                 }
-            };
-        } else {
-            // Saving a draft OR sending a brand-new message
-            cb = new Callback<MailApi.MailDto>() {
-                @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
-                                                 @NonNull Response<MailApi.MailDto> res) {
-                    if (res.isSuccessful()) {
-                        repo.refreshInbox();
-                        android.widget.Toast.makeText(ComposeActivity.this,
-                                asDraft ? R.string.draft_saved : R.string.sent_ok,
-                                android.widget.Toast.LENGTH_SHORT).show();
-                        setResult(RESULT_OK);
-                        finish();
-                    } else {
-                        tvError.setText(getString(R.string.send_failed, res.code()));
-                        tvError.setVisibility(TextView.VISIBLE);
-                    }
-                }
-                @Override public void onFailure(@NonNull Call<MailApi.MailDto> call, @NonNull Throwable t) {
-                    tvError.setText(getString(R.string.network_error_generic));
-                    tvError.setVisibility(TextView.VISIBLE);
-                }
-            };
-        }
-
-        // Choose request based on context
-        if (editMailId == null) {
-            // Brand new compose (send or draft)
-            repo.send(to, sub, msg, payloadLabels, cb);
-        } else {
-            if (asDraft) {
-                // Editing a draft and saving it again
-                repo.edit(editMailId, to, sub, msg, payloadLabels, cb);
-            } else {
-                // Editing a draft and pressing SEND -> create a NEW mail and delete the draft on success
-                repo.send(to, sub, msg, payloadLabels, cb);
             }
+            @Override public void onFailure(@NonNull Call<MailApi.MailDto> call, @NonNull Throwable t) {
+                tvError.setText(getString(R.string.network_error_generic));
+                tvError.setVisibility(TextView.VISIBLE);
+            }
+        };
+
+        if (editMailId == null) {
+            // New mail/draft
+            repo.send(to, sub, msg, maybeNull, cb);
+        } else {
+            // Update existing draft
+            repo.edit(editMailId, to, sub, msg, maybeNull, cb);
         }
     }
 

@@ -6,8 +6,9 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ImageView;
+
 import java.util.Locale;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -23,6 +24,7 @@ import com.example.gmail_android.viewmodel.InboxViewModel;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.example.gmail_android.repository.MailRepository;
+
 
 public class MainInboxActivity extends AppCompatActivity {
 
@@ -55,6 +57,22 @@ public class MainInboxActivity extends AppCompatActivity {
 
         setSupportActionBar(topAppBar);
         vm = new ViewModelProvider(this).get(InboxViewModel.class);
+
+        ImageView imgAvatar = findViewById(R.id.imgAvatar);
+        int userId = TokenStore.getUserId(getApplicationContext());
+        if (userId != -1) {
+            vm.getUser(userId).observe(this, user -> {
+                if (user != null && user.image != null && !user.image.isEmpty()) {
+                    try {
+                        String b64 = user.image.contains(",") ? user.image.split(",")[1] : user.image;
+                        byte[] bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+                        android.graphics.Bitmap bmp =
+                                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                        imgAvatar.setImageBitmap(bmp);
+                    } catch (Exception ignore) { /* default avatar stays */ }
+                }
+            });
+        }
         // Hide default title (we render our own)
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
