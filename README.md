@@ -1,49 +1,38 @@
-# Exercise 4 – Gmail-like Frontend (Advanced Programming Systems)
-
-## 📋 Content
-- [About](#-about)
-- [Architecture](#-architecture)
-- [How to Run](#-how-to-run)
-- [Screenshots](#-screenshots)
+#  Exercise 5 - The Best Gmail Ever (Android Integration)
 
 ## 📚 About
-This exercise is the fourth part of a multi-phase project building a Gmail-like mail system. In this part, we create a **React-based web application** with **HTML, CSS, JavaScript** that interacts dynamically with the server from Exercise 3.
+This exercise is the fifth part of a multi-phase project building a Gmail-like mail system. In this part, we create the full environment with **Docker Compose** and demonstrating the core flows (Register/Login + Create/Edit/Delete mails) with **Web** and **Android** clients integrated into the same backend.
 
-The goal is to provide a user-friendly **frontend client** with a Gmail-inspired design and functionality, allowing users to register, login, view and manage emails, and filter spam using a blacklist.
-
-### Key Features
-- 🔐 **User Registration & Login** – JWT-based authentication 
-- 📧 **Inbox & Mail Management** – View, send, edit, and delete emails  
-- 🏷️ **Labels** – Manage email labels  
-- 🚫 **Spam Filtering** – Blacklist support through the backend server
-- 📄 **Drafts** – Manage draft emails
-- 🎨 **Theme Switching** – Light / Dark mode
-   
+---
 
 ## 🏗️ Architecture
 
 ### System Overview
 ```
-┌─────────────────┐    HTTP/REST    ┌─────────────────┐    TCP Socket    ┌─────────────────┐
-│ React Frontend  │ ◄─────────────► │  Express API    │ ◄──────────────► │  Bloom Server   │
-│   (Port 3001)   │                 │   (Port 3000)   │                  │   (Port 8080)   │
-└─────────────────┘                 └─────────────────┘                  └─────────────────┘
+┌──────────────────────┐      HTTP/REST       ┌───────────────────┐        CRUD        ┌───────────────────┐
+│ React Web Client     │  ─────────────────▶  │  Express API      │  ───────────────▶  │   MongoDB         │
+│ (Port 3001)          │  ◀────────────────   │  (Port 3000)      │  ◀───────────────  │   (Port 27017)    │
+└──────────────────────┘                      └───────────────────┘                    └───────────────────┘
+         ▲
+         │ HTTP/REST (emulator uses http://10.0.2.2:3000)
+         │
+┌──────────────────────┐
+│ Android App          │
+└──────────────────────┘
 ```
+**Notes**
+- Android emulator must hit **`http://10.0.2.2:3000`** to reach the API on the host machine.
+- Docker Compose brings everything up together: `docker compose up -d --build`.
+---
 
-### Components
+## 🧩 Components
 
-#### 🎨 React Frontend
-- Developed using **React**, **HTML**, **CSS**, **JavaScript**
-- Communicates with the backend (Ex3) via REST API
-- Fully dynamic – no hardcoded data
-- State management with `useState`, page navigation with `React Router`
-- JWT token management (stored client-side)
-- Responsive design, Gmail-inspired layout 
-
-#### 🌐 Express API + Bloom Server
-- Same backend from Exercise 3
-- REST API provides full mail and user management
-- Communicates with multithreaded Bloom Filter server over TCP
+- **React Web (3001)** — Register/Login, Inbox, Compose, Edit, Delete; client‑side token handling.  
+- **Android App** — integrated into the project, pointing to the same API; base URL set to **`http://10.0.2.2:3000`**.  
+- **Express API (3000)** — JWT auth, Users, Mails endpoints; validation and error handling.  
+- **MongoDB (27017)** — Persists users, mails, labels; accessed by the API service.  
+- **Docker Compose** — Single command bring‑up of all services (server + Mongo + web client) with Docker Compose, consistent local environment.
+---
 
 ## ▶️ How to Run
 Make sure you have **Docker** and **Docker Compose** installed.
@@ -60,8 +49,8 @@ docker-compose up  -d
 
 Check services:
 ```bash
-# Frontend React app (Port 3001)
-http://localhost:3001
+# Frontend Android app 
+
 ```
 
  Cleanup
@@ -69,34 +58,53 @@ http://localhost:3001
 docker-compose down
 ``` 
 
+**Access Points**
+- Web (Android): http://localhost:3001  
+- Server API (Node): http://localhost:3000  
+- MongoDB: mongodb: //localhost:27017
+
+---
+## 🖥️ Web + 📱 Android
+**Web** — open http://localhost:3001 and use **Register** / **Login**.  
+**Android** — run on an emulator and set base URL to:  
+```
+http://10.0.2.2:3000
+```
+This maps the emulator to the host’s `localhost` where the server runs via Docker.
+
+---
+
+## 🔧 Troubleshooting (short)
+- **Android can’t reach API** → use `http://10.0.2.2:3000` (not `localhost`).  
+- **Ports busy (3000/3001/27017)** → change mappings in `docker-compose.yml` or stop the conflicting app.  
+- **Server errors** → `docker compose logs -f server`.  
+- **Reset DB** → `docker compose down -v` (⚠ deletes volumes).
+
+---
+
 ## 📸 Screenshots
-
-> The following screenshots illustrate key parts of the Ex4 implementation- Login, registration, inbox, sending and managing emails, theme switching, and search results
+> The following screenshots illustrate key parts of the Ex5 implementation- Login, registration, inbox, sending and managing emails, theme switching, and search results
 > ### Login page with form validation
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/7ee755f7-8267-47b1-9735-5831b1c03a71" />
+<img width="360" height="" alt="image" src="images/readme/01_android_login.jpg" />
 
-> ### Registration page with form validation
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/e2e212f4-957c-4e05-9a95-b8493372cc26" />
+> ### Login page with invalid validation
+<img width="360" height="" alt="image" src="images/readme/14_android_invalid_credentials.jpg" />
 
-> ###  Registration with profile picture upload and validation
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/eb1fbfff-a5a0-4cf1-aeab-18a13ed83941" />
+> ### Registration page
+<img width="360" height="" alt="image" src="images/readme/02_android_registration.jpg" />
 
-> ###  Inbox view after login
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/0da0fc84-3070-43a3-ac31-568790a776c6" />
+> ### Email compose screen & successful email send
+<img width="360" height="" alt="image" src="images/readme/03_android_compose.jpg" />
+<img width="360" height="" alt="image" src="images/readme/04_android_send_success.jpg" />
 
-> ### Email compose screen and successful email send
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/0a0bb6b8-dca9-4ffa-b31a-34cd70ccd726" />
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/a7fdfed1-0526-4fc0-864a-b033d7d40a8b" />
-
-> ###  Inbox view showing emails with labels (Draft, spam .. )
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/098b5923-5b8a-4e75-9995-616ba440a70c" />
+> ### Adding label functiolaity & using it
+<img width="360" height="" alt="image" src="images/readme/16_android_add_label.jpg" />
+<img width="360" height="" alt="image" src="images/readme/17_android_add_label_success.jpg" />
+<img width="360" height="" alt="image" src="images/readme/18_android_choose_label.jpg" />
+<img width="360" height="" alt="image" src="images/readme/19_android_using_label.jpg" />
 
 > ### Theme switching between light and dark modes
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/4e6dc810-3470-4234-af6c-5506b8967f78" />
+<img width="360" height="" alt="image" src="images/readme/20_android_darkmode.jpg" />
 
-> ### Search functionality and results
-<img width="1469" height="717" alt="image" src="https://github.com/user-attachments/assets/601804b7-12de-4bae-8cae-7becd3f20b19" />
-
----  
-
+---
 Built with ❤️
