@@ -54,6 +54,10 @@ public interface MailApi {
     @GET("users/{id}")
     retrofit2.Call<com.example.gmail_android.entities.User> getUser(@Path("id") int id);
 
+    // auth-based current user (like React)
+    @GET("users/me")
+    Call<com.example.gmail_android.entities.User> getMe();
+
     // ===== DTOs =====
     class LabelDto { public String id; public String name; }
 

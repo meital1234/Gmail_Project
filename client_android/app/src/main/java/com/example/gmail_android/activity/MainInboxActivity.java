@@ -58,21 +58,42 @@ public class MainInboxActivity extends AppCompatActivity {
         setSupportActionBar(topAppBar);
         vm = new ViewModelProvider(this).get(InboxViewModel.class);
 
+//        ImageView imgAvatar = findViewById(R.id.imgAvatar);
+//        int userId = TokenStore.getUserId(getApplicationContext());
+//        if (userId != -1) {
+//            vm.getUser(userId).observe(this, user -> {
+//                if (user != null && user.image != null && !user.image.isEmpty()) {
+//                    try {
+//                        String b64 = user.image.contains(",") ? user.image.split(",")[1] : user.image;
+//                        byte[] bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+//                        android.graphics.Bitmap bmp =
+//                                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//                        imgAvatar.setImageBitmap(bmp);
+//                    } catch (Exception ignore) { /* default avatar stays */ }
+//                }
+//            });
+//        }
         ImageView imgAvatar = findViewById(R.id.imgAvatar);
-        int userId = TokenStore.getUserId(getApplicationContext());
-        if (userId != -1) {
-            vm.getUser(userId).observe(this, user -> {
-                if (user != null && user.image != null && !user.image.isEmpty()) {
-                    try {
-                        String b64 = user.image.contains(",") ? user.image.split(",")[1] : user.image;
-                        byte[] bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
-                        android.graphics.Bitmap bmp =
-                                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                        imgAvatar.setImageBitmap(bmp);
-                    } catch (Exception ignore) { /* default avatar stays */ }
-                }
-            });
+
+        imgAvatar.setImageResource(R.drawable.round_account_circle_24);
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("auth", MODE_PRIVATE);
+        String cached = prefs.getString("userImage", null);
+        if (cached != null && !cached.trim().isEmpty()) {
+            setAvatar(imgAvatar, cached.trim());
         }
+
+        vm.getMe().observe(this, user -> {
+            if (user != null && user.image != null && !user.image.trim().isEmpty()) {
+                setAvatar(imgAvatar, user.image.trim());
+                prefs.edit().putString("userImage", user.image.trim()).apply(); // update cache
+            }else {
+                // no photo, clean cache.
+                prefs.edit().remove("userImage").apply();
+                imgAvatar.setImageResource(R.drawable.round_account_circle_24);
+            }
+        });
+
         // Hide default title (we render our own)
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
@@ -275,6 +296,20 @@ public class MainInboxActivity extends AppCompatActivity {
         vm.refresh();
     }
 
+    // Base64/Data URL
+    private void setAvatar(@NonNull ImageView target, @NonNull String raw) {
+        try {
+            String s = raw.trim();
+            int comma = s.indexOf(',');
+            String b64 = (comma >= 0) ? s.substring(comma + 1) : s;
+            byte[] bytes = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+            android.graphics.Bitmap bmp =
+                    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if (bmp != null) target.setImageBitmap(bmp);
+        } catch (Exception ignore) { /* default */ }
+    }
+
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         return true;
@@ -287,6 +322,8 @@ public class MainInboxActivity extends AppCompatActivity {
     }
     private void doLogout() {
         TokenStore.clear(getApplicationContext());
+        getSharedPreferences("auth", MODE_PRIVATE)
+                .edit().remove("userImage").apply();
         Intent i = new Intent(this, LoginActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);

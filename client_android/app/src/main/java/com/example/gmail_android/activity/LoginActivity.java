@@ -66,6 +66,9 @@ public class LoginActivity extends ComponentActivity {
                     // result.data is the token string (e.g., "token-123")
                     TokenStore.save(getApplicationContext(), result.data);
 
+                    getSharedPreferences("auth", MODE_PRIVATE)
+                            .edit().remove("userImage").apply();
+
                     Toast.makeText(this, "Logged in!", Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(this, MainInboxActivity.class));
                     finish();

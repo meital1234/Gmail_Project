@@ -55,9 +55,13 @@ dependencies {
     implementation("androidx.room:room-runtime:2.7.2")
     annotationProcessor("androidx.room:room-compiler:2.7.2")
 
-    // --- UI שהפעילות שלנו משתמשת בו ---
+    // UI
     implementation ("androidx.recyclerview:recyclerview:1.4.0")
     implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation ("androidx.cardview:cardview:1.0.0")
     implementation ("androidx.coordinatorlayout:coordinatorlayout:1.3.0")
+
+    // Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 }

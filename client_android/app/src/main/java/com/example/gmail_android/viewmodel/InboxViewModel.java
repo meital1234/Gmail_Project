@@ -44,6 +44,11 @@ public class InboxViewModel extends AndroidViewModel {
         return repo.getUser(id);
     }
 
+    // ( /users/me) like:
+    public androidx.lifecycle.LiveData<com.example.gmail_android.entities.User> getMe() {
+        return repo.getMe();
+    }
+
     public void selectAll() {
         filter.setValue(Filter.all());
         refresh();
