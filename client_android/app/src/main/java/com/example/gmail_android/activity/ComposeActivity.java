@@ -25,7 +25,7 @@ import retrofit2.Response;
 
 
 // screen used to compose a new mail (or save it as a draft).
-public class ComposeActivity extends ComponentActivity {
+public class ComposeActivity extends androidx.appcompat.app.AppCompatActivity {
 
     // default labels we don't show as selectable chips.
     private static final HashSet<String> DEFAULT_LABELS = new HashSet<>(
@@ -102,49 +102,66 @@ public class ComposeActivity extends ComponentActivity {
         String sub = etSubject.getText().toString().trim();
         String msg = etContent.getText().toString().trim();
 
-        // for non-draft we require a recipient.
+        // Require recipient only when actually sending
         if (!asDraft && to.isEmpty()) {
             tvError.setText(getString(R.string.recipient_required));
             tvError.setVisibility(TextView.VISIBLE);
             return;
         }
 
-        // Build labels to send to backend (by NAME, to match your web)
+        // Build label list for this action
         List<String> labels = new ArrayList<>(selectedNames);
         if (asDraft) {
-            // Guarantee the "Drafts" label
             boolean hasDrafts = false;
             for (String s : labels) if ("drafts".equalsIgnoreCase(s)) { hasDrafts = true; break; }
             if (!hasDrafts) labels.add("Drafts");
+        } else {
+            // Make sure no “Drafts” leaks into a send
+            labels.removeIf("drafts"::equalsIgnoreCase);
         }
         List<String> maybeNull = labels.isEmpty() ? null : labels;
 
-        Callback<MailApi.MailDto> cb = new Callback<>() {
+        // Common callbacks
+        Callback<MailApi.MailDto> onSendCb = new Callback<>() {
             @Override public void onResponse(@NonNull Call<MailApi.MailDto> call,
                                              @NonNull Response<MailApi.MailDto> res) {
-                if (res.isSuccessful()) {
-                    repo.refreshInbox(); // update list
-                    Toast.makeText(ComposeActivity.this,
-                            asDraft ? R.string.draft_saved : R.string.sent_ok,
-                            Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
+                if (!res.isSuccessful()) {
                     tvError.setText(getString(R.string.send_failed, res.code()));
                     tvError.setVisibility(TextView.VISIBLE);
+                    return;
                 }
+                // If we were sending while editing an existing draft, delete that draft now
+                if (!asDraft && editMailId != null) {
+                    // Delete from backend (best effort) and immediately from Room so UI updates
+                    repo.deleteLocal(editMailId);
+                    repo.delete(editMailId, /*cb*/ null);
+                }
+
+                repo.refreshInbox();
+                Toast.makeText(ComposeActivity.this,
+                        asDraft ? R.string.draft_saved : R.string.sent_ok,
+                        Toast.LENGTH_SHORT).show();
+                finish();
             }
+
             @Override public void onFailure(@NonNull Call<MailApi.MailDto> call, @NonNull Throwable t) {
                 tvError.setText(getString(R.string.network_error_generic));
                 tvError.setVisibility(TextView.VISIBLE);
             }
         };
 
+        // IMPORTANT: When sending, ALWAYS create a NEW mail (POST),
+        // and if we were editing a draft, delete the old draft after success.
+        if (!asDraft) {
+            repo.send(to, sub, msg, maybeNull, onSendCb);
+            return;
+        }
+
+        // Saving a draft: create new if it's a brand new draft, or PATCH the existing one
         if (editMailId == null) {
-            // New mail/draft
-            repo.send(to, sub, msg, maybeNull, cb);
+            repo.send(to, sub, msg, maybeNull, onSendCb); // create a draft via POST with "Drafts" label
         } else {
-            // Update existing draft
-            repo.edit(editMailId, to, sub, msg, maybeNull, cb);
+            repo.edit(editMailId, to, sub, msg, maybeNull, onSendCb); // update existing draft
         }
     }
 
