@@ -85,26 +85,26 @@ This maps the emulator to the host’s `localhost` where the server runs via Doc
 ## 📸 Screenshots
 > The following screenshots illustrate key parts of the Ex5 implementation- Login, registration, inbox, sending and managing emails, theme switching, and search results
 > ### Login page with form validation
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/e926628a-ac00-4ee2-9bbf-6589dafb997a" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/e926628a-ac00-4ee2-9bbf-6589dafb997a" />
 
 > ### Login page with invalid validation
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/03dc878e-882e-49ae-94a9-3e8e5f734396" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/03dc878e-882e-49ae-94a9-3e8e5f734396" />
 
 > ### Registration page
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/311f1d32-75f4-4011-8d27-e9222532ede4" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/311f1d32-75f4-4011-8d27-e9222532ede4" />
 
 > ### Email compose screen & successful email send
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/7ee20054-ed12-4efe-ad48-0c339274d7b4" />
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/00574b17-8043-4f03-8349-8a894b4c2760" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/7ee20054-ed12-4efe-ad48-0c339274d7b4" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/00574b17-8043-4f03-8349-8a894b4c2760" />
 
 > ### Adding label functiolaity & using it
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/2840e892-4606-4078-b205-dfe09fa33b2f" />
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/5190a5a3-ee92-451a-a8d7-91bf05e294e9" />
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/46dc5511-b2c8-450e-885d-8a97a95eae32" />
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/ccbb4781-258d-43c8-a28d-924c0ea152cd" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/2840e892-4606-4078-b205-dfe09fa33b2f" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/5190a5a3-ee92-451a-a8d7-91bf05e294e9" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/46dc5511-b2c8-450e-885d-8a97a95eae32" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/ccbb4781-258d-43c8-a28d-924c0ea152cd" />
 
 > ### Theme switching between light and dark modes
-<img width="230" height="" alt="image" src="https://github.com/user-attachments/assets/dfc17c5c-d7ca-4413-bfeb-b8197e57ff1c" />
+<img width="200" height="" alt="image" src="https://github.com/user-attachments/assets/dfc17c5c-d7ca-4413-bfeb-b8197e57ff1c" />
 
 ---
 Built with ❤️
